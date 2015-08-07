@@ -3,9 +3,8 @@
 // @namespace      Virtonomics
 // @description    XioScript using XioLibraries
 // @version        10.0
-// @require        file://C:\Users\Felix\Documents\Virtonomics\XSMapLibrary.js
-// @require        file://C:\Users\Felix\Documents\Virtonomics\XSCodeLibrary.js
-// @require        https://raw.github.com/XiozZe/XSCL/master/SupplyXioStock.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSML.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
