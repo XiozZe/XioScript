@@ -9,9 +9,9 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ZeroPrice.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToMyCompany.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/Stores3%25.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullService3%25.txt
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/RequiredSalary.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/PrimeCostPrice.js
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullService3%25.txt
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullTraining.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/EquipmentImproveRepair.js
 // @include        http://*virtonomic*.*/*/*

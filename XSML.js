@@ -510,14 +510,14 @@ XSML.push({
 			}
 		},
 		visitorsNum : {
-			path: ".infoblock .infoblock tr:eq(1) td:eq(1)",
+			path: ".infoblock .infoblock tbody > tr:eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
 		visitorsMax : {
-			path: ".infoblock .infoblock tr:eq(1) td:eq(1)",
+			path: ".infoblock .infoblock tbody > tr:eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text().split(": ")[1]);
