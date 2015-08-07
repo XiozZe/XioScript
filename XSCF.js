@@ -1,7 +1,8 @@
+XSML = [];
+XSCL = [];
+
 function XioScript(){
-	
-	console.log("XSCL: ", typeof XSCL);
-	
+		
 	//Bugs and additions (TODO list):
 			
 	//Select goods remove filter
@@ -763,7 +764,3 @@ function XioScript(){
     }
 	
 }
-
-var script = document.createElement("script");
-script.textContent = '(' + XioScript.toString() + ')();';
-document.documentElement.appendChild(script);
