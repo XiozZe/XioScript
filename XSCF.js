@@ -97,7 +97,8 @@ function XioScript(){
     addCustomStyle();
 	
 	
-    console.log("XioScript is running!");
+    console.log("XioScript is ranning!");
+    console.log("XioScript is ronning!");
 
     //Usefull stuff        
     function numberfy(variable){
