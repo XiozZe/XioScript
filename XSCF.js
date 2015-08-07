@@ -2,6 +2,8 @@ console.log("XSCF Loaded!");
 var XSML = [];
 var XSCL = [];
 
+console.log(typeof XSML);
+
 function XioScript(){
 		
 	//Bugs and additions (TODO list):
@@ -13,12 +15,12 @@ function XioScript(){
 		
 	//Check and load important XS materials
 	if(typeof XSML !== "object"){
-		console.log("No XSML!", XSML);
+		console.log("No XSML!", typeof XSML);
 		return false;
 	}
 	
 	if(typeof XSCL !== "object"){
-		console.log("No XSCL!", XSCL);
+		console.log("No XSCL!", typeof XSCL);
 		return false;
 	}
 	
