@@ -1,4 +1,5 @@
 XSCL = XSCL || [];
+console.log("XSCL: ", typeof XSCL);
 XSCL.push({
 	row: "Production",
 	name: "Supply XioStock",
