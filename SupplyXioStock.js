@@ -1,3 +1,4 @@
+XSCL = XSCL || [];
 XSCL.push({
 	row: "Production",
 	name: "Supply XioStock",
