@@ -10,17 +10,15 @@ function XioScript(){
 	//able to add html (TOP stats) --> XioOverview functions?
 	//User input
 	//Ask for all main pages
-	
-	//Hello!
-	
+		
 	//Check and load important XS materials
 	if(typeof XSML !== "object"){
-		console.log("No XSML!");
+		console.log("No XSML!", XSML);
 		return false;
 	}
 	
 	if(typeof XSCL !== "object"){
-		console.log("No XSCL!");
+		console.log("No XSCL!", XSCL);
 		return false;
 	}
 	
