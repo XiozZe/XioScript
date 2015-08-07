@@ -95,9 +95,8 @@ function XioScript(){
     addCustomStyle();
 	
 	
-    console.log("XioScript is ranning!");
-    console.log("XioScript is ronning!");
-
+    console.log("XioScript is running!");
+	
     //Usefull stuff        
     function numberfy(variable){
         return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
