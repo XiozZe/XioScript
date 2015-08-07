@@ -2,7 +2,7 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioLibraries
-// @version        10.0
+// @version        10.0.01
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSML.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
 // @include        http://*virtonomic*.*/*/*
