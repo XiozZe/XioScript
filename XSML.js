@@ -1,3 +1,4 @@
+console.log("XSML Loaded!");
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
 }

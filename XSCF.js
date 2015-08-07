@@ -1,3 +1,4 @@
+console.log("XSML Loaded!");
 XSML = [];
 XSCL = [];
 
