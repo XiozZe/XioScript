@@ -762,3 +762,7 @@ function XioScript(){
     }
 	
 }
+
+var script = document.createElement("script");
+script.textContent = '(' + XioScript.toString() + ')();';
+document.documentElement.appendChild(script);
