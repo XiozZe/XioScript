@@ -1,15 +1,3 @@
-// ==UserScript==
-// @name           XioScript
-// @namespace      Virtonomics
-// @description    XioScript using XioLibraries
-// @version        10.0
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSML.js
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
-// @include        http://*virtonomic*.*/*/*
-// @exclude        http://virtonomics.wikia.com*
-// @updateURL      https://raw.githubusercontent.com/XiozZe/XioScript/master/XioScript-10.0.user.js
-// ==/UserScript==
-
 function XioScript(){
 	
 	console.log("XSCL: ", typeof XSCL);
@@ -774,7 +762,3 @@ function XioScript(){
     }
 	
 }
-
-var script = document.createElement("script");
-script.textContent = '(' + XioScript.toString() + ')();';
-document.documentElement.appendChild(script);
