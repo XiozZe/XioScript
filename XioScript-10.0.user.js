@@ -7,6 +7,7 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
+// @updateURL      https://raw.githubusercontent.com/XiozZe/XioScript/master/XioScript-10.0.user.js
 // ==/UserScript==
 
 function XioScript(){
