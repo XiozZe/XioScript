@@ -11,6 +11,8 @@
 
 function XioScript(){
 	
+	console.log("XSCL: ", typeof XSCL);
+	
 	//Bugs and additions (TODO list):
 			
 	//Select goods remove filter
