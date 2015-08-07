@@ -1,6 +1,6 @@
 console.log("XSCF Loaded!");
-XSML = [];
-XSCL = [];
+var XSML = [];
+var XSCL = [];
 
 function XioScript(){
 		
