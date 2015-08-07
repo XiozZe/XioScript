@@ -2,13 +2,14 @@ function XioScript(){
 	
 	console.log("XSCL: ", typeof XSCL);
 	
-	//A little change
 	//Bugs and additions (TODO list):
 			
 	//Select goods remove filter
 	//able to add html (TOP stats) --> XioOverview functions?
 	//User input
 	//Ask for all main pages
+	
+	//Hello!
 	
 	//Check and load important XS materials
 	if(typeof XSML !== "object"){
