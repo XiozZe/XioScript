@@ -1,7 +1,7 @@
 XSCL.push({
 	row: "Production",
 	name: "To My Company",
-	description: "The policies for all goods of the selected subdivisions will be set to &quot;Only to my company&quot;. Works for production buildings only (no warehouses)",	
+	description: "The policies for all goods of the selected subdivisions will be set to &quot;Only to my company&quot;. Works for production buildings only (no warehouses).",	
 	code: function(){
 		
 		console.log("To My Company is running!"); 	

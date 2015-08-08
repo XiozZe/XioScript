@@ -26,4 +26,6 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
+var developer = false;
+
 window.addEventListener("load", XioScript);

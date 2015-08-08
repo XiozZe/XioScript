@@ -1,5 +1,5 @@
 console.log("XSCF Loaded!");
-XSCL = [];
+var XSCL = [];
 
 function XioScript(){
 	
@@ -680,8 +680,10 @@ function XioScript(){
     var xcount = 0; //counting the Ajax calls
 	var xport = false; //block of code is fully executed
 
-    //Load the map button into the topblock    
-    MapButton();
+    //Load the map button into the topblock 
+	if(developer){
+		MapButton();		
+	}
 
     //If we are on the main page, enable the XF menu
     if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list$").test(document.URL)){
