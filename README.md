@@ -1,4 +1,3 @@
-### XSUS: XioScript UserScript
-### XSCF: XioScript Core Functions
-### XSML: XioScript Map Library
-### XSCL: XioScript Code Library
+### Welcome!
+
+This github repository is dedicated to XioScript, a userscript for Virtonomics. I recommend to check out the [[wiki|home]] for any questions. Have fun with it!
