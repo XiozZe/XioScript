@@ -3,6 +3,8 @@
 // @namespace      Virtonomics
 // @description    XioScript using XioLibraries
 // @version        10.0
+// @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
+// @require        http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCF.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSML.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
@@ -14,10 +16,14 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/PrimeCostPrice.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullTraining.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/EquipmentImproveRepair.js
+// @resource       jQuiCss     http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/themes/smoothness/jquery-ui.css
+// @resource       myCss       https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCSS.css
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
+// @grant          GM_getResourceText
+// @grant          GM_addStyle
 // ==/UserScript==
 
-var script = document.createElement("script");
-script.textContent = '(' + XioScript.toString() + ')();';
-document.documentElement.appendChild(script);
+this.$ = this.jQuery = jQuery.noConflict(true);
+
+window.addEventListener("load", XioScript);

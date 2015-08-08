@@ -22,24 +22,6 @@ function XioScript(){
 	}
 
 	//Add styling sheets
-    function addJQueryUIStyle(){
-        var link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/themes/smoothness/jquery-ui.css";
-        document.head.appendChild(link);
-    }
-
-    function addCustomStyle(){        
-        var style = document.createElement("style");
-        style.id = "xioStyle";
-        style.type = 'text/css';
-        style.innerHTML = ""+
-            
-
-        document.getElementsByTagName("head")[0].appendChild(style);      
-    }
-	
-	//addJQueryUIStyle();
 	GM_addStyle(GM_getResourceText("jQuiCss"));	
     GM_addStyle(GM_getResourceText("myCss"));	
 	
