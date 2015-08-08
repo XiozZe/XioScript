@@ -55,7 +55,8 @@
 } 
             
 #xfMenu{ 
-	border-style:ridge 
+	border-style: ridge;
+    border-color: #ffffff;
 }
             
 #xfMain{ 
