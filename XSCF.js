@@ -409,7 +409,7 @@ function XioScript(){
 
 			success: function(html, status, xhr){				
 				
-				//Prepare the xvar for saving data				
+				//Save data in the xvar			
 				var $html = $(html.replace("body", "bodya"));
 				xvar[name][p].doc = $html;
 				xvar[name][p].url = url;

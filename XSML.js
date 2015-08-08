@@ -243,7 +243,7 @@ var XSML = {
 			}
 		},		
 		serviceLevel : {
-			path: "tr:has(td.control):eq(2) ~ tr:eq(4) .title",
+			path: "tr:has(td.control):eq(2) ~ tr:eq(4) .productivity_hint .title",
 			type: "item",
 			mod: function($x){
 				return $x.text();
