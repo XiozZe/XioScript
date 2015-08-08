@@ -1,8 +1,10 @@
 console.log("XSML Loaded!");
+
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
 }
-XSML.push({
+
+XSML = {
 	mainList:{
 		regExp: "\/.*\/main\/company\/view\/[0-9]+\/unit_list$",
 		subName: {
@@ -1399,4 +1401,4 @@ XSML.push({
 	notMapped:{
 		
 	}
-});
+};

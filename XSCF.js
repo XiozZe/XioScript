@@ -1,11 +1,8 @@
 console.log("XSCF Loaded!");
-var XSML = [];
-var XSCL = [];
-
-console.log(typeof XSML);
+XSCL = [];
 
 function XioScript(){
-		
+	
 	//Bugs and additions (TODO list):
 			
 	//Select goods remove filter
@@ -13,7 +10,7 @@ function XioScript(){
 	//User input
 	//Ask for all main pages
 		
-	//Check and load important XS materials
+	//Check  important XS materials
 	if(typeof XSML !== "object"){
 		console.log("No XSML!", typeof XSML);
 		return false;
@@ -23,32 +20,13 @@ function XioScript(){
 		console.log("No XSCL!", typeof XSCL);
 		return false;
 	}
-	
-    function addJQuery(){
-        var script = document.createElement("script");
-        script.setAttribute("src", '//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js');
-        script.addEventListener('load', function () {
-            var script = document.createElement("script");
-            script.textContent = "(" + XioScript.toString() + ")();";
-            document.head.appendChild(script);
-        }, false);
-        document.head.appendChild(script);
-    }
 
-    function addJQueryUI(){
+	//Add styling sheets
+    function addJQueryUIStyle(){
         var link = document.createElement("link");
         link.rel = "stylesheet";
         link.href = "//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/themes/smoothness/jquery-ui.css";
         document.head.appendChild(link);
-
-        var script = document.createElement("script");
-        script.setAttribute("src", '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js');
-        script.addEventListener('load', function() {
-            var script = document.createElement("script");
-            script.textContent = "(" + XioScript.toString() + ")();";
-            document.head.appendChild(script);
-        }, false);
-        document.head.appendChild(script);
     }
 
     function addCustomStyle(){        
@@ -56,54 +34,18 @@ function XioScript(){
         style.id = "xioStyle";
         style.type = 'text/css';
         style.innerHTML = ""+
-            ".unselectable{ -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none;  -ms-user-select: none; user-select: none;}\n"+
-
-            ".ui-selected td { background-color: #FEE068 !important;} \n"+
-            ".ui-selecting td { background-color: #FEE88F !important;} \n"+
-
-            ".xfSelected{ border-color: gold }\n"+
-            ".xfHide{ display: none; }\n"+
-            ".xfTitle{ font-size: 22px; margin-top: 15px; margin-left: 30px; color: gold; }\n"+
-            ".xfMinimize{ float: right; text-align: center; color: gold; font-size: 20px; width: 30px; height: 30px; }\n"+
-			".xfTdTitle{ color: gold; font-size: 18px; }"+
-			".xfButton{ margin-left: 8px; }\n"+
-			".xfButtonDisabled {font-style: italic; color:grey; opacity:0.4} \n"+
-            "#xfMenu{ border-style:ridge }\n"+
-            "#xfMain{ margin-top: 15px; margin-left: 30px; margin-bottom: 20px; }\n"+
-
-            ".mapTooltip { background-color: lightgreen !important }\n"+
-            "input.mapTooltip, select.mapTooltip { outline: 4px ridge pink !important ; }\n"+			
-			"#mapTable { font-size: 11px; color: #333333; border-width: 1px;  border-color: #36752D;  border-collapse: collapse; margin-bottom: 8px; margin-top: 8px; }\n"+
-			"#mapTable th { border-width: 1px;  padding: 8px; border-style: solid; border-color: #275420; background-color: #36752D; color: #ffffff; }\n"+
-			"#mapTable tr:nth-child(even) td{      background-color: #DFFFDE; }\n"+
-			"#mapTable td { border-width: 1px; padding: 8px; border-style: solid; border-color: #36752D; background-color: #ffffff; } ";
+            
 
         document.getElementsByTagName("head")[0].appendChild(style);      
     }
-
-    if(!window.jQuery){
-        addJQuery();
-		console.log("jQuery added");
-        return false;
-    }	
 	
-    if(!window.jQuery.ui || !window.jQuery.ui.version){
-		jQuery.ui = {};
-        addJQueryUI();
-		console.log("jQueryUI added");
-        return false;
-    }
-
-    addCustomStyle();
-	
+	//addJQueryUIStyle();
+	GM_addStyle(GM_getResourceText("jQuiCss"));	
+    GM_addStyle(GM_getResourceText("myCss"));	
 	
     console.log("XioScript is running!");
 	
-    //Usefull stuff        
-    function numberfy(variable){
-        return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
-    }
-
+    //Usefull stuff
     function spaces(value){
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
