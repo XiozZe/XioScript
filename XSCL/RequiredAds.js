@@ -1,7 +1,7 @@
 XSCL.push({
 	row: "Ads",
 	name: "Required Ads",
-	description: "Sets the advertisements expenses of a hairdressing salon to the required amount to keep the current popularity. If required expenses are zero or less than the minimum advertisement budget, it will set the expenses to minimum. The medium is always TV.",
+	description: "Sets the advertisements expenses of store or a service sector subdivision to the required amount to keep the current popularity. If required expenses are zero or less than the minimum advertisement budget, it will set the expenses to minimum. The medium is always TV.",
 	code: function(){
 		
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "repair", "restaurant", "shop"]);

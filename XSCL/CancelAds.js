@@ -13,7 +13,7 @@ XSCL.push({
 		});		
 
 		xlist.push(function(){
-			for(var i = 0; i < xvar.main.xcId.length; i++){	
+			for(var i = 0; i < xvar.main.xcId.length; i++){				
 				xcPost("adsPost", xvar.adsGet[i], [], "cancel");
 			}							
 		});

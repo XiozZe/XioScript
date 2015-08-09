@@ -1,6 +1,6 @@
 XSCL.push({
 	row: "Service",
-	name: "Full Service 3%",
+	name: "Full Service",
 	description: "For all selected restaurants, hospitals and autorepair: increase the price by 3% when the amount of visitors is higher than 97% of the maximum amount of visitors, and decrease the price by 3% when lower than 97%. Also sets the supply aiming for the stock to equal the required.",	
 	code: function(){
 		 		

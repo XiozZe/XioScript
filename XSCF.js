@@ -9,6 +9,7 @@ function XioScript(){
 	//able to add html (TOP stats) --> XioOverview functions?
 	//User input
 	//Ask for all main pages
+	//Salary cancel post with unrounded values
 		
 	//Check  important XS materials
 	if(typeof XSML !== "object"){
@@ -404,14 +405,14 @@ function XioScript(){
 	}
 	
 	function xcGet(name, url){
-		
-		xcount++;	
-		
+				
 		//save the p!
 		xvar[name] = xvar[name] || [];
 		var p = xvar[name].length;
 		xvar[name][p] = {};
 				
+		xcount++;		
+		
 		$.ajax({
 			url: url,				
 			type: "GET",
@@ -458,10 +459,9 @@ function XioScript(){
 		if(map === "notMapped"){
 			console.log(name+": notMapped! xcPost cancelled!");
 			return false;
-		}
-				
-		xcount++;		
+		}			
 		
+		var docHTML = get.doc.clone();
 		//Filling in the doc
 		for(var i = 0; i < inputs.length; i++){
 			var inputName = XSML[map][inputs[i][0]];
@@ -472,9 +472,13 @@ function XioScript(){
 				}
 			}
 			else{
-				console.log(name+": wrong map! xcPost cancelled!");
-				return false;
+				
 			}
+		}
+		
+		if( typeof XSML[map][save] === "undefined" ){
+			console.log(name+": Wrong map! xcPost cancelled!");
+			return false;
 		}
 		
 		//Finding and preparing the form
@@ -482,7 +486,8 @@ function XioScript(){
 		var $form = get.doc.find(formName.path);
 		$form = formName.mod($form);
 		var form = $form.serialize();
-		
+				
+		xcount++;
 				
 		$.ajax({
 			url: get.url,	

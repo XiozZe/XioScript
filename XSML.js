@@ -158,8 +158,15 @@ var XSML = {
 	},
 	prodSale:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/sale$",
-		stock: {
+		quantity: {
 			path: "td:has('table'):nth-child(5)  tr:nth-child(1) td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		quality: {
+			path: "td:has('table'):nth-child(5) tr:nth-child(2) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
@@ -167,13 +174,6 @@ var XSML = {
 		},
 		primeCost: {
 			path: "td:has('table'):nth-child(5)  tr:nth-child(3) td:nth-child(2)",
-			type: "item",
-			mod: function($x){
-				return numberfy($x.text());
-			}
-		},
-		primeQuality: {
-			path: "td:has('table'):nth-child(5) tr:nth-child(2) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
@@ -188,6 +188,16 @@ var XSML = {
 		},
 		price: {
 			path: "input.money:even",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}
+		},		
+		maxVolume: {
+			path: "input.money:odd",
 			type: "input",
 			mod: function($x){
 				return numberfy($x.val());
@@ -935,6 +945,79 @@ var XSML = {
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
+			}
+		}
+	},
+	wareSale: {
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/sale$",
+		quantity: {
+			path: "td:has('table')  tr:nth-child(1) td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		quality: {
+			path: "td:has('table') tr:nth-child(2) td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		primeCost: {
+			path: "td:has('table') tr:nth-child(3) td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		available: {
+			path: "td:nth-child(6)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		price: {
+			path: "input.money:even",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}
+		},		
+		maxVolume: {
+			path: "input.money:odd",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}
+		},		
+		policy: {
+			path: "select:even",
+			type: "input",
+			mod: function($x){
+				return $x.find("[selected]").text();
+			},
+			edit: function($x, value){
+				return $x.val($x.find(":contains("+value+")").val());
+			}
+		},
+		save: {
+			path: ":submit.button205:not([name])",
+			type: "submit",
+			form: "form"
+		},
+		form: {
+			path: "[name=storageForm]",
+			type: "form",
+			mod: function($form){
+				return $form;
 			}
 		}
 	},

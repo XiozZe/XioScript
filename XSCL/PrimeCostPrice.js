@@ -1,10 +1,10 @@
 XSCL.push({
-	row: "Production",
+	row: "Price",
 	name: "Prime Cost Price",
-	description: "For all selected subdivisions on the main page: set the price to the prime cost of the stock. If the prime cost of the stock is zero, do nothing.",	
+	description: "For all selected production subdivisions and warehouses: set the price to the prime cost of the stock. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
 				
-		xcMain(["mill", "workshop"]); 
+		xcMain(["mill", "warehouse", "workshop"]); 
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
