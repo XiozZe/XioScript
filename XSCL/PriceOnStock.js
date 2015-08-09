@@ -4,7 +4,6 @@ XSCL.push({
 	description: "For all selected stores: increase the price by 3% in case the stock was sold out, and decrease the price by 3% if there are goods left from yesterday. Exception for when there was nothing in stock (sales equals zero): in that case the price doesn&quot;t change.",	
 	code: function(){
 		
-		console.log("Stores 3%");		
 		xcMain(["fuel", "shop"]);
 		
 		xlist.push(function(){

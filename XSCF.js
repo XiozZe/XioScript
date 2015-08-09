@@ -263,7 +263,7 @@ function XioScript(){
 		var typeJSON = {
 			item : true,
 			input : true,
-			submit : true,
+			submit : false,
 			form: false
 		};				
 		
@@ -280,23 +280,31 @@ function XioScript(){
 
             var path = XSML[key][j].path;
             var curTitle = $(path).attr("title")? $(path).attr("title") + " & ":"";	
-
-            typeJSON.submit = true;		
 			
 			//Highlight and tooltip
-            if(typeJSON[XSML[key][j].type]){			
+            if( XSML[key][j].type === "item" ){			
                 $(path).not("[id^=xf]")
 					.attr("title", curTitle + j)
-					.addClass("mapTooltip");					
+					.addClass("mapGTooltip");				
             }
-
-			typeJSON.submit = false;
-
+			else if( XSML[key][j].type === "input" ){
+				$(path).not("[id^=xf]")
+					.attr("title", curTitle + j)
+					.addClass("mapGTooltip")
+					.addClass("mapPTooltip");
+			}
+			else if( XSML[key][j].type === "submit" ){
+				$(path).not("[id^=xf]")
+					.attr("title", curTitle + j)
+					.addClass("mapPTooltip");
+			}
+			
 			//Save value for overview
 			if(typeJSON[XSML[key][j].type]){				
 				html += "<th>"+j+"</th>";
 				arrayLength = Math.max(arrayLength, $(path).length);				
-			}			
+			}
+			
         }			
 		
 		html += "</tr>";
@@ -341,10 +349,11 @@ function XioScript(){
         $("#mapName, #mapTable").remove();		
 
         //remove items and inputs tooltips
-        $(".mapTooltip")
+        $(".mapGTooltip, .mapPTooltip")
         .css("background-color", "")
         .removeAttr("title")
-        .removeClass("mapTooltip");		
+        .removeClass("mapGTooltip")	
+        .removeClass("mapPTooltip");		
 
         //Switch buttons
         $("#xfHideMap").addClass("xfHide");
@@ -415,6 +424,7 @@ function XioScript(){
 				xvar[name][p].url = url;
 				
 				var map = xpMap(url, $html);
+				xvar[name][p].map = map;
 				
 				//Extract data based on map						
 				for(var i in XSML[map]){	
@@ -424,7 +434,7 @@ function XioScript(){
 				}						
 				
 				//Rounding up the xcGet function
-				console.log(name+" has finished!");
+				console.log(name+" was successful!");
 				xcount--;	
 				if(xcount === 0 && xport === true){
 					xcList();
@@ -444,9 +454,13 @@ function XioScript(){
 	
 	function xcPost(name, get, inputs, save){
 		
-		xcount++;	
-		
 		var map = xpMap(get.url, get.doc);
+		if(map === "notMapped"){
+			console.log(name+": notMapped! xcPost cancelled!");
+			return false;
+		}
+				
+		xcount++;		
 		
 		//Filling in the doc
 		for(var i = 0; i < inputs.length; i++){
@@ -456,6 +470,10 @@ function XioScript(){
 				for(var j = 0; j < objects.length; j++){
 					inputName.edit(objects.eq([j]), inputs[i][1][j]);					
 				}
+			}
+			else{
+				console.log(name+": wrong map! xcPost cancelled!");
+				return false;
 			}
 		}
 		
@@ -474,7 +492,7 @@ function XioScript(){
 			success: function(html, status, xhr){
 							
 				//Rounding up the xcPost function
-				console.log(name+" has finished!");
+				console.log(name+" was successful!");
 				xcount--;	
 				if(xcount === 0 && xport === true){
 					xcList();
@@ -504,7 +522,7 @@ function XioScript(){
 			success: function(html, status, xhr){
 							
 				//Rounding up the xcPost function
-				console.log(name+" has finished!");
+				console.log(name+" was successful!");
 				xcount--;	
 				if(xcount === 0 && xport === true){
 					xcList();
@@ -594,7 +612,7 @@ function XioScript(){
     }
     
 	//XioFunctions menu	
-    function xfButton(){		
+    function xfButtonMenu(){		
 		//Build the whole XF button menu
 		
 		//Build the basics		
@@ -630,6 +648,7 @@ function XioScript(){
 				.find("input:last")
 				.click(function(){
 					xpStart(); //Basic needs of preparation
+					console.log( XSCL[$(this).attr("data")].name +" is running!");
 					eval("(" + XSCL[$(this).attr("data")].code + ")()");
 				});
 			
@@ -642,7 +661,10 @@ function XioScript(){
 		}).click(function(){
 			$(this).tooltip("close");
 		});	
-        $("#xfMin, #xfMenuButton").click(function(){ xfToggleMenu(); });
+        
+		$("#xfMin, #xfMenuButton").click(function(){ 
+			xfToggleMenu(); 
+		});
         
     }
 	
@@ -687,7 +709,7 @@ function XioScript(){
 
     //If we are on the main page, enable the XF menu
     if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list$").test(document.URL)){
-        xfButton();
+        xfButtonMenu();
     }
 	
 }

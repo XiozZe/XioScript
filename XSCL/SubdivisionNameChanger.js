@@ -4,7 +4,6 @@ XSCL.push({
 	description: "Change the name of a subdivision. Uses the selected subdivisions on the main page. The new name of the subdivision is the old name plus &quot;Hello! This name is changed with XS 10.0!&quot;",		
 	code: function(){
 		
-		console.log("Subdivision Name Changer is running!"); 
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "warehouse", "workshop"]);
 		
 		xlist.push(function(){

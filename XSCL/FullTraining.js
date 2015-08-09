@@ -4,7 +4,6 @@ XSCL.push({
 	description: "Give the selected subdivisions a full training schedule of 4 weeks.",
 	code: function(){
 		
-		console.log("Full Training is running!");	
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
 		
 		xlist.push(function(){

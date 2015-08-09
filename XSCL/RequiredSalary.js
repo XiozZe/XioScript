@@ -3,8 +3,7 @@ XSCL.push({
 	name: "Required Salary",
 	description: "Sets the salary of the employees of the selected subdivision in such a way that the new qualification of the employees matches their required qualification. 80% of city salary as minimum. 50,000% of city salary maximum.",
 	code: function(){
-		
-		console.log("Max Top Manager Salary is running!");		
+				
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
 		
 		xlist.push(function(){

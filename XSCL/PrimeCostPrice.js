@@ -3,8 +3,7 @@ XSCL.push({
 	name: "Prime Cost Price",
 	description: "For all selected subdivisions on the main page: set the price to the prime cost of the stock. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
-		
-		console.log("Prime Cost Price is running!");  		
+				
 		xcMain(["mill", "workshop"]); 
 		
 		xlist.push(function(){

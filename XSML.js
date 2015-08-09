@@ -18,7 +18,7 @@ var XSML = {
 			path: "[class^='info ']",
 			type: "item",
 			mod: function($x){
-				return $x.attr("class").split("i-")[1].replace(" mapTooltip", "");
+				return $x.attr("class").split("i-")[1].replace(" mapGTooltip", "");
 			}
 		},
 		subId: {
@@ -153,7 +153,7 @@ var XSML = {
 			type: "form",
 			mod: function($form){				
 				return $form.append($form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
-			},
+			}
 		}				
 	},
 	prodSale:{
@@ -475,6 +475,158 @@ var XSML = {
 			}
 		}
 	},
+	adsEdit:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/virtasement$",
+		pop: {
+			path: ".infoblock td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		priceReq: {
+			path: ".infoblock tr:eq(1) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("$")[1]);
+			}
+		},
+		contactsReq: {
+			path: ".infoblock tr:eq(2) td:eq(0)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		mediaCheck: {
+			path: ":checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		mediaLabel: {
+			path: "label",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		priceMin: {
+			path: "[name='advertData[minCost]']",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val());
+			}
+		},
+		priceAds: {
+			path: ":text:not([readonly])",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}	
+		},
+		edit: {
+			path: "#acceptButton",
+			type: "submit",
+			form: "formEdit"
+		},
+		formEdit: {
+			path: "[name=advertData]",
+			type: "form",
+			mod: function($form){				
+				return $form.append($form.find("#acceptButton").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		},
+		cancel: {
+			path: "[name=cancel]",
+			type: "submit",
+			form: "formCancel"
+		},
+		formCancel: {
+			path: "[name=advertData]",
+			type: "form",
+			mod: function($form){				
+				return $form.append($form.find("[name=cancel]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		}
+	},
+	adsStart:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/virtasement$",
+		pop: {
+			path: ".infoblock td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		priceReq: {
+			path: ".infoblock tr:eq(1) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("$")[1]);
+			}
+		},
+		contactsReq: {
+			path: ".infoblock tr:eq(2) td:eq(0)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		mediaCheck: {
+			path: ":checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		mediaLabel: {
+			path: "label",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		priceMin: {
+			path: "[name='advertData[minCost]']",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val());
+			}
+		},
+		priceAds: {
+			path: ":text:not([readonly])",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}	
+		},
+		edit: {
+			path: "#acceptButton",
+			type: "submit",
+			form: "formEdit"
+		},
+		formEdit: {
+			path: "[name=advertData]",
+			type: "form",
+			mod: function($form){				
+				return $form.append($form.find("#acceptButton").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		}
+	},
 	serviceMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
 		equipQual : {
@@ -770,6 +922,7 @@ var XSML = {
 		}
 	},	
 	wareMain: {
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
 		size: {
 			path: ".infoblock tr:eq(0) td:eq(1)",
 			type: "item",

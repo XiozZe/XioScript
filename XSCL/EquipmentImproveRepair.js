@@ -4,7 +4,6 @@ XSCL.push({
 	description: "Repairs the equipment of the selected subdivisions. It only repairs the number in black, as the equipment piece of the number in red is not fully broken yet and therefore not cost efficient, although it will repair the part when the wear and tear is above 3% and all black parts are repaired. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the current equipment quality. Beware that this will inevitably increase the quality of the equipment over time, which could lead to problems with the employee qualification.",
 	code: function(){
 		
-		console.log("Equipment Improve Repair is running!");
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "workshop"]);
 					
 		for(var i = 0; i < xvar.main.xcId.length; i++){

@@ -4,7 +4,6 @@ XSCL.push({
 	description: "The policies for all goods of the selected subdivisions will be set to &quot;Only to my company&quot;. Works for production buildings only (no warehouses).",	
 	code: function(){
 		
-		console.log("To My Company is running!"); 	
 		xcMain(["mill", "workshop"]);	
 		
 		xlist.push(function(){

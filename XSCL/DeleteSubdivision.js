@@ -4,7 +4,6 @@ XSCL.push({
 	description: "Deletes the selected subdivisions. No-one will know it was there.",
 	code: function(){
 		
-		console.log("Delete Subdivision is running!");		
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "warehouse", "workshop"]);
 		
 		xlist.push(function(){

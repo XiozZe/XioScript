@@ -3,8 +3,7 @@ XSCL.push({
 	name: "Zero Price",
 	description: "For all selected subdivisions on the main page: set the price to $0.00",	
 	code: function(){
-		
-		console.log("Prime Cost Price is running!");  		
+				
 		xcMain(["mill", "workshop"]); 
 		
 		xlist.push(function(){

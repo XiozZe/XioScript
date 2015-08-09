@@ -65,11 +65,15 @@
 	margin-bottom: 20px; 
 }
 
-.mapTooltip { 
+.mapGTooltip { 
+	background-color: lightgreen !important 
+}
+
+[readonly].readonly.mapGTooltip { 
 	background-color: lightgreen !important 
 }
             
-input.mapTooltip, select.mapTooltip { 
+.mapPTooltip { 
 	outline: 4px ridge pink !important ; 
 }			
 			
