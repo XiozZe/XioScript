@@ -31,8 +31,8 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/EquipmentImproveRepair.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/DeleteSubdivision.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSEL/TopManagerStats.js
-// @resource       jQuiCss     https://raw.githubusercontent.com/XiozZe/XioScript/master/master/jquery-ui.css
-// @resource       myCss       https://raw.githubusercontent.com/XiozZe/XioScript/master/master/XSCSS.css
+// @resource       jQuiCss     https://raw.githubusercontent.com/XiozZe/XioScript/master/jquery-ui.css
+// @resource       myCss       https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCSS.css
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // @grant          GM_getResourceText
