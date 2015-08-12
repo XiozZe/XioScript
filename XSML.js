@@ -60,50 +60,71 @@ var XSML = {
 	},
 	prodMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
-		equipQual : {
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
+		equipQual: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(2):not(:has(.progress_bar)) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		wearPerc : {
+		wearPerc: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		wearFull : {
+		wearFull: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
 			}
 		},
-		emplNum : {
+		techLevel: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(5) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		emplNum: {
 			path: "tr:has(td.control):eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		emplSkill : {
+		emplSkill: {
 			path: "tr:has(td.control):eq(1) ~ tr:eq(3):not(:has(img, .progress_bar)) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		managerQual : {
+		managerQual: {
 			path: "tr:has(td.control):eq(2) ~ tr:eq(0) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
-		emplAll : {
+		emplAll: {
 			path: "tr:has(td.control):eq(2) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){				
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(2) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -158,6 +179,20 @@ var XSML = {
 	},
 	prodSale:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/sale$",
+		region: {
+			path: ".officePlace a:eq(-2)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		product: {
+			path: ".grid td:nth-child(3) a",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
 		quantity: {
 			path: "td:has('table'):nth-child(5)  tr:nth-child(1) td:nth-child(2)",
 			type: "item",
@@ -231,6 +266,13 @@ var XSML = {
 	},
 	storeMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
 		emplNum : {
 			path: "tr:has(td.control):eq(1) td:eq(1)",
 			type: "item", 
@@ -263,11 +305,18 @@ var XSML = {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(0) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
 		emplAll : {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(4) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -639,6 +688,13 @@ var XSML = {
 	},
 	serviceMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
 		equipQual : {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):not(:has(.progress_bar)) td:eq(1)",
 			type: "item", 
@@ -688,6 +744,13 @@ var XSML = {
 				return numberfy($x.text().split(": ")[1]);
 			}
 		},
+		serviceLevel : {
+			path: ".infoblock .infoblock tbody > tr:eq(2) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return $x.text();
+			}
+		},
 		priceOld: {
 			path: ".infoblock .infoblock a",
 			type: "item",
@@ -709,11 +772,18 @@ var XSML = {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(0) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
 		emplAll : {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(4) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -734,53 +804,67 @@ var XSML = {
 	},	
 	medicalMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
-		equipQual : {
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
+		equipQual: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		wearPerc : {
+		wearPerc: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		wearFull : {
+		wearFull: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
 			}
 		},
-		emplNum : {
+		emplNum: {
 			path: "tr:has(td.control):eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		emplSkill : {
+		emplSkill: {
 			path: "tr:has(td.control):eq(1) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		visitorsNum : {
+		visitorsNum: {
 			path: ".infoblock .infoblock tr:eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		visitorsMax : {
+		visitorsMax: {
 			path: ".infoblock .infoblock tr:eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text().split(": ")[1]);
+			}
+		},
+		serviceLevel:{
+			path: ".infoblock .infoblock tbody > tr:eq(2) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return $x.text();
 			}
 		},
 		priceOld: {
@@ -800,26 +884,33 @@ var XSML = {
 				return $x.val(value);
 			}
 		},
-		managerQual : {
+		managerQual: {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(0) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
-		emplAll : {
+		emplAll: {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(4) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		setprice : {
+		setprice: {
 			path: "[name=setprice]",
 			type: "submit",
 			form: "priceForm"
 		},
-		priceForm : {
+		priceForm: {
 			path: "form[name=servicePriceForm]",
 			type: "form",
 			mod: function($form){				
@@ -829,6 +920,13 @@ var XSML = {
 	},
 	gasMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
 		equipQual : {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
@@ -868,11 +966,18 @@ var XSML = {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(0) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
 		emplAll : {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(4) ~ tr:eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -881,6 +986,13 @@ var XSML = {
 	},	
 	officeMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
 		emplNum: {
 			path: "tr:has(td.control):eq(1) td:eq(1)",
 			type: "item", 
@@ -920,11 +1032,18 @@ var XSML = {
 			path: "tr:has(td.control):eq(4) td:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text());
+				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
 		emplAll: {
 			path: "tr:has(td.control):eq(4) ~ tr:eq(0) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(4) ~ tr:eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -933,6 +1052,13 @@ var XSML = {
 	},	
 	wareMain: {
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
 		size: {
 			path: ".infoblock tr:eq(0) td:eq(1)",
 			type: "item",
@@ -950,6 +1076,13 @@ var XSML = {
 	},
 	wareSale: {
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/sale$",
+		product: {
+			path: ".grid td:nth-child(3) a",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
 		quantity: {
 			path: "td:has('table')  tr:nth-child(1) td:nth-child(2)",
 			type: "item",
@@ -1023,6 +1156,13 @@ var XSML = {
 	},
 	salary:{
 		regExp: "\/.*\/window\/unit\/employees\/engage\/[0-9]+$",
+		img: {
+			path: ".imgContainer",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[3].split("_")[0].split(".")[0];				
+			}
+		},
 		number: {
 			path: "#quantity",
 			type: "input",
@@ -1634,7 +1774,134 @@ var XSML = {
 			}
 		}
 	},
-	notMapped:{
+	IP: {
+		regExp: "\/.*\/main\/geo\/countrydutylist\/[0-9]+(\/?)$",
+		product: {
+			path: ".list td:nth-child(5n-3)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		IP: {
+			path: ".list td:nth-child(5n)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},
+	TM: {
+		regExp: "\/.*\/main\/globalreport\/tm\/info$",
+		franchise: {
+			path: ".grid b",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		product: {
+			path: ".grid td:odd",
+			type: "item",
+			mod: function($x){
+				return $x.clone().children().remove().end().text().trim();
+			}
+		}
+	},
+	CTIE: {
+		regExp: "\/.*\/main\/geo\/regionENVD\/[0-9]+$",
+		profitTax: {
+			path: ".region_data td:eq(3)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		product: {
+			path: ".list td:nth-child(3n-1)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		CTIE: {
+			path: ".list td:nth-child(3n)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},
+	transport: {
+		regExp: "\/.*\/main\/common\/main_page\/game_info\/transport$",
+		countryName: {
+			path: "select:eq(0) option",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		countryId: {
+			path: "select:eq(0) option",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val().split("/")[1]);
+			}
+		},
+		regionName: {
+			path: "select:eq(1) option",
+			type: "item",
+			mod: function($x){
+				return $x.text()
+			}
+		},
+		regionId: {
+			path: "select:eq(1) option",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val().split("/")[2]);
+			}
+		},
+		cityName: {
+			path: "select:eq(2) option",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		cityId: {
+			path: "select:eq(2) option",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val().split("/")[3]);
+			}
+		}
+	},
+	qualification: {
+		regExp: "\/.*\/main\/user\/privat\/persondata\/knowledge$",
+		branch: {
+			path: ".grid:eq(1) td:nth-child(1) > div:nth-child(1)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		qual: {
+			path: ".grid:eq(1) td:nth-child(2) input",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val());
+			}
+		},
+		bonus: {
+			path: ".grid:eq(1) td:nth-child(4)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},
+	notMapped: {
 		
 	}
 };

@@ -15,30 +15,17 @@
 	background-color: #FEE88F !important;
 } 
 
-.xfSelected{ 
-	border-color: gold 
-}
-
 .xfHide{ 
 	display: none; 
 }
 
 .xfTitle{ 
-	font-size: 22px; 
+	font-size: 30px; 
 	margin-top: 15px; 
-	margin-left: 30px; 
+	margin-left: 5px; 
 	color: gold; 
 }
-            
-.xfMinimize{ 
-	float: right; 
-	text-align: center; 
-	color: gold; 
-	font-size: 20px; 
-	width: 30px; 
-	height: 30px; 
-}
-			
+        			
 .xfTdTitle{ 
 	color: gold; 
 	font-size: 18px; 
@@ -46,6 +33,10 @@
 
 .xfButton{ 
 	margin-left: 8px; 
+} 
+
+.xfLabel{ 
+	margin-right: 8px; 
 }
 			
 .xfButtonDisabled {
@@ -54,11 +45,6 @@
 	opacity:0.4
 } 
             
-#xfMenu{ 
-	border-style: ridge;
-	border-color: #ffffff;
-}
-            
 #xfMain{ 
 	margin-top: 15px; 
 	margin-left: 30px; 
@@ -66,15 +52,15 @@
 }
 
 .mapGTooltip { 
-	background-color: lightgreen !important 
+	background-color: lightgreen !important;
 }
 
 [readonly].readonly.mapGTooltip { 
-	background-color: lightgreen !important 
+	background-color: lightgreen !important;
 }
             
 .mapPTooltip { 
-	outline: 4px ridge pink !important ; 
+	outline: 4px ridge pink !important; 
 }			
 			
 #mapTable { 
