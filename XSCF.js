@@ -8,10 +8,8 @@ function XioScript(){
 	//Bugs and ideas (TODO list):
 			
 	//Select goods remove filter
-	//able to add html (TOP stats) --> XioOverview functions?
 	//User input
 	//Ask for all main pages
-	//Cancel xcPost when no change
 		
 	//Check  important XS materials
 	if(typeof XSML !== "object"){
@@ -205,14 +203,13 @@ function XioScript(){
 		}
 		
 	}
-	
-	function xcHtml(varName, html){
 		
-		if(xvar.here[varName]){			
-			var $path = $( XSML[ xvar.here.map ][ varName ].path );
-			for(var i = 0; i < $path.length; i++){
-				$path.append(html);
-			}
+	function xc$(varName){
+		if(XSML[xvar.here.map][varName]){
+			return $(XSML[xvar.here.map][varName].path);
+		}
+		else{
+			return $();
 		}
 		
 	}

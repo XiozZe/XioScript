@@ -1358,6 +1358,55 @@ var XSML = {
 			},
 		}
 	},
+	upgradeRent: {
+		regExp: "\/.*\/window\/unit\/upgrade\/[0-9]+$",
+		districtCheck: {
+			path: ".list:eq(0) :radio",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		districtName: {
+			path: ".list:eq(0) tr.zebra td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		sizeCheck: {
+			path: ".list:eq(1) :radio",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		sizeName: {
+			path: ".list:eq(1) tr.zebra td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		rent: {
+			path: ":submit",
+			type: "submit",
+			form: "form"
+		},
+		form: {
+			path: "form",
+			type: "form",
+			mod: function($form){				
+				return $form;
+			}
+		}
+	},
 	build1:{
 		regExp: "\/.*\/main\/unit\/create\/[0-9]+(\/step1)?$",
 		subClass: {
@@ -1895,6 +1944,23 @@ var XSML = {
 		},
 		bonus: {
 			path: ".grid:eq(1) td:nth-child(4)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},
+	industry: {
+		regExp: "\/.*\/main\/company\/view\/[0-9]+\/sales_report\/by_produce$",
+		qualityYou: {
+			path: ".c_row .c_qlt:even",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		qualityRealm: {
+			path: ".c_row .c_qlt:odd",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());

@@ -43,4 +43,9 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 
 var developer = false;
 
-window.addEventListener("load", XioScript);
+document.onreadystatechange = function () {
+    if (document.readyState == "complete") {
+        XioScript();
+    }
+}
+document.onreadystatechange();
