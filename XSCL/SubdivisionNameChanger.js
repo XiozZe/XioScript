@@ -15,7 +15,7 @@ XSCL.push({
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){	
-				xvar.play.name = [xvar.play.name];
+				xvar.play.name = [xvar.play.name || xvar.ncwGet[i].intName];
 				xcPost("ncwPost", xvar.ncwGet[i], [["intName", xvar.play.name]], "save");
 			}
 		});

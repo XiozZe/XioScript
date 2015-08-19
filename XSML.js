@@ -201,35 +201,36 @@ var XSML = {
 			}
 		},
 		product: {
-			path: ".grid td:nth-child(3) a",
+			path: ".grid td:nth-last-child(7) a",
 			type: "item",
 			mod: function($x){
 				return $x.text();
 			}
 		},
 		quantity: {
-			path: "td:has('table'):nth-child(5)  tr:nth-child(1) td:nth-child(2)",
+			path: "td:has('table'):nth-last-child(5)  tr:nth-child(1) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
+				console.log($x);
 				return numberfy($x.text());
 			}
 		},
 		quality: {
-			path: "td:has('table'):nth-child(5) tr:nth-child(2) td:nth-child(2)",
+			path: "td:has('table'):nth-last-child(5) tr:nth-child(2) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
 		primeCost: {
-			path: "td:has('table'):nth-child(5)  tr:nth-child(3) td:nth-child(2)",
+			path: "td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
 		available: {
-			path: "td:nth-child(7)",
+			path: ".grid td:nth-last-child(3)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());

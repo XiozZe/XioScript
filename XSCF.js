@@ -225,7 +225,7 @@ function XioScript(){
 				"Go": function() {
 					var input = $("#xfInput").val();
 					xvar.play[varName] = /^\d+$/.test(input)? numberfy(input) : input;					
-					$( this ).dialog( "close" );
+					$(this).dialog('destroy').remove();
 					xcount--;	
 					if(xcount === 0 && xport === true){
 						xcList();
