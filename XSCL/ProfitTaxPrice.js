@@ -1,7 +1,7 @@
 XSCL.push({
 	row: "Price",
 	name: "Profit Tax Price",
-	description: "For all selected production subdivisions and warehouses: set the price of the products to their prime cost increased by their CTIE and the profit tax. The price cannot exceed 30x IP.",	
+	description: "For all selected production subdivisions and warehouses: set the price of the products to their prime cost increased by their CTIE and the profit tax. The price cannot exceed 30x IP. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
 				
 		xcMain(["mill", "warehouse", "workshop"]); 
@@ -43,7 +43,7 @@ XSCL.push({
 					xvar.play.CTIEIndex = xvar.CTIE[ xvar.play.CTIEpage ].product.indexOf( xvar.play.product );
 					xvar.play.CTIE = xvar.CTIE[ xvar.play.CTIEpage ].CTIE[ xvar.play.CTIEIndex ];
 					xvar.play.CTIEPrice = xvar.priceGet[i].primeCost[j] * (1 + xvar.play.CTIE/100 * xvar.CTIE[ xvar.play.CTIEpage ].profitTax/100);
-					xvar.play.price.push( Math.min( Math.round(xvar.play.CTIEPrice*100)/100, 30 * xvar.play.IP ) );
+					xvar.play.price.push( Math.min( Math.round(xvar.play.CTIEPrice*100)/100, 30 * xvar.play.IP ) || xvar.priceGet[i].price[j]);
 				}
 				xcPost("pricePost", xvar.priceGet[i], [["price", xvar.play.price]], "save");
 			}

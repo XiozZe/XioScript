@@ -1,7 +1,7 @@
 XSCL.push({
 	row: "Equipment",
-	name: "Equipment Improve Repair",
-	description: "Repairs the equipment of the selected subdivisions. It only repairs the number in black, as the equipment piece of the number in red is not fully broken yet and therefore not cost efficient, although it will repair the part when the wear and tear is above 3% and all black parts are repaired. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the current equipment quality. Beware that this will inevitably increase the quality of the equipment over time, which could lead to problems with the employee qualification.",
+	name: "Improve Full Repair",
+	description: "Repairs the equipment of the selected subdivisions. It repairs all broken equipment, both black and red. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the current equipment quality. Beware that this will inevitably increase the quality of the equipment over time, which could lead to problems with the employee qualification.",
 	code: function(){
 		
 		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "workshop"]);
@@ -17,7 +17,7 @@ XSCL.push({
 				
 				xlist.push(function(){
 					
-					xvar.play.toRepair = xvar.mainGet[i].wearFull[0] + !!(xvar.mainGet[i].wearPerc[0] > 3 && !xvar.mainGet[i].wearFull[0]);
+					xvar.play.toRepair = xvar.mainGet[i].wearBlack[0] + xvar.mainGet[i].wearRed[0];
 
 					//Until nothing has to be repaired any more
 					while(xvar.play.toRepair > 0){

@@ -51,6 +51,10 @@
 	margin-bottom: 20px; 
 }
 
+#xfInput{
+	display: block;
+}
+
 .mapGTooltip { 
 	background-color: lightgreen !important;
 }

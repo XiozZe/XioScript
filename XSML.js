@@ -59,7 +59,7 @@ var XSML = {
 		}
 	},
 	prodMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -74,6 +74,13 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
+		equipReq: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(2):not(:has(.progress_bar)) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text().match(/([0-9]|\.)+\)/));
+			}
+		},
 		wearPerc: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
@@ -81,11 +88,18 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
-		wearFull: {
+		wearBlack: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
 			}
 		},
 		techLevel: {
@@ -265,7 +279,7 @@ var XSML = {
 		}			
 	},
 	storeMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -325,7 +339,14 @@ var XSML = {
 	},	
 	storeTrade:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/trading_hall$",
-		checkbox : {
+		officeId: {
+			path: ".officePlace a:last",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.attr("href").match("[0-9]+"));
+			}
+		},
+		checkbox: {
 			path: ":checkbox[name^=product]",
 			type: "input",
 			mod: function($x){
@@ -335,63 +356,63 @@ var XSML = {
 				return $x.prop("checked", value);
 			}				
 		},
-		sales : {
+		sales: {
 			path: ".nowrap:nth-child(4)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		itemId : {
+		itemId: {
 			path: ".nowrap:nth-child(4) a",
 			type: "item",
 			mod: function($x){
-				return numberfy( $x.attr("href").match(/\d+\/$/) );
+				return numberfy( $x.attr("href").match(/[0-9]+\/$/) );
 			}
 		},
-		order : {
+		order: {
 			path: ".nowrap:nth-child(5)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		delivered : {
+		delivered: {
 			path: ".nowrap:nth-child(5)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("[")[1]);
 			}
 		},
-		stock : {
+		stock: {
 			path: ".nowrap:nth-child(6)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		qualStore : {
+		qualStore: {
 			path: ".nowrap:nth-child(7)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		brandStore : {
+		brandStore: {
 			path: ".nowrap:nth-child(8)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		pricePurc : {
+		pricePurc: {
 			path: ".nowrap:nth-child(9)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		priceSale : {
+		priceSale: {
 			path: ":text",
 			type: "input",
 			mod: function($x){
@@ -401,40 +422,40 @@ var XSML = {
 				return $x.val(value);
 			}
 		},
-		share : {
+		share: {
 			path: ".nowrap:nth-child(11)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		priceCity : {
+		priceCity: {
 			path: ".nowrap:nth-child(12)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		qualCity : {
+		qualCity: {
 			path: ".nowrap:nth-child(13)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		brandCity : {
+		brandCity: {
 			path: ".nowrap:nth-child(14)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
-		setprice : {
+		setprice: {
 			path: "[name=setprice]",
 			type: "submit",
 			form: "priceForm"
 		},
-		priceForm : {
+		priceForm: {
 			path: "form[name=tradingHallForm]",
 			type: "form",
 			mod: function($form){
@@ -447,7 +468,7 @@ var XSML = {
 			type: "submit",
 			form: "eliminateForm"
 		},
-		eliminateForm : {
+		eliminateForm: {
 			path: "form[name=tradingHallForm]",
 			type: "form",
 			mod: function($form){
@@ -571,7 +592,7 @@ var XSML = {
 			path: "label",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text().split(" ")[1]);
+				return $x.text();
 			}
 		},
 		priceMin: {
@@ -653,7 +674,7 @@ var XSML = {
 			path: "label",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text().split(" ")[1]);
+				return $x.text();
 			}
 		},
 		priceMin: {
@@ -687,7 +708,7 @@ var XSML = {
 		}
 	},
 	serviceMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -709,11 +730,18 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
-		wearFull : {
+		wearBlack: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(4):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(4):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
 			}
 		},
 		emplNum : {
@@ -731,21 +759,21 @@ var XSML = {
 			}
 		},
 		visitorsNum : {
-			path: ".infoblock .infoblock tbody > tr:eq(1) td:eq(1)",
+			path: ".infoblock .infoblock tr:has(.title):eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
 			}
 		},
 		visitorsMax : {
-			path: ".infoblock .infoblock tbody > tr:eq(1) td:eq(1)",
+			path: ".infoblock .infoblock tr:has(.title):eq(1) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text().split(": ")[1]);
 			}
 		},
 		serviceLevel : {
-			path: ".infoblock .infoblock tbody > tr:eq(2) td:eq(1)",
+			path: ".infoblock .infoblock tr:has(.title):eq(2) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return $x.text();
@@ -803,7 +831,7 @@ var XSML = {
 		}	
 	},	
 	medicalMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -825,11 +853,18 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
-		wearFull: {
+		wearBlack: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
 			}
 		},
 		emplNum: {
@@ -919,7 +954,7 @@ var XSML = {
 		}	
 	},
 	gasMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -941,11 +976,18 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
-		wearFull : {
+		wearBlack: {
 			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(3):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
 			}
 		},
 		emplNum : {
@@ -985,7 +1027,7 @@ var XSML = {
 		}
 	},	
 	officeMain:{
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -1021,11 +1063,18 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		},
-		wearFull: {
+		wearBlack: {
 			path: "tr:has(td.control):eq(2) ~ tr:eq(2) td:eq(1)",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(2) ~ tr:eq(2) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
 			}
 		},
 		managerQual: {
@@ -1050,8 +1099,240 @@ var XSML = {
 			}
 		}
 	},	
+	officeAdsMain: {
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/virtasement$",
+		productName: {
+			path: ".hand td:nth-child(1)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		productUrl: {
+			path: ".hand td:nth-child(2)",
+			type: "item",
+			mod: function($x){
+				return $x.attr("onclick").split("virtasement")[1].replace("')", "");
+			}
+		},
+		brand: {
+			path: ".hand td:nth-child(5)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		checkbox: {
+			path: ".hand :checkbox",
+			type: "item",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}			
+		},
+		stop: {
+			path: "[name=destroy]",
+			type: "submit",
+			form: "form"
+		},
+		form: {
+			path: "form[name=advertForm]",
+			type: "form",
+			mod: function($form){				
+				return $form.append($form.find("[name=destroy]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));				
+			}
+		}
+	},
+	officeAdsEdit:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/virtasement/[0-9]+\/([0-9]+)?$",
+		product: {
+			path: "select [selected]",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		priceReq: {
+			path: ".infoblock tr:eq(2) td",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("$")[1]);
+			}
+		},
+		contactsReq: {
+			path: ".infoblock tr:eq(3) td",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		cityCheck: {
+			path: ".list:eq(0) :checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		cityLabel: {
+			path: ".list:eq(0) td:nth-child(2) label",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		mediaCheck: {
+			path: ".list:eq(1) :checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		mediaLabel: {
+			path: ".list:eq(1) label",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		priceMin: {
+			path: "[name='advertData[minCost]']",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val());
+			}
+		},
+		priceAds: {
+			path: ":text:not([readonly])",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}	
+		},
+		edit: {
+			path: "[name=accept]",
+			type: "submit",
+			form: "formEdit"
+		},
+		formEdit: {
+			path: "[name=advertForm]",
+			type: "form",
+			mod: function($form){				
+				return $form//.append($form.find("[name=accept]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		},
+		cancel: {
+			path: "[name=cancel]",
+			type: "submit",
+			form: "formCancel"
+		},
+		formCancel: {
+			path: "[name=advertForm]",
+			type: "form",
+			mod: function($form){				
+				return $form.append($form.find("[name=cancel]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		}
+	},
+	officeAdsStart:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/virtasement/[0-9]+\/([0-9]+)?$",
+		product: {
+			path: "select [selected]",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		priceReq: {
+			path: ".infoblock tr:eq(2) td",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("$")[1]);
+			}
+		},
+		contactsReq: {
+			path: ".infoblock tr:eq(3) td",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split(" ")[1]);
+			}
+		},
+		cityCheck: {
+			path: ".list:eq(0) :checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		cityLabel: {
+			path: ".list:eq(0) td:nth-child(2) label",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		mediaCheck: {
+			path: ".list:eq(1) :checkbox",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		mediaLabel: {
+			path: ".list:eq(1) label",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		priceMin: {
+			path: "[name='advertData[minCost]']",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.val());
+			}
+		},
+		priceAds: {
+			path: ":text:not([readonly])",
+			type: "input",
+			mod: function($x){
+				return numberfy($x.val());
+			},
+			edit: function($x, value){
+				return $x.val(value);
+			}	
+		},
+		edit: {
+			path: "[name=accept]",
+			type: "submit",
+			form: "formEdit"
+		},
+		formEdit: {
+			path: "[name=advertForm]",
+			type: "form",
+			mod: function($form){				
+				return $form//.append($form.find("[name=accept]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));			
+			}
+		}
+	},
 	wareMain: {
-		regExp: "\/.*\/main\/unit\/view\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
 			path: "#unitImage img",
 			type: "item",
@@ -1184,7 +1465,7 @@ var XSML = {
 			}
 		},
 		salaryCity: {
-			path: "tr:eq(3) td",
+			path: "tr:nth-child(3) > td",
 			type: "item",
 			mod: function($x){
 				return numberfy($x.text().split("$")[1]);
@@ -1201,7 +1482,7 @@ var XSML = {
 			path: "div span[id]:eq(1)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text().match(/\d+(\.\d+)?/)[0]);
+				return numberfy($x.text().match(/[0-9]+(\.[0-9]+)?/)[0]);
 			}
 		},
 		skillRequired: {
@@ -1395,6 +1676,38 @@ var XSML = {
 			}
 		},
 		rent: {
+			path: ":submit",
+			type: "submit",
+			form: "form"
+		},
+		form: {
+			path: "form",
+			type: "form",
+			mod: function($form){				
+				return $form;
+			}
+		}
+	},
+	specialization: {
+		regExp: "\/.*\/window\/unit\/produce_change\/[0-9]+$",
+		specCheck: {
+			path: ":radio",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		specName: {
+			path: "td:nth-child(3):not([align])",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
+		change: {
 			path: ":submit",
 			type: "submit",
 			form: "form"
@@ -1765,7 +2078,7 @@ var XSML = {
 			path: ".list:eq(0) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
-				return numberfy($x.text().match(/\d+/));
+				return numberfy($x.text().match(/[0-9]+/));
 			}
 		},
 		purchase: {
@@ -1824,7 +2137,7 @@ var XSML = {
 		}
 	},
 	IP: {
-		regExp: "\/.*\/main\/geo\/countrydutylist\/[0-9]+(\/?)$",
+		regExp: "\/.*\/main\/geo\/countrydutylist\/[0-9]+$",
 		product: {
 			path: ".list td:nth-child(5n-3)",
 			type: "item",

@@ -15,11 +15,16 @@ XSCL.push({
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){	
 				xvar.play.supply = [];
-				for(var j = 0; j < xvar.supplyGet[i].parcel.length; j++){
-					xvar.play.supply.push( 4 * xvar.supplyGet[i].required[j] - xvar.supplyGet[i].stock[j] 
-					- Math.max(xvar.supplyGet[i].required[j] - xvar.supplyGet[i].stock[j] , 0));
+				if(xvar.supplyGet[i].parcel){
+					for(var j = 0; j < xvar.supplyGet[i].parcel.length; j++){
+						xvar.play.supply.push( 4 * xvar.supplyGet[i].required[j] - xvar.supplyGet[i].stock[j] 
+						- Math.max(xvar.supplyGet[i].required[j] - xvar.supplyGet[i].stock[j] , 0));
+					}
+					xcPost("supplyPost", xvar.supplyGet[i], [["parcel", xvar.play.supply]], "edit");
 				}
-				xcPost("supplyPost", xvar.supplyGet[i], [["parcel", xvar.play.supply]], "edit");
+				else{
+					console.log("This subdivision has no suppliers: "+xvar.main.xcId[0]);
+				}
 			}
 		});
 		

@@ -8,8 +8,9 @@ function XioScript(){
 	//Bugs and ideas (TODO list):
 			
 	//Select goods remove filter
-	//User input
 	//Ask for all main pages
+	//Laboratory functions
+	//Warehouse distribution manager
 		
 	//Check  important XS materials
 	if(typeof XSML !== "object"){
@@ -32,7 +33,7 @@ function XioScript(){
     function xfShowMap(){		
 
         var key = xpMap(document.URL, $(document));	
-
+		
 		//Don't show table if the page is not mapped
 		if(key === "notMapped"){  
 			return false;
@@ -65,23 +66,18 @@ function XioScript(){
             var path = XSML[key][j].path;
             var curTitle = $(path).attr("title")? $(path).attr("title") + " & ":"";	
 			
+			var classes = {
+				item: "mapGTooltip ",
+				input: "mapGTooltip mapPTooltip ",
+				submit: "mapPTooltip "
+			};
+			
 			//Highlight and tooltip
-            if( XSML[key][j].type === "item" ){			
+            if( XSML[key][j].type === "item" || XSML[key][j].type === "input" || XSML[key][j].type === "submit"){			
                 $(path).not("[id^=xf]")
 					.attr("title", curTitle + j)
-					.addClass("mapGTooltip");				
+					.addClass(classes[XSML[key][j].type]);
             }
-			else if( XSML[key][j].type === "input" ){
-				$(path).not("[id^=xf]")
-					.attr("title", curTitle + j)
-					.addClass("mapGTooltip")
-					.addClass("mapPTooltip");
-			}
-			else if( XSML[key][j].type === "submit" ){
-				$(path).not("[id^=xf]")
-					.attr("title", curTitle + j)
-					.addClass("mapPTooltip");
-			}
 			
 			//Save value for overview
 			if(typeJSON[XSML[key][j].type]){				
@@ -160,7 +156,8 @@ function XioScript(){
 			$("body").css("padding-top", 0)
 			$("#headerWithSeparator").css({"position" : "static", "height" : "initial"});
 		}		
-
+				
+		$("#xfShowMap, #xfHideMap").button();	
 		$("#xfShowMap").click(function(){ xfShowMap(); });
 		$("#xfHideMap").click(function(){ xfHideMap(); });
 	}
@@ -211,6 +208,31 @@ function XioScript(){
 		else{
 			return $();
 		}
+		
+	}
+	
+	function xcUser(text, varName){
+		xcount++;
+		
+		var html = '<div id="xfDialog" title="xcUser Dialog">'+
+					'<p><span>'+text+'</span></p><p><label for=xfInput>'+varName+'</label><input id=xfInput></p>'+
+					'</div>';
+					
+		$("body").append(html);
+		
+		$("#xfDialog").dialog({
+			buttons: {
+				"Go": function() {
+					var input = $("#xfInput").val();
+					xvar.play[varName] = /^\d+$/.test(input)? numberfy(input) : input;					
+					$( this ).dialog( "close" );
+					xcount--;	
+					if(xcount === 0 && xport === true){
+						xcList();
+					}
+				}
+			}
+		});
 		
 	}
 	
@@ -359,7 +381,6 @@ function XioScript(){
 		if(!xlist.length){
 			$(".xfButton").removeClass("xfButtonDisabled").prop("disabled", false);
 			console.log("all done!");
-            console.log(xvar);
 			return false;
 		}
 		
@@ -416,6 +437,7 @@ function XioScript(){
 			play : {}
 		};
 		$(".xfButton").addClass("xfButtonDisabled").prop("disabled", true);
+		console.log(xvar);
 	}
 	
     function xpValue($context, map, item){

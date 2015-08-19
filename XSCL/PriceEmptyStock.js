@@ -15,18 +15,23 @@ XSCL.push({
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
 				xvar.play.price = [];
-				for(var j = 0; j < xvar.tradeGet[i].priceSale.length; j++){					
-					if(xvar.tradeGet[i].delivered[j] === xvar.tradeGet[i].stock[j] && xvar.tradeGet[i].sales[j]){
-						xvar.play.price.push(xvar.tradeGet[i].priceSale[j] * 1.03);
+				if(xvar.tradeGet[i].priceSale){
+					for(var j = 0; j < xvar.tradeGet[i].priceSale.length; j++){					
+						if(xvar.tradeGet[i].delivered[j] === xvar.tradeGet[i].stock[j] && xvar.tradeGet[i].sales[j]){
+							xvar.play.price.push(xvar.tradeGet[i].priceSale[j] * 1.03);
+						}
+						else if(xvar.tradeGet[i].delivered[j] === xvar.tradeGet[i].stock[j]){
+							xvar.play.price.push(xvar.tradeGet[i].priceSale[j]);
+						}
+						else{
+							xvar.play.price.push(xvar.tradeGet[i].priceSale[j] * 0.97);
+						}
 					}
-					else if(xvar.tradeGet[i].delivered[j] === xvar.tradeGet[i].stock[j]){
-						xvar.play.price.push(xvar.tradeGet[i].priceSale[j]);
-					}
-					else{
-						xvar.play.price.push(xvar.tradeGet[i].priceSale[j] * 0.97);
-					}
+					xcPost("tradePost", xvar.tradeGet[i], [["priceSale", xvar.play.price]], "setprice");
 				}
-				xcPost("tradePost", xvar.tradeGet[i], [["priceSale", xvar.play.price]], "setprice");
+				else{
+					console.log("This subdivision has no products in its trade hall: "+xvar.main.xcId[0]);
+				}
 			}							
 		});
 		
