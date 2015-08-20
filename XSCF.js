@@ -539,7 +539,33 @@ function XioScript(){
 				
             '</div>';		
 
-        $("#topblock").append(menuHTML);
+        $("#topblock").append(menuHTML);		
+		
+		//Build the toggles
+		rows = [];
+		var XSELon = JSON.parse(localStorage.XSEL);
+		for(var i = 0; i < XSEL.length; i++){						
+					
+			//Create button
+			$("#xfEx")
+				.append(
+					"<label for='"+XSEL[i].name+"' class='xfLabel' title='"+XSEL[i].description+"'>"+XSEL[i].name+"</label>"+
+					"<input type=checkbox id='"+XSEL[i].name+"' class='xfExtension'>"
+				)	
+			
+			//State
+			var state = XSELon[XSEL[i].name];
+			if(!state){
+				$("#xfEx :checkbox:last").attr("checked", true);
+			}				
+		}	
+
+		//Toggle
+		$("#xfEx label").click(function(){
+			var data = JSON.parse(localStorage.XSEL);
+			data[$(this).attr("for")] = !data[$(this).attr("for")];
+			localStorage.XSEL = JSON.stringify(data);
+		});		
 		
 		//Build the buttons
 		var rows = [];
@@ -563,35 +589,8 @@ function XioScript(){
 					xpStart(); //Basic needs of preparation
 					console.log( XSCL[$(this).attr("data")].name +" is running!");
 					eval("(" + XSCL[$(this).attr("data")].code + ")()");
-				});
-			
-		}	
-
-		//Build the toggles
-		rows = [];
-		var XSELon = JSON.parse(localStorage.XSEL);
-		for(var i = 0; i < XSEL.length; i++){						
-					
-			//Create button
-			$("#xfEx")
-				.append(
-					"<label for='"+XSEL[i].name+"' class='xfLabel' title='"+XSEL[i].description+"'>"+XSEL[i].name+"</label>"+
-					"<input type=checkbox id='"+XSEL[i].name+"' class='xfExtension'>"
-				)
-				.find("label")
-				.click(function(){
-					var data = JSON.parse(localStorage.XSEL);
-					data[$(this).attr("for")] = !data[$(this).attr("for")];
-					localStorage.XSEL = JSON.stringify(data);
 				});			
-			
-			//State
-			var state = XSELon[XSEL[i].name];
-			if(!state){
-				$("#xfEx :checkbox:last").attr("checked", true);
-			}
-				
-		}			
+		}	
 		
 		$(".xfButton").tooltip({
 			content: function() {
