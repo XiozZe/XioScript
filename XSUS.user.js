@@ -19,16 +19,20 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToAnyCostumer.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToMyCompany.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToCorporation.js
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullService.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/RequiredAds.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/CancelAds.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/RequiredCampaign.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/StopCampaign.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/RequiredSalary.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/UserSalary.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/TopSalary.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/BonusSalary.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/FullTraining.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/HolidayOn.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/HolidayOff.js
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/EquipmentImproveRepair.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/RequiredRepair.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ImproveRepair.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SubdivisionNameChanger.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/DeleteSubdivision.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSEL/TopManagerStats.js
 // @resource       jQuiCss     https://raw.githubusercontent.com/XiozZe/XioScript/master/jquery-ui.css

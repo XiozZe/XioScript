@@ -38,6 +38,11 @@ function XioScript(){
 		if(key === "notMapped"){  
 			return false;
 		}
+		
+		//Disable building
+		if(key.indexOf("build") >= 0){  
+			return false;
+		}
 
         $("[title]").not(".xfButton").removeAttr("title");
 
@@ -212,6 +217,11 @@ function XioScript(){
 	}
 	
 	function xcUser(text, varName){
+		
+		if(xforce){
+			return false;
+		}		
+		
 		xcount++;
 		
 		var html = '<div id="xfDialog" title="xcUser Dialog">'+
@@ -225,19 +235,28 @@ function XioScript(){
 				"Go": function() {
 					var input = $("#xfInput").val();
 					xvar.play[varName] = /^\d+$/.test(input)? numberfy(input) : input;					
-					$(this).dialog('destroy').remove();
-					xcount--;	
-					if(xcount === 0 && xport === true){
-						xcList();
-					}
+					$(this).dialog('close').dialog('destroy').remove();
 				}
+			},
+			close: function(){
+				if(typeof xvar.play[varName] === "undefined"){
+					xforce = true;
+				}	
+				xcount--;	
+				if(xcount === 0 && xport === true || xforce){
+					xcList();
+				}								
 			}
 		});
 		
 	}
 	
 	function xcGet(name, url){
-				
+		
+		if(xforce){
+			return false;
+		}
+		
 		//save the p!
 		xvar[name] = xvar[name] || [];
 		var p = xvar[name].length;
@@ -250,6 +269,10 @@ function XioScript(){
 			type: "GET",
 
 			success: function(html, status, xhr){				
+				
+				if(xforce){
+					return false;
+				}
 				
 				//Save data in the xvar			
 				var $html = $(html.replace("body", "bodya"));
@@ -271,7 +294,8 @@ function XioScript(){
 				xcount--;	
 				if(xcount === 0 && xport === true){
 					xcList();
-				}				
+				}		
+								
 
 			},
 
@@ -286,6 +310,10 @@ function XioScript(){
 	}
 	
 	function xcPost(name, get, inputs, save){
+		
+		if(xforce){
+			return false;
+		}
 		
 		var map = xpMap(get.url, get.doc);
 		if(map === "notMapped"){
@@ -327,7 +355,11 @@ function XioScript(){
 			type: "POST",
 
 			success: function(html, status, xhr){
-							
+
+				if(xforce){
+					return false;
+				}			
+				
 				//Rounding up the xcPost function
 				console.log(name+" was successful!");
 				xcount--;	
@@ -348,6 +380,10 @@ function XioScript(){
 	
 	function xcSupplierPost(name, url, data){
 		
+		if(xforce){
+			return false;
+		}
+		
 		xcount++;	
 		
 		$.ajax({
@@ -357,7 +393,11 @@ function XioScript(){
 			dataType: "JSON",
 
 			success: function(html, status, xhr){
-							
+				
+				if(xforce){
+					return false;
+				}
+				
 				//Rounding up the xcPost function
 				console.log(name+" was successful!");
 				xcount--;	
@@ -378,7 +418,7 @@ function XioScript(){
 	}
 	
 	function xcList(){
-		if(!xlist.length){
+		if(!xlist.length || xforce){
 			$(".xfButton").removeClass("xfButtonDisabled").prop("disabled", false);
 			console.log("all done!");
 			return false;
@@ -432,6 +472,10 @@ function XioScript(){
 	}
 	
 	function xpStart(){
+		xcount = 0;
+		xport = false;
+		xforce = false;
+		xlist = [];
 		xvar = {
 			realm : "/"+readCookie('last_realm'),
 			play : {}
@@ -577,6 +621,7 @@ function XioScript(){
     var xlist = []; //saving Ajax calls order list
     var xcount = 0; //counting the Ajax calls
 	var xport = false; //block of code is fully executed
+	var xforce = false; //force stop
 
     //Load the map button into the topblock 
 	if(developer){
