@@ -44,6 +44,7 @@ function XioScript(){
 			return false;
 		}
 
+		console.log(key);		
         $("[title]").not(".xfButton").removeAttr("title");
 
         $(document).tooltip();			
@@ -639,6 +640,5 @@ function XioScript(){
 			console.log( XSEL[i].name +" is running!");
 			eval("(" + XSEL[i].code + ")()");
 		}
-	}
-	
+	}	
 }

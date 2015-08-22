@@ -288,6 +288,13 @@ var XSML = {
 				return $x.attr("src").split("/")[4].split("_")[0];
 			}
 		},
+		techLevel: {
+			path: "tr:has(td.control):eq(0):has([href*=produce_change]) ~ tr:eq(1) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
 		equipQual: {
 			path: "tr:has(td.control):eq(1) ~ tr:eq(0):not(:has(.progress_bar)) td:eq(1)",
 			type: "item", 
@@ -314,13 +321,6 @@ var XSML = {
 			type: "item",
 			mod: function($x){
 				return +/\+/.test($x.text());
-			}
-		},
-		techLevel: {
-			path: "tr:has(td.control):eq(0) ~ tr:eq(1) td:eq(1)",
-			type: "item",
-			mod: function($x){
-				return numberfy($x.clone().children().remove().end().text());
 			}
 		},
 		emplNum: {
@@ -358,7 +358,87 @@ var XSML = {
 				return numberfy($x.text());
 			}
 		}
-	},	
+	},
+	sawmillMain:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
+		techLevel: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(0) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		equipQual: {
+			path: "tr:has(td.control):eq(1) ~ tr:eq(0):not(:has(.progress_bar)) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		wearPerc: {
+			path: "tr:has(td.control):eq(1) ~ tr:eq(1):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		wearBlack: {
+			path: "tr:has(td.control):eq(1) ~ tr:eq(1):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(1) ~ tr:eq(1):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
+			}
+		},
+		emplNum: {
+			path: "tr:has(td.control):eq(2) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		emplSkill: {
+			path: "tr:has(td.control):eq(2) ~ tr:eq(3):not(:has(img, .progress_bar)) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		managerQual: {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(0) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		emplAll: {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){				
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(2) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},		
 	powerMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
@@ -404,7 +484,7 @@ var XSML = {
 			}
 		},
 		emplSkill : {
-			path: "tr:has(td.control):eq(1) ~ tr:eq(3) td:eq(1)",
+			path: "tr:has(td.control):eq(1) ~ tr:eq(3):not(:has(.progress_bar)) td:eq(1)",
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
@@ -1180,6 +1260,79 @@ var XSML = {
 			}
 		}
 	},	
+	labMain:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
+		img: {
+			path: "#unitImage img",
+			type: "item",
+			mod: function($x){
+				return $x.attr("src").split("/")[4].split("_")[0];
+			}
+		},
+		equipQual : {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		wearPerc : {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(2):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		wearBlack: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(2):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text().split("(")[1]);
+			}
+		},		
+		wearRed: {
+			path: "tr:has(td.control):eq(0) ~ tr:eq(2):has(.progress_bar) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return +/\+/.test($x.text());
+			}
+		},
+		emplNum : {
+			path: "tr:has(td.control):eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		emplSkill : {
+			path: "tr:has(td.control):eq(1) ~ tr:eq(2):not(:has(.progress_bar)) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		managerQual : {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(0) td:eq(1)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		emplAll : {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(1) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.clone().children().remove().end().text());
+			}
+		},
+		managerEff: {
+			path: "tr:has(td.control):eq(3) ~ tr:eq(2) td:eq(1)",
+			type: "item", 
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		}
+	},
 	officeMain:{
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+$",
 		img: {
