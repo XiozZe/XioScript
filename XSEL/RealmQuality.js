@@ -16,5 +16,6 @@ XSEL.push({
 				
 		}
 		
+		xcList();		
 	}
 });

@@ -1,0 +1,29 @@
+XSCL.push({
+    row: "Production",
+    name: "Zero Supply",
+    description: "For the selected subdivisions on the main page, set the supply to zero.",
+    code: function(){
+
+        xcMain(["workshop"]);
+
+        xlist.push(function(){
+            for ( var i = 0; i < xvar.main.xcId.length; i++ ){
+                xcGet( "supplyGet" , xvar.realm + "/main/unit/view/" + xvar.main.xcId[i] + "/supply" );       
+            }
+        }
+
+
+        xlist.push(function(){
+            for ( var i = 0; i < xvar.main.xcId.length; i++ ){
+                xvar.play.required = [];
+                for ( var j = 0 < xvar.supplyGet[i].required.length; j++){
+                    xvar.play.required.push( 0 );
+                }
+                xcPost( "supplyPost" , xvar.supplyGet[i] , [["parcel", xvar.play.required]], "edit" );       
+            }
+        }
+
+        xcList();
+
+    }
+});
