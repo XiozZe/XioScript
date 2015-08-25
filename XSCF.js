@@ -590,6 +590,7 @@ function XioScript(){
 					xpStart(); //Basic needs of preparation
 					console.log( XSCL[$(this).attr("data")].name +" is running!");
 					eval("(" + XSCL[$(this).attr("data")].code + ")()");
+					
 				});			
 		}	
 		
