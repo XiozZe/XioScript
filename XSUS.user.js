@@ -16,7 +16,6 @@
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/30IPPrice.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/CTIEPrice.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ProfitTaxPrice.js
-// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/PriceEmptyStock.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/NotForSale.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToAnyCostumer.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ToMyCompany.js
