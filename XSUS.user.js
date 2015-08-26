@@ -7,6 +7,8 @@
 // @require        http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCF.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSML.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyZero.js
+// @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyRequired.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/SupplyXioStock.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/ZeroPrice.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/master/XSCL/PrimeCostPrice.js
