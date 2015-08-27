@@ -472,13 +472,24 @@ function XioScript(){
 		return key;
 	}
 	
+	function xcCookie(name){
+		var nameEQ = name + "=";
+		var ca = document.cookie.split(';');
+		for(var i = 0; i < ca.length; i++){
+			var c = ca[i];
+			while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+		}
+		return null;
+	}
+	
 	function xpStart(){
 		xcount = 0;
 		xport = false;
 		xforce = false;
 		xlist = [];
 		xvar = {
-			realm : "/"+readCookie('last_realm'),
+			realm : "/"+xcCookie('last_realm'),
 			play : {}
 		};
 		$(".xfButton").addClass("xfButtonDisabled").prop("disabled", true);
@@ -635,7 +646,7 @@ function XioScript(){
     }
 	
 	//For every page, check through the XSEL for functions to execute
-	for(var i in XSEL){
+	for(var i = 0; i < XSEL.length; i++){
 		if(new RegExp(XSEL[i].regex).test(document.URL) && JSON.parse(localStorage.XSEL)[XSEL[i].name]){
 			xpStart(); //Basic needs of preparation
 			console.log( XSEL[i].name +" is running!");
