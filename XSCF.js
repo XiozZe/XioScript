@@ -9,6 +9,7 @@ console.log("extra consolelog3");
 console.log("extra consolelog4");
 console.log("extra consolelog5");
 console.log("extra consolelog6");
+console.log("extra consolelog7");
 
 function XioScript(){
 	
