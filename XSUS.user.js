@@ -2,7 +2,7 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioLibraries
-// @version        10.0.4
+// @version        10.0.5
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @require        http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js
 // @require        https://raw.githubusercontent.com/XiozZe/XioScript/Update-trial/XSCF.js
