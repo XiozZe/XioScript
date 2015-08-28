@@ -12,7 +12,7 @@ function XioScript(){
 	//Laboratory functions
 	//Warehouse distribution manager
 		
-	//Check  important XS materials
+	//Check for important XS materials
 	if(typeof XSML !== "object"){
 		console.log("No XSML!", typeof XSML);
 		return false;
@@ -27,147 +27,8 @@ function XioScript(){
 	GM_addStyle(GM_getResourceText("jQuiCss"));	
     GM_addStyle(GM_getResourceText("myCss"));	
 	
-    console.log("XioScript is running!");
-	
-    //Mapping
-    function xfShowMap(){		
-
-        var key = xpMap(document.URL, $(document));	
-		
-		//Don't show table if the page is not mapped
-		if(key === "notMapped"){  
-			return false;
-		}
-		
-		//Disable building
-		if(key.indexOf("build") >= 0){  
-			return false;
-		}
-
-		console.log(key);		
-        $("[title]").not(".xfButton").removeAttr("title");
-
-        $(document).tooltip();			
-        				
-        var arrayLength = 0;		
-        
-		var typeJSON = {
-			item : true,
-			input : true,
-			submit : false,
-			form: false
-		};				
-		
-		var html = "<table id=mapTable><tr><th></th>";
-
-		//Show items and inputs tooltips
-		//Build table basics for overview				
-		for(var j in XSML[key]){
-
-            //regExp is never an item
-            if(j === "regExp"){
-                continue;
-            }
-
-            var path = XSML[key][j].path;
-            var curTitle = $(path).attr("title")? $(path).attr("title") + " & ":"";	
-			
-			var classes = {
-				item: "mapGTooltip ",
-				input: "mapGTooltip mapPTooltip ",
-				submit: "mapPTooltip "
-			};
-			
-			//Highlight and tooltip
-            if( XSML[key][j].type === "item" || XSML[key][j].type === "input" || XSML[key][j].type === "submit"){			
-                $(path).not("[id^=xf]")
-					.attr("title", curTitle + j)
-					.addClass(classes[XSML[key][j].type]);
-            }
-			
-			//Save value for overview
-			if(typeJSON[XSML[key][j].type]){				
-				html += "<th>"+j+"</th>";
-				arrayLength = Math.max(arrayLength, $(path).length);				
-			}
-			
-        }			
-		
-		html += "</tr>";
-		
-		for(var i = 0; i < arrayLength; i++){
-			
-			html += "<tr>";
-			html += "<td>["+i+"]</td>";
-			
-			for(var j in XSML[key]){
-				
-				if(j !== "regExp" && typeJSON[XSML[key][j].type]){
-					
-					if($(XSML[key][j].path).length > i){
-						html += "<td>"+XSML[key][j].mod( $(XSML[key][j].path).eq(i) )+"</td>";
-					}
-					else{
-						html += "<td></td>";
-					}
-					
-				}			
-				
-			}
-			
-			html += "</tr>";
-			
-		}
-		
-		html += "</table>";
-		
-		$("#topblock, #headerWithSeparator").append(html);
-
-		//Switch buttons
-        $("#xfShowMap").addClass("xfHide");
-        $("#xfHideMap").removeClass("xfHide");		
-
-    }
-
-    function xfHideMap(){
-
-        //remove map name en map table
-        $("#mapName, #mapTable").remove();		
-
-        //remove items and inputs tooltips
-        $(".mapGTooltip, .mapPTooltip")
-        .css("background-color", "")
-        .removeAttr("title")
-        .removeClass("mapGTooltip")	
-        .removeClass("mapPTooltip");		
-
-        //Switch buttons
-        $("#xfHideMap").addClass("xfHide");
-        $("#xfShowMap").removeClass("xfHide");		
-    }
-	
-	function MapButton(){
-		var menuHTML = ''+
-			'<button id="xfShowMap" class="xfButton">Show Map</button>'+
-			'<button id="xfHideMap" class="xfHide xfButton">Hide Map</button>';       
-		
-		//Main pages
-		if($("#topblock").length){
-			$("#topblock").append(menuHTML);
-		}		
-		//Windows
-		else{
-			$("#headerWithSeparator").append(menuHTML);
-			$("#headerWithSeparator").next().css("margin-top", "30px");
-			$("body").css("padding-top", 0)
-			$("#headerWithSeparator").css({"position" : "static", "height" : "initial"});
-		}		
-				
-		$("#xfShowMap, #xfHideMap").button();	
-		$("#xfShowMap").click(function(){ xfShowMap(); });
-		$("#xfHideMap").click(function(){ xfHideMap(); });
-	}
-	
+    console.log("XioScript is running!");	
+    
 	//XioCode functions
 	function xcMain(typeArray, filter){
 								
@@ -428,6 +289,7 @@ function XioScript(){
 		xport = false;
 		xlist.shift()();
 		xport = true;
+		
 		if(xcount === 0){
 			xcList();
 		}
@@ -472,7 +334,7 @@ function XioScript(){
 		return key;
 	}
 	
-	function xcCookie(name){
+	function xpCookie(name){
 		var nameEQ = name + "=";
 		var ca = document.cookie.split(';');
 		for(var i = 0; i < ca.length; i++){
@@ -489,7 +351,7 @@ function XioScript(){
 		xforce = false;
 		xlist = [];
 		xvar = {
-			realm : "/"+xcCookie('last_realm'),
+			realm : "/"+xpCookie('last_realm'),
 			play : {}
 		};
 		$(".xfButton").addClass("xfButtonDisabled").prop("disabled", true);
@@ -548,11 +410,11 @@ function XioScript(){
 				'<div>'+
 					'<table id="xfTable"></table>'+
 				'</div>'+
-				
+				'<div id="xfDebug"></div>'+
             '</div>';		
 
         $("#topblock").append(menuHTML);		
-		
+				
 		//Build the toggles
 		rows = [];
 		var XSELon = JSON.parse(localStorage.XSEL);
@@ -600,10 +462,23 @@ function XioScript(){
 				.click(function(){
 					xpStart(); //Basic needs of preparation
 					console.log( XSCL[$(this).attr("data")].name +" is running!");
-					eval("(" + XSCL[$(this).attr("data")].code + ")()");
-					
+					eval("(" + XSCL[$(this).attr("data")].code + ")()");					
 				});			
 		}	
+		
+		//Enable console log
+		if (typeof console  != "undefined") 
+			if (typeof console.log != 'undefined')
+				console.olog = console.log;
+			else
+				console.olog = function() {};
+
+		console.log = function(message) {
+			console.olog(message);
+			$('#xfDebug').append('<p>' + message + '</p>');
+		};
+		console.error = console.debug = console.info =  console.log
+		
 		
 		$(".xfButton").tooltip({
 			content: function() {
@@ -635,11 +510,6 @@ function XioScript(){
 	var xport = false; //block of code is fully executed
 	var xforce = false; //force stop
 
-    //Load the map button into the topblock 
-	if(developer){
-		MapButton();		
-	}
-
     //If we are on the main page, enable the XF menu
     if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list$").test(document.URL)){
         MenuButton();
@@ -651,6 +521,10 @@ function XioScript(){
 			xpStart(); //Basic needs of preparation
 			console.log( XSEL[i].name +" is running!");
 			eval("(" + XSEL[i].code + ")()");
+			if(xlist.length === 0 && xcount === 0){
+				$(".xfButton").removeClass("xfButtonDisabled").prop("disabled", false);
+				console.log("all done!");
+			}
 		}
 	}	
 }

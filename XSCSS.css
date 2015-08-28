@@ -15,6 +15,10 @@
 	background-color: #FEE88F !important;
 } 
 
+.xfGrey{
+	background-color: #bababa;
+}
+
 .xfHide{ 
 	display: none; 
 }
@@ -53,6 +57,10 @@
 
 #xfInput{
 	display: block;
+}
+
+#xfDebug{
+	color: gold;
 }
 
 .mapGTooltip { 
