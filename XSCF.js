@@ -6,6 +6,7 @@ localStorage.XSEL = localStorage.XSEL || "{}";
 console.log("extra consolelog");
 console.log("extra consolelog2");
 console.log("extra consolelog3");
+console.log("extra consolelog4");
 
 function XioScript(){
 	
