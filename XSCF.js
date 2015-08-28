@@ -3,7 +3,7 @@ var XSCL = [];
 var XSEL = [];
 localStorage.XSEL = localStorage.XSEL || "{}";
 
-console.log("extra consolelog8");
+console.log("extra consolelog10");
 
 function XioScript(){
 	
