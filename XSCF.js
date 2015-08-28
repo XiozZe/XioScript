@@ -410,11 +410,11 @@ function XioScript(){
 				'<div>'+
 					'<table id="xfTable"></table>'+
 				'</div>'+
-				
+				'<div id="xfDebug"></div>'+
             '</div>';		
 
         $("#topblock").append(menuHTML);		
-		
+				
 		//Build the toggles
 		rows = [];
 		var XSELon = JSON.parse(localStorage.XSEL);
@@ -465,6 +465,18 @@ function XioScript(){
 					eval("(" + XSCL[$(this).attr("data")].code + ")()");					
 				});			
 		}	
+		
+		//Enable console log
+		var old = console.log;
+		var logger = document.getElementById('xfDebug');
+		console.log = function (message) {
+			if (typeof message == 'object') {
+				logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />';
+			} else {
+				logger.innerHTML += message + '<br />';
+			}
+		}
+		
 		
 		$(".xfButton").tooltip({
 			content: function() {

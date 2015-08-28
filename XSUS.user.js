@@ -19,8 +19,6 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-var developer = false;
-
 document.onreadystatechange = function () {
     if (document.readyState == "complete") {
         XioScript();
