@@ -470,9 +470,7 @@ function XioScript(){
 		var old = console.log;
 		var logger = document.getElementById('xfDebug');
 		console.log = function (message) {
-			if (typeof message == 'object') {
-				logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />';
-			} else {
+			if (typeof message !== 'object') {
 				logger.innerHTML += message + '<br />';
 			}
 		}
