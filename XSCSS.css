@@ -59,6 +59,10 @@
 	display: block;
 }
 
+#xfDebug{
+	color: gold;
+}
+
 .mapGTooltip { 
 	background-color: lightgreen !important;
 }

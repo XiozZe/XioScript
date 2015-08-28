@@ -467,13 +467,17 @@ function XioScript(){
 		}	
 		
 		//Enable console log
-		var old = console.log;
-		var logger = document.getElementById('xfDebug');
-		console.log = function (message) {
-			if (typeof message !== 'object') {
-				logger.innerHTML += message + '<br />';
-			}
-		}
+		if (typeof console  != "undefined") 
+			if (typeof console.log != 'undefined')
+				console.olog = console.log;
+			else
+				console.olog = function() {};
+
+		console.log = function(message) {
+			console.olog(message);
+			$('#xfDebug').append('<p>' + message + '</p>');
+		};
+		console.error = console.debug = console.info =  console.log
 		
 		
 		$(".xfButton").tooltip({
