@@ -145,7 +145,7 @@ XSCL.push({
 			for(var i = 0; i < xvar.main.xcId.length; i++){	
 				xvar.play.price = [];
 				for(var j = 0; j < xvar.priceGet[i].price.length; j++){
-					xvar.play.price.push(xvar.priceGet[i].primeCost[j] || xvar.priceGet[i].price[j]);
+					xvar.play.price.push((xvar.priceGet[i].primeCost[j] +0.001) || xvar.priceGet[i].price[j]);
 				}
 				xcPost("pricePost", xvar.priceGet[i], [["price", xvar.play.price]], "save");
 			}
@@ -509,6 +509,33 @@ XSCL.push({
 		});
 		
 		xcList();
+	}
+});
+
+//Lab
+XSCL.push({
+	row: "Lab",
+	name: "Step 2 Selector",
+	description: "Selects the best possible hypothese if the lab is in step 2."
+	code: function(){
+		
+		xcMain(["lab"]);
+		
+		xlist.push(function(){
+			for(var i = 0; i < xvar.main.xcId.length; i++){
+				xcGet("invGet", xvar.realm+"/main/unit/view/"+xvar.main.xcId[i]+"/investigation");
+			}
+		})
+		
+		xlist.push(function(){
+			for(var i = 0; i < xvar.main.xcId.length; i++){
+				if(xvar.invGet[i].refTime){
+					
+					xcPost("invPost", xvar.supplyGet[i], [["parcel", xvar.play.supply]], "select");
+				}				
+			}
+		})
+		
 	}
 });
 
