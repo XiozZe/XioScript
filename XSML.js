@@ -211,7 +211,6 @@ var XSML = {
 			path: "td:has('table'):nth-last-child(5)  tr:nth-child(1) td:nth-child(2)",
 			type: "item",
 			mod: function($x){
-				console.log($x);
 				return numberfy($x.text());
 			}
 		},
@@ -1330,6 +1329,45 @@ var XSML = {
 			type: "item", 
 			mod: function($x){
 				return numberfy($x.text());
+			}
+		}
+	},
+	labStep2:{
+		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/investigation$",
+		radio: {
+			path: ".grid tr:gt(0) :radio, .grid tr:gt(0) img",
+			type: "input",
+			mod: function($x){
+				return $x.is(":checked");
+			},
+			edit: function($x, value){
+				return $x.prop("checked", value);
+			}	
+		},
+		chance: {
+			path: ".grid tr:gt(0) td:nth-child(3)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		refTime: {
+			path: ".grid tr:gt(0) td:nth-child(4)",
+			type: "item",
+			mod: function($x){
+				return numberfy($x.text());
+			}
+		},
+		select: {
+			path: "#selectIt",
+			type: "submit",
+			form: "form"
+		},
+		form: {
+			path: "form:has(#selectIt)",
+			type: "form",
+			mod: function($x){
+				return $x;
 			}
 		}
 	},

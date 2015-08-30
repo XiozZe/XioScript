@@ -1,6 +1,6 @@
 XSEL.push({
 	name: "Choose Buttons",
-	description: "Disables all XioFunction buttons. Clicking will toggle the button just like the XioExtensions do. When untoggled, the button will hide when the 'Hide buttons' XioExtension is on. Reload to see the changes.",
+	description: "Disables all XioFunction buttons. Clicking will toggle the button just like the XioExtensions do. When untoggled, the button will hide when the &quot;Hide buttons&quot; XioExtension is on. Reload to see the changes.",
 	regex: "\/.*\/main\/company\/view\/[0-9]+\/unit_list$",
 	code: function(){
 		
@@ -28,7 +28,7 @@ XSEL.push({
 });
 XSEL.push({
 	name: "Hide Buttons",
-	description: "Hides all buttons untoggled by the 'Choose buttons' XioExtension.",
+	description: "Hides all buttons untoggled by the &quot;Choose buttons&quot; XioExtension.",
 	regex: "\/.*\/main\/company\/view\/[0-9]+\/unit_list$",
 	code: function(){
 		
@@ -99,7 +99,6 @@ XSEL.push({
 		}
 
 		console.log(key);		
-        $("[title]").not(".xfButton").removeAttr("title");
 
         $(document).tooltip();			
         				
@@ -112,70 +111,85 @@ XSEL.push({
 			form: false
 		};				
 		
-		var html = "<table id=mapTable><tr><th></th>";
+		function htmlMap(){
+			
+			$("[title]").not(".xfButton").removeAttr("title");
+			
+			var html = "<table id=mapTable><tr><th></th>";
 
-		//Show items and inputs tooltips
-		//Build table basics for overview				
-		for(var j in XSML[key]){
-
-            //regExp is never an item
-            if(j === "regExp"){
-                continue;
-            }
-
-            var path = XSML[key][j].path;
-            var curTitle = $(path).attr("title")? $(path).attr("title") + " & ":"";	
-			
-			var classes = {
-				item: "mapGTooltip ",
-				input: "mapGTooltip mapPTooltip ",
-				submit: "mapPTooltip "
-			};
-			
-			//Highlight and tooltip
-            if( XSML[key][j].type === "item" || XSML[key][j].type === "input" || XSML[key][j].type === "submit"){			
-                $(path).not("[id^=xf]")
-					.attr("title", curTitle + j)
-					.addClass(classes[XSML[key][j].type]);
-            }
-			
-			//Save value for overview
-			if(typeJSON[XSML[key][j].type]){				
-				html += "<th>"+j+"</th>";
-				arrayLength = Math.max(arrayLength, $(path).length);				
-			}
-			
-        }			
-		
-		html += "</tr>";
-		
-		for(var i = 0; i < arrayLength; i++){
-			
-			html += "<tr>";
-			html += "<td>["+i+"]</td>";
-			
+			//Show items and inputs tooltips
+			//Build table basics for overview				
 			for(var j in XSML[key]){
+
+				//regExp is never an item
+				if(j === "regExp"){
+					continue;
+				}
+
+				var path = XSML[key][j].path;
+				var curTitle = $(path).attr("title")? $(path).attr("title") + " & ":"";	
 				
-				if(j !== "regExp" && typeJSON[XSML[key][j].type]){
-					
-					if($(XSML[key][j].path).length > i){
-						html += "<td>"+XSML[key][j].mod( $(XSML[key][j].path).eq(i) )+"</td>";
-					}
-					else{
-						html += "<td></td>";
-					}
-					
-				}			
+				var classes = {
+					item: "mapGTooltip ",
+					input: "mapGTooltip mapPTooltip ",
+					submit: "mapPTooltip "
+				};
 				
-			}
+				//Highlight and tooltip
+				if( XSML[key][j].type === "item" || XSML[key][j].type === "input" || XSML[key][j].type === "submit"){			
+					$(path).not("[id^=xf]")
+						.attr("title", curTitle + j)
+						.addClass(classes[XSML[key][j].type]);
+				}
+				
+				//Save value for overview
+				if(typeJSON[XSML[key][j].type]){				
+					html += "<th>"+j+"</th>";
+					arrayLength = Math.max(arrayLength, $(path).length);				
+				}
+				
+			}			
 			
 			html += "</tr>";
 			
+			for(var i = 0; i < arrayLength; i++){
+				
+				html += "<tr>";
+				html += "<td>["+i+"]</td>";
+				
+				for(var j in XSML[key]){
+					
+					if(j !== "regExp" && typeJSON[XSML[key][j].type]){
+						
+						if($(XSML[key][j].path).length > i){
+							html += "<td>"+XSML[key][j].mod( $(XSML[key][j].path).eq(i) )+"</td>";
+						}
+						else{
+							html += "<td></td>";
+						}
+						
+					}			
+					
+				}
+				
+				html += "</tr>";
+				
+			}
+			
+			html += "</table>";
+			
+			$("#topblock, #headerWithSeparator").append(html); 
+			
 		}
 		
-		html += "</table>";
+		htmlMap();
 		
-		$("#topblock, #headerWithSeparator").append(html);    	
+		$("body").click(function(){
+			$("#mapTable").remove();
+			htmlMap();
+		});
+		
+		   	
 		
 	}
 });

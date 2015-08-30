@@ -3,8 +3,8 @@ var XSCL = [];
 var XSEL = [];
 localStorage.XSEL = localStorage.XSEL || "{}";
 
+
 function XioScript(){
-	
 	//Bugs and ideas (TODO list):
 			
 	//Select goods remove filter
@@ -410,6 +410,7 @@ function XioScript(){
 				'<div>'+
 					'<table id="xfTable"></table>'+
 				'</div>'+
+				'<div id="xfTitle" class="xfTitle">XioConsole</div>'+				
 				'<div id="xfDebug"></div>'+
             '</div>';		
 
@@ -473,13 +474,27 @@ function XioScript(){
 			else
 				console.olog = function() {};
 
+		var logger = $('#xfDebug');	
+		var time = new Date().getTime();
+			
 		console.log = function(message) {
 			console.olog(message);
-			$('#xfDebug').append('<p>' + message + '</p>');
+			if (typeof message !== 'object') {
+				
+				var bottom = logger[0].scrollTop + logger[0].offsetHeight === logger[0].scrollHeight;	
+				$('#xfDebug').append(Math.floor((new Date().getTime() - time)/1000)+"s : "+message + '<br/>');				
+				if(bottom){
+					logger[0].scrollTop = logger[0].scrollHeight - logger[0].offsetHeight;
+				}
+				
+			}
 		};
+		
 		console.error = console.debug = console.info =  console.log
 		
 		
+		
+		//enable tooltips on buttons		
 		$(".xfButton").tooltip({
 			content: function() {
 				return $(this).attr('title');
@@ -498,6 +513,7 @@ function XioScript(){
 		
 		$(".xfExtension").button();
         		
+		//switch buttons
 		$("#xfShowMenu").click(function(){ xfShowMenu(); });
 		$("#xfHideMenu").click(function(){ xfHideMenu(); });
         

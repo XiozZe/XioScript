@@ -25,6 +25,7 @@
 
 .xfTitle{ 
 	font-size: 30px; 
+	margin-bottom: 5px; 
 	margin-top: 15px; 
 	margin-left: 5px; 
 	color: gold; 
@@ -61,6 +62,8 @@
 
 #xfDebug{
 	color: gold;
+	overflow:auto; 
+	max-height:150px;
 }
 
 .mapGTooltip { 
