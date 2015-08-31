@@ -5,7 +5,7 @@ XSCL.push({
     description: "The stock of selected production subdivisions will have their supply set to zero.",
     code: function(){
 
-		xcMain(["mill", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "incinerator_power", "medicine", "mill", "oil_power", "repair", "restaurant", "workshop"]);
 	
         xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -38,7 +38,7 @@ XSCL.push({
     description: "The stock of selected production subdivisions will have their supply set equal to the amount they require. Beware of the fact that each raw material has to have exactly one supplier: zero, two or more than two will give strange results, if any at all.",
     code: function(){
 
-		xcMain(["mill", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "incinerator_power", "medicine", "mill", "oil_power", "repair", "restaurant", "workshop"]);
 	
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -71,7 +71,7 @@ XSCL.push({
 	description: "The stock of selected production subdivisions aim to have three times the required amount. (Just in case, you know.) This function will set the supply accordingly. Beware of the fact that each raw material has to have exactly one supplier: zero, two or more than two will give strange results, if any at all.",	
 	code: function(){
 				
-		xcMain(["mill", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "incinerator_power", "medicine", "mill", "oil_power", "repair", "restaurant", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -106,7 +106,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price to $0.00",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -133,7 +133,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price to the prime cost of the stock. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -160,7 +160,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price of the products to their prime cost increased by their CTIE. The price cannot exceed 30x IP. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 						
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -199,7 +199,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price of the products to their prime cost increased by their CTIE and the profit tax. The price cannot exceed 30x IP. If the prime cost of the stock is zero, do nothing.",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]); 
 						
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -253,7 +253,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price of the products to 1x their IP.",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 						
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -286,7 +286,7 @@ XSCL.push({
 	description: "For all selected production subdivisions and warehouses: set the price of the products to 30x IP.",	
 	code: function(){
 				
-		xcMain(["mill", "warehouse", "workshop"]); 
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 						
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -321,7 +321,7 @@ XSCL.push({
 	description: "The policies for all goods of the selected subdivisions will be set to &quot;Not for sale&quot;. Works for production buildings and warehouses.",	
 	code: function(){
 		
-		xcMain(["mill", "warehouse", "workshop"]);	
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -348,7 +348,7 @@ XSCL.push({
 	description: "The policies for all goods of the selected subdivisions will be set to &quot;To any costumer&quot;. Works for production buildings and warehouses.",	
 	code: function(){
 		
-		xcMain(["mill", "warehouse", "workshop"]);	
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -375,7 +375,7 @@ XSCL.push({
 	description: "The policies for all goods of the selected subdivisions will be set to &quot;Only to my company&quot;. Works for production buildings and warehouses.",	
 	code: function(){
 		
-		xcMain(["mill", "warehouse", "workshop"]);	
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -402,7 +402,7 @@ XSCL.push({
 	description: "The policies for all goods of the selected subdivisions will be set to &quot;Only to members of the corporation&quot;. Works for production buildings and warehouses.",	
 	code: function(){
 		
-		xcMain(["mill", "warehouse", "workshop"]);	
+		xcMain(["animalfarm", "farm", "fishingbase", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -516,7 +516,7 @@ XSCL.push({
 XSCL.push({
 	row: "Lab",
 	name: "Step 2 Selector",
-	description: "Selects the best possible hypothese if the lab is in step 2.",
+	description: "Selects the best possible hypothese in the selected labs on the main page, if the lab is in step 2. ",
 	code: function(){
 		
 		xcMain(["lab"]);
@@ -720,7 +720,7 @@ XSCL.push({
 	description: "Repairs the equipment of the selected subdivisions. It only repairs the number in black, as the equipment piece of the number in red is not fully broken yet and therefore not cost efficient, although it will repair the part when the wear and tear is above 3% and all black parts are repaired. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the current equipment quality. Beware that this will inevitably increase the quality of the equipment over time, which could lead to problems with the employee qualification.",
 	code: function(){
 		
-		xcMain(["fitness", "fuel", "hairdressing", "lab", "laundry", "medicine", "mill", "office", "repair", "restaurant", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "workshop"]);
 					
 		for(var i = 0; i < xvar.main.xcId.length; i++){
 			
@@ -780,7 +780,7 @@ XSCL.push({
 	description: "Repairs the equipment of the selected subdivisions. It repairs all broken equipment, both black and red. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the current equipment quality. Beware that this will inevitably increase the quality of the equipment over time, which could lead to problems with the employee qualification.",
 	code: function(){
 		
-		xcMain(["fitness", "fuel", "hairdressing", "lab", "laundry", "medicine", "mill", "office", "repair", "restaurant", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "workshop"]);
 					
 		for(var i = 0; i < xvar.main.xcId.length; i++){
 			
@@ -840,7 +840,7 @@ XSCL.push({
 	description: "Repairs the equipment of the selected subdivisions. It only repairs the number in black, as the equipment piece of the number in red is not fully broken yet and therefore not cost efficient, although it will repair the part when the wear and tear is above 3% and all black parts are repaired. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the required equipment quality. This function only works for production buildings, as only they have a required equipment quality.",
 	code: function(){
 		
-		xcMain(["mill", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "hairdressing", "incinerator_power", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "workshop"]);
 					
 		for(var i = 0; i < xvar.main.xcId.length; i++){
 			
@@ -900,7 +900,7 @@ XSCL.push({
 	description: "Repairs the equipment of the selected subdivisions. It repairs all broken equipment, both black and red. <br/><br/>The equipment used for reparation will be bought from the world market. It chooses the cheapest one but with a quality higher than the required equipment quality. This function only works for production buildings, as only they have a required equipment quality.",
 	code: function(){
 		
-		xcMain(["mill", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "hairdressing", "incinerator_power", "mill", "mine", "oil_power", "oilpump", "orchard", "sawmill", "workshop"]);
 					
 		for(var i = 0; i < xvar.main.xcId.length; i++){
 			
@@ -962,7 +962,7 @@ XSCL.push({
 	description: "Sets the salary of the employees of the selected subdivision in such a way that the new qualification of the employees matches their required qualification. 80% of city salary as minimum. 50,000% of city salary maximum.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -993,7 +993,7 @@ XSCL.push({
 	description: "Sets the salary of the employees of the selected subdivision in such a way that the new qualification of the employees matches the qualification specified by the user with a dialog. 80% of city salary as minimum. 50,000% of city salary maximum.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -1021,7 +1021,7 @@ XSCL.push({
 	description: "Sets the salary of the employees of the selected subdivision to maximize top1. 80% of city salary as minimum. 50,000% of city salary maximum.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		var subType = {
 			mine: [8, 1],
@@ -1069,7 +1069,7 @@ XSCL.push({
 	description: "Sets the salary of the employees of the selected subdivision to maximize top1 + bonus. 80% of city salary as minimum. 50,000% of city salary maximum.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		var subType = {
 			mine: [8, 1],
@@ -1117,7 +1117,7 @@ XSCL.push({
 	description: "Give the selected subdivisions a full training schedule of 4 weeks.",
 	code: function(){
 		
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -1140,7 +1140,7 @@ XSCL.push({
 	description: "The employees of the selected subdivision will go on holiday.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 		
 		xlist.push(function(){		
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -1158,7 +1158,7 @@ XSCL.push({
 	description: "The employees of the selected subdivision will return from holiday.",
 	code: function(){
 				
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "workshop"]);
 			
 		xlist.push(function(){		
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -1178,7 +1178,7 @@ XSCL.push({
 	description: "Change the name of a subdivision. Uses the selected subdivisions on the main page. A dialog is prompted where you will have to fill in the new name.",		
 	code: function(){
 		
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "warehouse", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "farm", "fishingbase", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "mine", "office", "oil_power", "oilpump", "orchard", "repair", "restaurant", "sawmill", "shop", "villa", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
@@ -1200,10 +1200,10 @@ XSCL.push({
 XSCL.push({
 	row: "Miscellaneous",
 	name: "Delete Subdivision",
-	description: "Deletes the selected subdivisions. No-one will know it was there. Asks for confirmation before actually closing your subdivision.",
+	description: "Deletes the selected subdivisions. No-one will know it was there. Asks for confirmation before actually closing your subdivision. Disabled for state-enterprises.",
 	code: function(){
 		
-		xcMain(["fitness", "fuel", "hairdressing", "laundry", "medicine", "mill", "office", "repair", "restaurant", "shop", "warehouse", "workshop"]);
+		xcMain(["animalfarm", "coal_power", "fitness", "fuel", "hairdressing", "incinerator_power", "lab", "laundry", "medicine", "mill", "office", "oil_power", "repair", "restaurant", "shop", "warehouse", "workshop"]);
 		
 		xlist.push(function(){
 			for(var i = 0; i < xvar.main.xcId.length; i++){
