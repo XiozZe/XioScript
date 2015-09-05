@@ -3,13 +3,10 @@ var XSCL = [];
 var XSEL = [];
 localStorage.XSEL = localStorage.XSEL || "{}";
 
-
-function XioScript(){
+function XioScript(version){
 	//Bugs and ideas (TODO list):
 			
 	//Select goods remove filter
-	//Ask for all main pages
-	//Laboratory functions
 	//Warehouse distribution manager
 		
 	//Check for important XS materials
@@ -404,6 +401,7 @@ function XioScript(){
             '<button id="xfShowMenu" class="xfButton">Show XF</button>'+
 			'<button id="xfHideMenu" class="xfHide xfButton">Hide XF</button>'+
             '<div id="xfMenu" class="xfHide">'+
+				'<div id="xfUnderTitle">v'+GM_info.script.version+'</div>'+
 				'<div id="xfTitle" class="xfTitle">XioExtensions</div>'+				
 				'<div id="xfEx"></div>'+
 				'<div id="xfTitle" class="xfTitle">XioFunctions</div>'+
@@ -461,9 +459,14 @@ function XioScript(){
 				.append("<input type=submit class='xfButton' data="+i+" value='"+XSCL[i].name+"' title='"+XSCL[i].description+"'>")
 				.find("input:last")
 				.click(function(){
-					xpStart(); //Basic needs of preparation
-					console.log( XSCL[$(this).attr("data")].name +" is running!");
-					eval("(" + XSCL[$(this).attr("data")].code + ")()");					
+					try{
+						xpStart(); //Basic needs of preparation
+						console.log( XSCL[$(this).attr("data")].name +" is running!");
+						eval("(" + XSCL[$(this).attr("data")].code + ")()");	
+					}									
+					catch(error){
+						console.log(error.message);
+					}
 				});			
 		}	
 		
@@ -534,12 +537,17 @@ function XioScript(){
 	//For every page, check through the XSEL for functions to execute
 	for(var i = 0; i < XSEL.length; i++){
 		if(new RegExp(XSEL[i].regex).test(document.URL) && JSON.parse(localStorage.XSEL)[XSEL[i].name]){
-			xpStart(); //Basic needs of preparation
-			console.log( XSEL[i].name +" is running!");
-			eval("(" + XSEL[i].code + ")()");
-			if(xlist.length === 0 && xcount === 0){
-				$(".xfButton").removeClass("xfButtonDisabled").prop("disabled", false);
-				console.log("all done!");
+			try{
+				xpStart(); //Basic needs of preparation
+				console.log( XSEL[i].name +" is running!");
+				eval("(" + XSEL[i].code + ")()");
+				if(xlist.length === 0 && xcount === 0){
+					$(".xfButton").removeClass("xfButtonDisabled").prop("disabled", false);
+					console.log("all done!");
+				}
+			}									
+			catch(error){
+				console.log(error.message);
 			}
 		}
 	}	

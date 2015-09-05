@@ -1702,6 +1702,13 @@ var XSML = {
 	},
 	wareSale: {
 		regExp: "\/.*\/main\/unit\/view\/[0-9]+\/sale$",
+		region: {
+			path: ".officePlace a:eq(-2)",
+			type: "item",
+			mod: function($x){
+				return $x.text();
+			}
+		},
 		product: {
 			path: ".grid td:nth-child(3) a",
 			type: "item",
