@@ -168,8 +168,8 @@ XSCL.push({
 			}
 			xcGet("transport", xvar.realm+"/main/common/main_page/game_info/transport");
 			xcGet("TM", xvar.realm+"/main/globalreport/tm/info");
-			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/15913");
-			xcGet("CTIE", xvar.realm+"/main/geo/regionENVD/15932");
+			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/359837");
+			xcGet("CTIE", xvar.realm+"/main/geo/regionENVD/359838");
 		});		
 		
 		xlist.push(function(){
@@ -207,7 +207,7 @@ XSCL.push({
 			}
 			xcGet("transport", xvar.realm+"/main/common/main_page/game_info/transport");
 			xcGet("TM", xvar.realm+"/main/globalreport/tm/info");
-			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/15913");
+			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/359837");
 		});		
 
 		xlist.push(function(){
@@ -260,7 +260,7 @@ XSCL.push({
 				xcGet("priceGet", xvar.realm+"/main/unit/view/"+xvar.main.xcId[i]+"/sale");
 			}
 			xcGet("TM", xvar.realm+"/main/globalreport/tm/info");
-			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/15913");
+			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/359837");
 		});		
 
 		xlist.push(function(){
@@ -293,7 +293,7 @@ XSCL.push({
 				xcGet("priceGet", xvar.realm+"/main/unit/view/"+xvar.main.xcId[i]+"/sale");
 			}
 			xcGet("TM", xvar.realm+"/main/globalreport/tm/info");
-			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/15913");
+			xcGet("IP", xvar.realm+"/main/geo/countrydutylist/359837");
 		});		
 
 		xlist.push(function(){
