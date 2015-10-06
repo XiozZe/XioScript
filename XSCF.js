@@ -494,9 +494,7 @@ function XioScript(version){
 		};
 		
 		console.error = console.debug = console.info =  console.log
-		
-		
-		
+				
 		//enable tooltips on buttons		
 		$(".xfButton").tooltip({
 			content: function() {

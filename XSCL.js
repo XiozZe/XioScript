@@ -568,7 +568,63 @@ XSCL.push({
 		
 	}
 });
+/*
+XSCL.push({
+	row: "Lab",
+	name: "Step 3 Selector",
+	description: "Attaches the factory with the highest efficiency to the lab. ",
+	code: function(){
+		
+		xcMain(["lab"]);
+		
+		xlist.push(function(){
+			for(var i = 0; i < xvar.main.xcId.length; i++){
+				xcGet("invGet", xvar.realm+"/main/unit/view/"+xvar.main.xcId[i]+"/investigation");
+			}
+		});
+		
+		xlist.push(function(){
+			for(var i = 0; i < xvar.main.xcId.length; i++){
+				if(xvar.invGet[i].refTime){
+					xvar.play.time = [];
+					xvar.play.radio = [];
+					xvar.play.fastest = 0;
+					for(var j = 0; j < xvar.invGet[i].refTime.length; j++){
+						//p=starting possibility between 0 and 1
+						//k=reference time
+						//i=1=the amount of percentage points the chance increases each fail (always 1)
+						var calcProduct = function(i,p,n){
+							var value=1;
+							for(var m=1; m<= n-1; m++){ value = value*(1-(1/100*i*(m-1)+p)); }
+							return value;
+						}
+						var calcStudyTime = function(p,k,i){
+							var value=0;
+							for(var n=1;n<=(100*(1-p)/i);n++){
+								value += n*(1/100*i*(n-1)+p)*calcProduct(i,p,n);
+							}
+							return k*value;
+						}
+						xvar.play.time.push( calcStudyTime(xvar.invGet[i].chance[j]/100, xvar.invGet[i].refTime[j], 1) );
+						if(xvar.play.time[j] < xvar.play.time[xvar.play.fastest]){
+							xvar.play.fastest = j;
+						}
+						xvar.play.radio.push( false );
 
+					}			
+
+					xvar.play.radio[xvar.play.fastest] = true;
+					console.log(xvar.play.time);
+					xcPost("invPost", xvar.invGet[i], [["radio", xvar.play.radio]], "select");
+				}				
+			}
+		});
+		
+		xcList();
+		
+	}
+});
+*/
 //Ads
 XSCL.push({
 	row: "Ads",
