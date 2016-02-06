@@ -768,7 +768,7 @@ XSCL.push({
 		xcList();
 	}
 });
-
+/*
 //Repair
 XSCL.push({
 	row: "Equipment",
@@ -1010,7 +1010,7 @@ XSCL.push({
 		xcList();
 	}
 });
-
+/*
 //Employee
 XSCL.push({
 	row: "Employee",
@@ -1226,7 +1226,7 @@ XSCL.push({
 		
 	}
 });
-
+*/
 //Miscellaneous
 XSCL.push({
 	row: "Miscellaneous",
