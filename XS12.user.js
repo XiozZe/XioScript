@@ -44,20 +44,24 @@ function map(html, url, type){
 			primecost : $(html).find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
 		}
 	}
+	else if(type === "supply"){
+		mapped[url] = {
+			form : $(html).find("[name=supplyContractForm]"),
+			parcel: $(html).find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
+			required : $(html).find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			stock : $(html).find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
+		}
+	}
 }
 
 function xGet(url, type, callback, subid, choice){
-	
-	
-		
 	xcallback.push([url, function(){
 		callback(subid, choice);
 	}]);
 		
 	if($.inArray(url, getUrls) === -1){
 		
-		xcount++;
-		
+		xcount++;		
 		getUrls.push(url);
 		
 		$.ajax({
@@ -77,7 +81,6 @@ function xGet(url, type, callback, subid, choice){
 			}			
 		});		
 	}	
-	
 }
 
 function xPost(url, form){
@@ -123,7 +126,6 @@ function xDone(url){
 		$("#XM").attr("disabled", false)
 	}
 	
-	
 }
 
 function saleprice1(subid, choice){	
@@ -148,8 +150,7 @@ function saleprice2(subid, choice){
 
 	if(change){
 		xPost(url, mapped[url].form.serialize());
-	}
-	
+	}	
 }
 
 function salepolicy1(subid, choice){
@@ -191,9 +192,40 @@ function salepolicy2(subid, choice){
 	}
 }
 
+function supply1(subid, choice){
+	if(choice !== 0){
+		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "supply", supply2, subid, choice);
+	}
+}
+
+function supply2(subid, choice){
+	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";
+	var data = mapped[url];
+	var change = false;
+	
+	for(var i = 0; i < mapped[url].parcel.length; i++){
+		if(choice === 1 && mapped[url].parcel[i] !== mapped[url].required[i]){
+			change = true;
+			mapped[url].parcel[i] = mapped[url].required[i];
+			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+		}
+		else if(choice === 2 && mapped[url].parcel[i] !== Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0))){
+			change = true;
+			mapped[url].parcel[i] = Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0));
+			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+		}
+	};
+
+	if(change){
+		mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
+		xPost(url, mapped[url].form.serialize());
+	}
+}
+
 var policyJSON = {
 	pc: [saleprice1, ["no changes in price", "set price equal to the prime cost"]],
-	pl: [salepolicy1, ["no changes in policy", "set always to not for sale", "set always to any customer", "set always to my company", "set always to my corporation"]]
+	pl: [salepolicy1, ["no changes in policy", "set always to not for sale", "set always to any customer", "set always to my company", "set always to my corporation"]],
+	sp: [supply1, ["no changes in supply", "required amount", "aim for 2x stock"]]
 };
 
 function preference(policies){
@@ -213,7 +245,7 @@ function preference(policies){
 	for(var i = 0; i < policies.length; i++){
 		var policyChoice = 0;
 		if(savedPolicies.indexOf(policies[i]) >= 0){
-			policyChoice = savedPolicyChoices[i];
+			policyChoice = savedPolicyChoices[savedPolicies.indexOf(policies[i])];
 		}
 		
 		var htmlstring = "<select class=XioPolicy id="+policies[i]+">";
@@ -224,8 +256,7 @@ function preference(policies){
 		$("#"+policies[i]+" option").eq(policyChoice).attr("selected", true);
 		
 	} 
-	
-	$(".XioPolicy").change(function(){
+	$(".XioPolicy").change(function(){	
 		
 		var thisid = $(this).attr("id");
 		var thisindex = $(this).find("option:selected").index();
@@ -252,7 +283,6 @@ function preference(policies){
 		};
 		
 		GM_setValue(subid, newPolicyString.substring(1));
-		
 	});
 	
 }
@@ -281,11 +311,10 @@ function XioMaintenance(){
 	//specific collection and execution
 	var savedPolicyStrings = [];
 	var subids = GM_listValues();
-	for(var i = 0; i < subids.length; i++){
-		 
+	for(var i = 0; i < subids.length; i++){		 
 		savedPolicyStrings = GM_getValue(subids[i])? GM_getValue(subids[i]).split(";") : [];
 		for(var j = 0; j < savedPolicyStrings.length; j++){		
-			policyJSON[savedPolicyStrings[j].substring(0, 2)][0](subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
+			policyJSON[savedPolicyStrings[j].substring(0, 2)][0](subids[i], parseFloat(savedPolicyStrings[j].substring(2)));			
 		}	
 	}
 	
@@ -304,9 +333,14 @@ function XioScript(){
 		});
     }
 	
-	//Production Price/Sale page
+	//Price/Sale page
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(document.URL)){
 		preference(["pc", "pl"]);
+	}
+	
+	//Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL)){
+		preference(["sp"]);
 	}
 	
 }
