@@ -24,44 +24,50 @@ function xpCookie(name){
 	}
 	return null;
 }
-var realm = xpCookie('last_realm');
 
+var realm = xpCookie('last_realm');
 var getUrls = [];
 var finUrls = [];
 var xcallback = [];
 var mapped = {};
+var xcount = {};
+var typedone = [];
+var xwait = [];
 
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
 }
 
-function map(html, url, type){
-	if(type === "sale"){
+function map(html, url, page){
+	var $html = $(html);
+	if(page === "sale"){
 		mapped[url] = {
-			form : $(html).find("[name=storageForm]"),
-			policy : $(html).find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
-			price : $(html).find("input.money:even").map(function(){ return numberfy($(this).val()); }).get(),
-			primecost : $(html).find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
+			form : $html.find("[name=storageForm]"),
+			policy : $html.find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
+			price : $html.find("input.money:even").map(function(){ return numberfy($(this).val()); }).get(),
+			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
 		}
 	}
-	else if(type === "supply"){
+	else if(page === "supply"){
 		mapped[url] = {
-			form : $(html).find("[name=supplyContractForm]"),
-			parcel: $(html).find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
-			required : $(html).find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			stock : $(html).find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
+			isProd : !$html.find(".sel").next().attr("class"),
+			form : $html.find("[name=supplyContractForm]"),
+			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
+			required : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			stock : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
+		}
+	}
+	else if(page === "consume"){
+		mapped[url] = {
+			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map(function(){ return numberfy($(this).text().match(/\d+/)); }).get()
 		}
 	}
 }
 
-function xGet(url, type, callback, subid, choice){
-	xcallback.push([url, function(){
-		callback(subid, choice);
-	}]);
+function xGet(url, page, callback){
 		
 	if($.inArray(url, getUrls) === -1){
-		
-		xcount++;		
+				
 		getUrls.push(url);
 		
 		$.ajax({
@@ -69,7 +75,8 @@ function xGet(url, type, callback, subid, choice){
 			type: "GET",
 
 			success: function(html, status, xhr){
-				map(html, url, type);
+				map(html, url, page);
+				callback();
 				xDone(url);
 			},
 
@@ -80,20 +87,26 @@ function xGet(url, type, callback, subid, choice){
 				}, 3000);
 			}			
 		});		
+	}
+	else{
+		
+		xcallback.push([url, function(){
+			callback();
+		}]);
+		
+		
 	}	
 }
 
-function xPost(url, form){
-	
-	xcount++;
-	
+function xPost(url, form, callback){
+		
 	$.ajax({
 		url: url,	
 		data: form,
 		type: "POST",
 
 		success: function(html, status, xhr){
-			xDone();
+			callback();			
 		},
 
 		error: function(){
@@ -106,41 +119,82 @@ function xPost(url, form){
 	
 }
 
+function xTypeDone(type){	
+	
+	xcount[type]--;
+	if(xcount[type]){
+		console.log(xcount[type], "subdivisions with "+type+" functions to do left");
+	}
+	else{
+		console.log(type+" functions completed!");
+		typedone.push(type);
+		for(var i = 0; i < xwait.length; i++){
+			var index = xwait[i][0].indexOf(type);
+			if(index >= 0){
+				xwait[i][0].splice(index, 1);
+				if(xwait[i][0].length === 0){
+					xwait[i][1]();
+					xwait.splice(i, 1)
+					i--;
+				}
+			}			
+		}
+
+	}	
+	
+	var sum = 0;
+	for(var i in xcount)
+		sum += xcount[i];
+	
+	if(sum === 0){
+		console.log("All Done!");
+		console.log(mapped);
+		$("#XM").attr("disabled", false);
+	}
+	
+}
+
 function xDone(url){
 	
 	if(url){
 		finUrls.push(url);
-		for(var i = 0; i < xcallback.length; i++){
-			if(xcallback[i][0] === url){
-				xcallback[i][1]();
-			}
+	}
+	
+	for(var i = 0; i < xcallback.length; i++){
+		if(finUrls.indexOf(xcallback[i][0]) >= 0){
+			xcallback[i][1]();
+			xcallback.splice(i, 1);
+			i--;
 		}
-	}
-	
-	xcount--;
-	console.log(xcount, "server calls left");
-	
-	if(xcount === 0){
-		console.log("All Done!");
-		console.log(mapped);
-		$("#XM").attr("disabled", false)
-	}
+	}	
 	
 }
 
-function saleprice1(subid, choice){	
+function saleprice1(type, subid, choice){	
+
 	if(choice !== 0){
-		xGet("/"+realm+"/main/unit/view/"+subid+"/sale", "sale", saleprice2, subid, choice);
-	}		
+		xGet("/"+realm+"/main/unit/view/"+subid+"/sale", "sale", function(){
+			saleprice2(type, subid, choice);
+		});
+	}	
+	else{
+		xTypeDone(type);
+	}	
 }
 
-function saleprice2(subid, choice){	
+function saleprice2(type, subid, choice){	
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
 	var data = mapped[url];
 	var change = false;
 	
 	for(var i = 0; i < mapped[url].price.length; i++){
-		if(Math.abs(mapped[url].price[i] - mapped[url].primecost[i] - 0.005) > 0.007){
+		if(choice === 1 && mapped[url].price[i] !== 0){
+			change = true;
+			mapped[url].price[i] = 0;
+			mapped[url].form.find("input.money:even").eq(i).val(0);
+			
+		}
+		if(choice === 2 && Math.abs(mapped[url].price[i] - mapped[url].primecost[i] - 0.005) > 0.007){
 			change = true;
 			mapped[url].price[i] = mapped[url].primecost[i]? mapped[url].primecost[i]+0.001 : 0;
 			mapped[url].form.find("input.money:even").eq(i).val(mapped[url].price[i]);
@@ -149,17 +203,27 @@ function saleprice2(subid, choice){
 	};
 
 	if(change){
-		xPost(url, mapped[url].form.serialize());
-	}	
-}
-
-function salepolicy1(subid, choice){
-	if(choice !== 0){
-		xGet("/"+realm+"/main/unit/view/"+subid+"/sale", "sale", salepolicy2, subid, choice);		
+		xPost(url, mapped[url].form.serialize(), function(){
+			xTypeDone(type);
+		});
+	}
+	else{
+		xTypeDone(type);
 	}
 }
 
-function salepolicy2(subid, choice){
+function salepolicy1(type, subid, choice){
+	if(choice !== 0){
+		xGet("/"+realm+"/main/unit/view/"+subid+"/sale", "sale", function(){
+			salepolicy2(type, subid, choice);
+		});
+	}
+	else{
+		xTypeDone(type);
+	}
+}
+
+function salepolicy2(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
 	var data = mapped[url];
 	var change = false;
@@ -188,44 +252,109 @@ function salepolicy2(subid, choice){
 	};
 
 	if(change){
-		xPost(url, mapped[url].form.serialize());
+		xPost(url, mapped[url].form.serialize(), function(){
+			xTypeDone(type);
+		});
+	}
+	else{
+		xTypeDone(type);
 	}
 }
 
-function supply1(subid, choice){
+function supply1(type, subid, choice){
 	if(choice !== 0){
-		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "supply", supply2, subid, choice);
+		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "supply", function(){
+			supply2(type, subid, choice);
+		});
+	}
+	else{
+		xTypeDone(type);
 	}
 }
 
-function supply2(subid, choice){
-	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";
+function supply2(type, subid, choice){
+	if(choice === 1 || mapped["/"+realm+"/main/unit/view/"+subid+"/supply"].isProd){
+		supply3(type, subid, choice);
+	}
+	else{
+		xGet("/"+realm+"/main/unit/view/"+subid+"/consume", "consume", function(){
+			supply3(type, subid, choice);
+		});
+	}
+}
+
+function supply3(type, subid, choice){
+	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
+	var url2 = "/"+realm+"/main/unit/view/"+subid+"/consume";
 	var data = mapped[url];
 	var change = false;
 	
+	if(mapped[url].parcel.length !== mapped[url].required.length){
+		choice = 1;
+		console.log("Subdivision "+subid+" is missing a supplier!");
+	}
+	
 	for(var i = 0; i < mapped[url].parcel.length; i++){
-		if(choice === 1 && mapped[url].parcel[i] !== mapped[url].required[i]){
+		if(choice === 1 && mapped[url].parcel[i] !== 0){
+			change = true;
+			mapped[url].parcel[i] = 0;
+			mapped[url].form.find("input[type=type]").eq(i).val(0);			
+		}		
+		else if(choice === 2 && mapped[url].isProd && mapped[url].parcel[i] !== mapped[url].required[i]){
 			change = true;
 			mapped[url].parcel[i] = mapped[url].required[i];
 			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
 		}
-		else if(choice === 2 && mapped[url].parcel[i] !== Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0))){
+		else if(choice === 2 && !mapped[url].isProd && mapped[url].parcel[i] !== mapped[url2].consump[i]){
+			change = true;
+			mapped[url].parcel[i] = mapped[url2].consump[i];
+			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+		}
+		else if(choice === 3 && mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0))){
 			change = true;
 			mapped[url].parcel[i] = Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0));
+			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+		}
+		else if(choice === 3 && !mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0))){
+			change = true;
+			mapped[url].parcel[i] = Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0));
 			mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
 		}
 	};
 
 	if(change){
 		mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
-		xPost(url, mapped[url].form.serialize());
+		xPost(url, mapped[url].form.serialize(), function(){
+			xTypeDone(type);
+		});
+	}
+	else{
+		xTypeDone(type);
 	}
 }
 
 var policyJSON = {
-	pc: [saleprice1, ["no changes in price", "set price equal to the prime cost"]],
-	pl: [salepolicy1, ["no changes in policy", "set always to not for sale", "set always to any customer", "set always to my company", "set always to my corporation"]],
-	sp: [supply1, ["no changes in supply", "required amount", "aim for 2x stock"]]
+	pc: {
+		func: saleprice1, 
+		save: ["no changes in price", "zero price", "prime cost"], 
+		order: ["no changes in price", "zero price", "prime cost"],
+		name: "price",
+		wait: []
+	},
+	pl: {
+		func: salepolicy1, 
+		save: ["no changes in policy", "not for sale", "any customer", "my company", "my corporation"], 
+		order: ["no changes in policy", "not for sale", "any customer", "my company", "my corporation"],
+		name: "policy",
+		wait: []
+	},
+	sp: {
+		func: supply1, 
+		save: ["no changes in supply", "zero supply", "required", "2x stock"], 
+		order: ["no changes in supply", "zero supply", "required", "2x stock"],
+		name: "supply",
+		wait: []
+	}
 };
 
 function preference(policies){
@@ -249,8 +378,8 @@ function preference(policies){
 		}
 		
 		var htmlstring = "<select class=XioPolicy id="+policies[i]+">";
-		for(var j = 0; j < policyJSON[policies[i]][1].length; j++){
-			htmlstring += "<option>"+policyJSON[policies[i]][1][j]+"</option>";
+		for(var j = 0; j < policyJSON[policies[i]].order.length; j++){
+			htmlstring += "<option>"+policyJSON[policies[i]].order[j]+"</option>";
 		}		
 		$topblock.append(htmlstring + "</select>");
 		$("#"+policies[i]+" option").eq(policyChoice).attr("selected", true);
@@ -259,8 +388,8 @@ function preference(policies){
 	$(".XioPolicy").change(function(){	
 		
 		var thisid = $(this).attr("id");
-		var thisindex = $(this).find("option:selected").index();
-				
+		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
+		
 		savedPolicyStrings = GM_getValue(subid)? GM_getValue(subid).split(";") : [];	
 		savedPolicies = [];
 		savedPolicyChoices = [];
@@ -296,7 +425,7 @@ function XioMaintenance(){
 	getUrls = [];
 	finUrls = [];
 	xcallback = [];
-	xcount = 0;
+	xcount = {};
 	mapped = {};
 	
 	/* while (GM_listValues().length > 0){
@@ -311,10 +440,26 @@ function XioMaintenance(){
 	//specific collection and execution
 	var savedPolicyStrings = [];
 	var subids = GM_listValues();
+	var policy;
 	for(var i = 0; i < subids.length; i++){		 
 		savedPolicyStrings = GM_getValue(subids[i])? GM_getValue(subids[i]).split(";") : [];
-		for(var j = 0; j < savedPolicyStrings.length; j++){		
-			policyJSON[savedPolicyStrings[j].substring(0, 2)][0](subids[i], parseFloat(savedPolicyStrings[j].substring(2)));			
+		for(var j = 0; j < savedPolicyStrings.length; j++){	
+			policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
+			xcount[policy.name] = ++xcount[policy.name] || 1;
+			
+			if(policy.wait.length === 0){
+				policy.func(policy.name, subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
+			}
+			else{
+				xwait.push(
+					[						
+						policy.wait.slice(), 
+						function(i, j, policy, savedPolicyStrings){							
+							policy.func(policy.name, subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
+						}.bind(this, i, j, policy, savedPolicyStrings)
+					]
+				);
+			}						
 		}	
 	}
 	
