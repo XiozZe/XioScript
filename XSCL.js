@@ -56,7 +56,7 @@ XSCL.push({
 					xcPost("supplyPost", xvar.supplyGet[i], [["parcel", xvar.play.supply]], "edit");
 				}
 				else{
-					console.log("This subdivision has no suppliers: "+xvar.main.xcId[0]);
+					console.log("This subdivision is missing or having too many suppliers: "+xvar.main.xcId[0]+". Be sure that every good has exactly one supplier.");
 				}
 			}
 		});

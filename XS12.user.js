@@ -2,7 +2,7 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.1
+// @version        12.0.2
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
@@ -13,6 +13,8 @@
 // ==/UserScript==
 
 this.$ = this.jQuery = jQuery.noConflict(true);
+
+//GM_deleteValue("3940531");
 
 function xpCookie(name){
 	var nameEQ = name + "=";
@@ -40,16 +42,18 @@ function numberfy(variable){
 
 function map(html, url, page){
 	var $html = $(html);
-	if(page === "sale"){
+	if(page === "sale"){ 
 		mapped[url] = {
 			form : $html.find("[name=storageForm]"),
 			policy : $html.find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
 			price : $html.find("input.money:even").map(function(){ return numberfy($(this).val()); }).get(),
-			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
+			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			product: $html.find(".grid a:not([onclick])").map(function(){ return $(this).text(); }).get(),
+			region: $html.find(".officePlace a:eq(-2)").text()
 		}
 	}
-	else if(page === "supply"){
-		mapped[url] = {
+	else if(page === "prodsupply"){
+		mapped[url] = { 
 			isProd : !$html.find(".sel").next().attr("class"),
 			form : $html.find("[name=supplyContractForm]"),
 			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
@@ -60,6 +64,44 @@ function map(html, url, page){
 	else if(page === "consume"){
 		mapped[url] = {
 			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map(function(){ return numberfy($(this).text().match(/\d+/)); }).get()
+		}
+	}
+	else if(page === "storesupply"){
+		mapped[url] = {
+			form : $html.find("[name=supplyContractForm]"),
+			parcel: $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
+			purchase: $html.find("td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			quantity : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
+		}
+	}
+	else if(page === "TM"){
+		mapped[url] = {
+			product: $html.find(".grid td:odd").map(function(){ return $(this).clone().children().remove().end().text().trim(); }).get(),
+			franchise: $html.find(".grid b").map(function(){ return $(this).text(); }).get()
+		}
+	}
+	else if(page === "IP"){
+		mapped[url] = {
+			product: $html.find(".list td:nth-child(5n-3)").map(function(){ return $(this).text(); }).get(),
+			IP: $html.find(".list td:nth-child(5n)").map(function(){ return numberfy($(this).text()); }).get()
+		}
+	}
+	else if(page === "transport"){
+		mapped[url] = {
+			countryName: $html.find("select:eq(0) option").map(function(){ return $(this).text(); }).get(),
+			countryId: $html.find("select:eq(0) option").map(function(){ return numberfy($(this).val().split("/")[1]); }).get(),
+			regionName: $html.find("select:eq(1) option").map(function(){ return $(this).text(); }).get(),
+			regionId: $html.find("select:eq(1) option").map(function(){ return numberfy($(this).val().split("/")[2]); }).get(),
+			cityName: $html.find("select:eq(2) option").map(function(){ return $(this).text(); }).get(),
+			cityId: $html.find("select:eq(2) option").map(function(){ return numberfy($(this).val().split("/")[3]); }).get()			
+		}
+	}
+	else if(page === "CTIE"){
+		mapped[url] = {
+			product: $html.find(".list td:nth-child(3n-1)").map(function(){ return $(this).text(); }).get(),
+			profitTax: numberfy($html.find(".region_data td:eq(3)").text()),
+			CTIE: $html.find(".list td:nth-child(3n)").map(function(){ return numberfy($(this).text()); }).get()
 		}
 	}
 }
@@ -176,15 +218,78 @@ function saleprice1(type, subid, choice){
 		xGet("/"+realm+"/main/unit/view/"+subid+"/sale", "sale", function(){
 			saleprice2(type, subid, choice);
 		});
-	}	
+	}
 	else{
 		xTypeDone(type);
 	}	
 }
 
-function saleprice2(type, subid, choice){	
+function saleprice2(type, subid, choice){
+		
+	if(choice !== 1){
+		xGet("/"+realm+"/main/globalreport/tm/info", "TM", function(){
+			saleprice3(type, subid, choice);
+		});
+	}	
+	else{
+		saleprice6(type, subid, choice);
+	}
+	
+}
+
+function saleprice3(type, subid, choice){
+		
+	if(choice !== 1){
+		xGet("/"+realm+"/main/geo/countrydutylist/359837", "IP", function(){
+			saleprice4(type, subid, choice);
+		});
+	}	
+	else{
+		saleprice6(type, subid, choice);
+	}
+	
+}
+
+function saleprice4(type, subid, choice){
+		
+	if(choice === 5 || choice === 6){
+		xGet("/"+realm+"/main/common/main_page/game_info/transport", "transport", function(){
+			saleprice5(type, subid, choice);
+		});
+	}	
+	else{
+		saleprice6(type, subid, choice);
+	}
+	
+}
+
+function saleprice5(type, subid, choice){
+		
+	if(choice === 5){
+		xGet("/"+realm+"/main/geo/regionENVD/359838", "CTIE", function(){
+			saleprice6(type, subid, choice);
+		});
+	}	
+	else if(choice === 6){
+		var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
+		var urlTrans = "/"+realm+"/main/common/main_page/game_info/transport";
+			
+		indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
+		regionId = mapped[urlTrans].regionId[ indexRegion ];	
+		
+		xGet("/"+realm+"/main/geo/regionENVD/"+regionId, "CTIE", function(){
+			saleprice6(type, subid, choice);
+		});	
+	}
+	
+}
+
+function saleprice6(type, subid, choice){	
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
-	var data = mapped[url];
+	var urlIP = "/"+realm+"/main/geo/countrydutylist/359837";
+	var urlTM = "/"+realm+"/main/globalreport/tm/info";
+	var urlCTIE = "/"+realm+"/main/geo/regionENVD/359838";
+	var urlTrans = "/"+realm+"/main/common/main_page/game_info/transport";
 	var change = false;
 	
 	for(var i = 0; i < mapped[url].price.length; i++){
@@ -194,11 +299,80 @@ function saleprice2(type, subid, choice){
 			mapped[url].form.find("input.money:even").eq(i).val(0);
 			
 		}
-		if(choice === 2 && Math.abs(mapped[url].price[i] - mapped[url].primecost[i] - 0.005) > 0.007){
-			change = true;
-			mapped[url].price[i] = mapped[url].primecost[i]? mapped[url].primecost[i]+0.001 : 0;
-			mapped[url].form.find("input.money:even").eq(i).val(mapped[url].price[i]);
+		else if(choice === 2){
+			indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+			product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+			indexIP = mapped[urlIP].product.indexOf(product);
+			IP = mapped[urlIP].IP[indexIP];
+			price = mapped[url].primecost[i]? (mapped[url].primecost[i]+0.001 < 30 * IP? mapped[url].primecost[i] + 0.001 : mapped[url].primecost[i]) : 0;
+						
+			if(mapped[url].price[i] !== price){
+				change = true;
+				mapped[url].price[i] = price
+				mapped[url].form.find("input.money:even").eq(i).val(price);
+			}			
+		}
+		else if(choice === 3){			
+			indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+			product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+			indexIP = mapped[urlIP].product.indexOf(product);
+			IP = mapped[urlIP].IP[indexIP];
 			
+			if(mapped[url].price[i] !== IP){
+				change = true;
+				mapped[url].price[i] = IP;
+				mapped[url].form.find("input.money:even").eq(i).val(IP);
+			}		
+		}
+		else if(choice === 4){
+			indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+			product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+			indexIP = mapped[urlIP].product.indexOf(product);
+			IP = mapped[urlIP].IP[indexIP];
+			
+			if(mapped[url].price[i] !== 30*IP){
+				change = true;
+				mapped[url].price[i] = 30*IP;
+				mapped[url].form.find("input.money:even").eq(i).val(30*IP);
+			}
+		}
+		else if(choice === 5){
+			indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+			product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+			indexIP = mapped[urlIP].product.indexOf(product);
+			IP = mapped[urlIP].IP[indexIP];
+			
+			indexCTIE = mapped[urlCTIE].product.indexOf(product);
+			CTIE = mapped[urlCTIE].CTIE[indexCTIE];
+			priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100);
+			price = Math.min( Math.round(priceCTIE*100)/100, 30 * IP);
+			
+			if(mapped[url].price[i] !== price){
+				change = true;
+				mapped[url].price[i] = price;
+				mapped[url].form.find("input.money:even").eq(i).val(price);
+			}
+		}
+		else if(choice === 6){
+			indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
+			regionId = mapped[urlTrans].regionId[indexRegion];
+			urlCTIE = "/"+realm+"/main/geo/regionENVD/"+regionId;
+			
+			indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+			product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+			indexIP = mapped[urlIP].product.indexOf(product);
+			IP = mapped[urlIP].IP[indexIP];
+			
+			indexCTIE = mapped[urlCTIE].product.indexOf(product);
+			CTIE = mapped[urlCTIE].CTIE[indexCTIE];
+			priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100 * mapped["/"+realm+"/main/geo/regionENVD/"+regionId].profitTax/100);
+			price = Math.min( Math.round(priceCTIE*100)/100, 30 * IP);
+			
+			if(mapped[url].price[i] !== price){
+				change = true;
+				mapped[url].price[i] = price;
+				mapped[url].form.find("input.money:even").eq(i).val(price);
+			}
 		}
 	};
 
@@ -225,7 +399,6 @@ function salepolicy1(type, subid, choice){
 
 function salepolicy2(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
-	var data = mapped[url];
 	var change = false;
 	
 	for(var i = 0; i < mapped[url].price.length; i++){
@@ -261,10 +434,10 @@ function salepolicy2(type, subid, choice){
 	}
 }
 
-function supply1(type, subid, choice){
+function prodsupply1(type, subid, choice){
 	if(choice !== 0){
-		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "supply", function(){
-			supply2(type, subid, choice);
+		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "prodsupply", function(){
+			prodsupply2(type, subid, choice);
 		});
 	}
 	else{
@@ -272,26 +445,25 @@ function supply1(type, subid, choice){
 	}
 }
 
-function supply2(type, subid, choice){
+function prodsupply2(type, subid, choice){
 	if(choice === 1 || mapped["/"+realm+"/main/unit/view/"+subid+"/supply"].isProd){
-		supply3(type, subid, choice);
+		prodsupply3(type, subid, choice);
 	}
 	else{
 		xGet("/"+realm+"/main/unit/view/"+subid+"/consume", "consume", function(){
-			supply3(type, subid, choice);
+			prodsupply3(type, subid, choice);
 		});
 	}
 }
 
-function supply3(type, subid, choice){
+function prodsupply3(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
 	var url2 = "/"+realm+"/main/unit/view/"+subid+"/consume";
-	var data = mapped[url];
 	var change = false;
 	
 	if(mapped[url].parcel.length !== mapped[url].required.length){
 		choice = 1;
-		console.log("Subdivision "+subid+" is missing a supplier!");
+		console.log("Subdivision "+subid+" is missing a supplier, or has too many suppliers!");
 	}
 	
 	for(var i = 0; i < mapped[url].parcel.length; i++){
@@ -333,11 +505,60 @@ function supply3(type, subid, choice){
 	}
 }
 
+function storesupply1(type, subid, choice){
+	if(choice !== 0){
+		xGet("/"+realm+"/main/unit/view/"+subid+"/supply", "storesupply", function(){
+			storesupply2(type, subid, choice);
+		});
+	}
+	else{
+		xTypeDone(type);
+	}
+}
+
+function storesupply2(type, subid, choice){
+	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
+	var change = false;
+	
+	for(var i = 0; i < mapped[url].parcel.length; i++){
+		if(choice === 1 && mapped[url].parcel[i] !== 0){
+			change = true;
+			mapped[url].parcel[i] = 0;
+			mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(0);			
+		}		
+		else if(choice === 2 && mapped[url].parcel[i] !== mapped[url].sold[i]){
+			change = true;
+			mapped[url].parcel[i] = mapped[url].sold[i];
+			mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+		}
+		else if(choice === 3 && mapped[url].parcel[i] !== mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2){
+			change = true;
+			mapped[url].parcel[i] = mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2;
+			mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+		}
+		else if(choice === 4 && mapped[url].parcel[i] !== Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0))){
+			change = true;
+			mapped[url].parcel[i] = Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
+			mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+		}
+	};
+
+	if(change){
+		mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
+		xPost(url, mapped[url].form.serialize(), function(){
+			xTypeDone(type);
+		});
+	}
+	else{
+		xTypeDone(type);
+	}
+}
+
 var policyJSON = {
 	pc: {
 		func: saleprice1, 
-		save: ["no changes in price", "zero price", "prime cost"], 
-		order: ["no changes in price", "zero price", "prime cost"],
+		save: ["no changes in price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax"], 
+		order: ["no changes in price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", ],
 		name: "price",
 		wait: []
 	},
@@ -349,9 +570,16 @@ var policyJSON = {
 		wait: []
 	},
 	sp: {
-		func: supply1, 
-		save: ["no changes in supply", "zero supply", "required", "2x stock"], 
-		order: ["no changes in supply", "zero supply", "required", "2x stock"],
+		func: prodsupply1, 
+		save: ["no changes in supply", "zero supply", "required", "3x stock"], 
+		order: ["no changes in supply", "zero supply", "required", "3x stock"],
+		name: "supply",
+		wait: []
+	},
+	ss: {
+		func: storesupply1, 
+		save: ["no changes in supply", "zero supply", "sold", "sold++", "3x stock"], 
+		order: ["no changes in supply", "zero supply", "sold", "sold++", "3x stock"],
 		name: "supply",
 		wait: []
 	}
@@ -375,6 +603,7 @@ function preference(policies){
 		var policyChoice = 0;
 		if(savedPolicies.indexOf(policies[i]) >= 0){
 			policyChoice = savedPolicyChoices[savedPolicies.indexOf(policies[i])];
+			policyChoice = policyJSON[policies[i]].order.indexOf(policyJSON[policies[i]].save[policyChoice]);
 		}
 		
 		var htmlstring = "<select class=XioPolicy id="+policies[i]+">";
@@ -432,12 +661,6 @@ function XioMaintenance(){
 		GM_deleteValue(GM_listValues()[0]);
 	} */
 	
-	//general collection
-	
-	
-	
-	
-	//specific collection and execution
 	var savedPolicyStrings = [];
 	var subids = GM_listValues();
 	var policy;
@@ -478,14 +701,19 @@ function XioScript(){
 		});
     }
 	
-	//Price/Sale page
+	//Production and Warehouse Price/Sale page
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(document.URL)){
 		preference(["pc", "pl"]);
 	}
 	
-	//Supply page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL)){
+	//Production and Service Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL) && $(".add_contract").length === 0 && $("[name=productCategory]").length === 0){
 		preference(["sp"]);
+	}
+	
+	//Store Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL) && $(".add_contract").length === 0){
+		preference(["ss"]);
 	}
 	
 }
