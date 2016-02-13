@@ -986,7 +986,6 @@ function technology(type, subid, choice){
 		if(choice === 1){
 			
 			for(var i = mapped[url].price.length - 1; i >= 0; i--){
-				console.log(i, mapped[url].price[i]);
 				if(mapped[url].price[i] === "$0.00") break;
 			}
 			
