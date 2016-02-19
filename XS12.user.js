@@ -2,7 +2,7 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.4
+// @version        12.0.5
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
@@ -30,6 +30,8 @@ var mapped = {};
 var xcount = {};
 var typedone = [];
 var xwait = [];
+var xsupplier = [];
+var firesupplier = false;
 var servercount = 0;
 var processingtime = 0;
 
@@ -103,21 +105,22 @@ function map(html, url, page){
 	}
 	else if(page === "main"){
 		mapped[url] = {
-			employees: numberfy($html.find(".unit_box:has(.fa-users) tr:eq(0) td:eq(1)").text()),
-			salaryNow: numberfy($html.find(".unit_box:has(.fa-users) tr:eq(2) td:eq(1)").text()),
-			salaryCity: numberfy($html.find(".unit_box:has(.fa-users) tr:eq(3) td:eq(1)").text()),
-		    skillNow: numberfy($html.find(".unit_box:has(.fa-users) tr:eq(4) td:eq(1)").text()),
-			skillReq: numberfy($html.find(".unit_box:has(.fa-users) tr:eq(5) td:eq(1)").text()),
-			equipNum: numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(0) td:eq(1)").text()),
-			equipMax: numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(1) td:eq(1)").text()),
-			equipQual: numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(2) td:eq(1)").text()),
-			equipReq: numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(3) td:eq(1)").text()),
-			equipWearBlack: numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(4) td:eq(1)").text().split("(")[1]),
-			equipWearRed: $html.find(".unit_box:has(.fa-cogs) tr:eq(4) td:eq(1) span").length === 1,
-			manager: $html.find(".unit_box:has(.fa-user) tr:eq(0) td:eq(1)").text(),
-			qual: numberfy($html.find(".unit_box:has(.fa-user) tr:eq(1) td:eq(1)").text()),
-			maxEmployees: numberfy($html.find(".unit_box:has(.fa-user) tr:eq(2) td:eq(1)").text()),
-			img: $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0]
+			employees : numberfy($html.find(".unit_box:has(.fa-users) tr:eq(0) td:eq(1)").text()),
+			salaryNow : numberfy($html.find(".unit_box:has(.fa-users) tr:eq(2) td:eq(1)").text()),
+			salaryCity : numberfy($html.find(".unit_box:has(.fa-users) tr:eq(3) td:eq(1)").text()),
+		    skillNow : numberfy($html.find(".unit_box:has(.fa-users) tr:eq(4) td:eq(1)").text()),
+			skillReq : numberfy($html.find(".unit_box:has(.fa-users) tr:eq(5) td:eq(1)").text()),
+			equipNum : numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(0) td:eq(1)").text()),
+			equipMax : numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(1) td:eq(1)").text()),
+			equipQual : numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(2) td:eq(1)").text()),
+			equipReq : numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(3) td:eq(1)").text()),
+			equipWearBlack : numberfy($html.find(".unit_box:has(.fa-cogs) tr:eq(4) td:eq(1)").text().split("(")[1]),
+			equipWearRed : $html.find(".unit_box:has(.fa-cogs) tr:eq(4) td:eq(1) span").length === 1,
+			manager : $html.find(".unit_box:has(.fa-user) tr:eq(0) td:eq(1)").text(),
+			qual : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(1) td:eq(1)").text()),
+			maxEmployees : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(2) td:eq(1)").text()),
+			img : $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0],
+			hasService : !$html.find("[src='/img/artefact/icons/color/production.gif']").length
 		}
 	}
 	else if(page === "salary"){
@@ -161,7 +164,47 @@ function map(html, url, page){
 	else if(page === "tech"){
 		mapped[url] = {
 			price : $html.find("tr td.nowrap:nth-child(2)").map(function(){ return $(this).text().trim(); }).get(),
-			tech : $html.find("tr:has([src='/img/v.gif'])").index()
+			tech : $html.find("tr:has([src='/img/v.gif'])").index(),
+			img: $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0]
+		}
+	}	
+	else if(page === "products"){
+		mapped[url] = {
+			name : $html.find(".list td:nth-child(2n):has(a)").map(function(){ return $(this).text(); }).get(),
+			id : $html.find(".list td:nth-child(2n) a:nth-child(1)").map(function(){ return numberfy($(this).attr("href").match(/\d+/)[0]); }).get()
+		}
+	}
+	else if(page === "waresupply"){
+		mapped[url] = {			
+			form : $html.find("[name=supplyContractForm]"),
+			contract : $html.find(".p_title").map(function(){ return $(this).find("a:eq(1)").attr("href"); }).get(),
+			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
+			product : $html.find("tr:has(input:text[name])").map(function(){ return $(this).prevAll(".p_title:first").find("strong:eq(0)").text(); }).get(),
+			price : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			quality : $html.find("tr:has(input) td:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
+			offer : $html.find("tr input:checkbox").map(function(){ return numberfy($(this).val()); }).get(),
+			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
+			stock : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-3)").text()); }).get(),			
+			shipments : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-1)").text()); }).get(),
+			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().trim() === "Unlim."? 1000000000 : numberfy($(this).text().match(/(\d| )+/)[0]); }).get()			
+		}
+	}	
+	else if(page === "contract"){
+		mapped[url] = {
+			available : $html.find(".price_w_tooltip:nth-child(4)").map(function(){ $(this).find("i").remove(); return  numberfy($(this).text()); }).get(),
+			offer : $html.find(".unit-list-2014 tr[id]").map(function(){ return numberfy($(this).attr("id").match(/\d+/)[0]); }).get(),
+			price : $html.find(".price_w_tooltip:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
+			quality : $html.find("td:nth-child(7)").map(function(){ return numberfy($(this).text()); }).get(),
+			tm : $html.find(".unit-list-2014 td:nth-child(1)").map(function(){ return $(this).find("img").length ? $(this).find("img").attr("title") : ""; }).get(),
+			product : $html.find("img:eq(0)").attr("title")
+		}
+	}
+	else if(page === "research"){
+		mapped[url] = {
+			isFree : !$html.find(".cancel").length,
+			unittype : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split(",")[1]),
+			industry : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split("(")[1]),
+			level : numberfy($html.find(".list tr td[style]:eq(0)").text())
 		}
 	}
 }
@@ -170,7 +213,9 @@ function xGet(url, page, callback){
 		
 	if($.inArray(url, getUrls) === -1){
 				
-		getUrls.push(url);
+		if(page !== "forget"){
+			getUrls.push(url);			
+		}
 		
 		$.ajax({
 			url: url,				
@@ -966,7 +1011,35 @@ function equipment(type, subid, choice){
 				}							
 			}
 			mapped[urlSalary].skillNow = calcEquip(mapped[url].qualNow);
-		}		
+		}	
+		else if(choice === 3 && equipWear !== 0){
+						
+			while(equipWear > 0){
+							
+				var id = -1;
+				for(var i = 0; i < mapped[url].offer.length; i++){
+					if(mapped[url].qualOffer[i] === 2.00 && mapped[url].available[i]){
+						id = i;
+						break;
+					}
+				}
+				
+				if(id === -1){
+					console.log("No equipment on the market with a quality of 2.00. Could not repair subdivision "+subid);
+					xTypeDone(type);
+					return false;
+				}
+							
+				var tobuy = Math.min(equipWear, mapped[url].available[id]);
+				mapped[url].available[id] -= tobuy;
+				equipWear -= tobuy;
+				
+				mapped[url].qualNow = ((mapped[url].equipNum - tobuy) * mapped[url].qualNow + tobuy * 2.00) / mapped[url].equipNum;				
+				equipContract("repair", tobuy, mapped[url].offer[i]);
+				
+			}
+			
+		}
 		else{
 			xTypeDone(type);
 		}
@@ -975,9 +1048,14 @@ function equipment(type, subid, choice){
 
 function technology(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/technology";
-		
+	var urlManager = "/"+realm+"/main/user/privat/persondata/knowledge";
+
+	var getcount = 2;
 	xGet(url, "tech", function(){
-		post();
+		!--getcount && post();
+	});
+	xGet(urlManager, "manager", function(){
+		!--getcount && post();
 	});
 	
 	function post(){
@@ -985,8 +1063,12 @@ function technology(type, subid, choice){
 			
 		if(choice === 1){
 			
+			var managerIndex = subType[mapped[url].img][2];
+			var managerQual = mapped[urlManager].base[managerIndex] + mapped[urlManager].bonus[managerIndex];
+			var techLevel = calcTechLevel(managerQual);
+			
 			for(var i = mapped[url].price.length - 1; i >= 0; i--){
-				if(mapped[url].price[i] === "$0.00") break;
+				if(mapped[url].price[i] === "$0.00" && (i+1) <= techLevel) break;
 			}
 			
 			if((i+1) !== mapped[url].tech){
@@ -994,7 +1076,7 @@ function technology(type, subid, choice){
 				mapped[url].tech = i+1;
 			}
 			
-		}		
+		}	
 
 		if(change){
 			xPost(url, "level="+mapped[url].tech+"&impelentit=Buy+a+technology", function(){
@@ -1009,12 +1091,274 @@ function technology(type, subid, choice){
 	
 }
 
+function prodBooster(type, subid, choice){
+	
+	var url = "/"+realm+"/main/unit/view/"+subid;
+	
+	xGet(url, "main", function(){
+		post();
+	});
+	
+	function post(){
+		var change = false;
+			
+		if(choice === 1 && !mapped[url].hasService){
+			change = true;				
+		}	
+
+		if(change){
+			xPost("/"+realm+"/ajax/unit/artefact/attach/", "?unit_id="+subid+"&artefact_id=300804&slot_id=300139", function(){
+				xTypeDone(type);
+			});
+		}
+		else{
+			xTypeDone(type);			
+		}
+	}
+	
+	
+	
+}
+
+function research1(type, subid, choice){
+	var url = "/"+realm+"/main/unit/view/"+subid+"/investigation";
+
+	xGet(url, "research", function(){
+		
+		if(choice === 1 && mapped[url].isFree){
+			var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
+			console.log(data);
+			xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
+				xTypeDone(type);
+			});
+		}
+		else{
+			xTypeDone(type);
+		}
+		
+		
+	});
+}
+
+function wareSupply(type, subid, choice){
+	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
+	var getcount = 0;
+	
+	getcount++;
+	xGet(url, "waresupply", function(){
+		!--getcount && post();
+	});
+	
+	if(choice >= 5){
+		getcount += 3;
+		xGet("/"+realm+"/window/common/util/setpaging/dbwarehouse/supplyList/40000", "none", function(){
+			!--getcount && post();
+		});
+		var data = "total_price%5Bfrom%5D=&total_price%5Bto%5D=&quality%5Bfrom%5D=&quality%5Bto%5D=&quantity%5Bfrom%5D=&free_for_buy%5Bfrom%5D=1&brand_value%5Bfrom%5D=&brand_value%5Bto%5D=";
+		xPost("/"+realm+"/window/common/util/setfiltering/dbwarehouse/supplyList", data, function(){
+			!--getcount && post();
+		});
+		xGet("/"+realm+"/window/common/util/setfiltering/dbwarehouse/supplyList/supplierType=all/tm=all", "none", function(){
+			!--getcount && post();
+		});
+
+	}
+	
+	function post(){
+
+		var change = false;
+			
+		if(choice === 1 || choice === 4){
+			for(var i = 0; i < mapped[url].parcel.length; i++){
+				if(choice === 1 && mapped[url].parcel[i] !== 0){
+					change = true;
+					mapped[url].parcel[i] = 0;
+					mapped[url].form.find("input:text[name]").eq(i).val(0);			
+				}		
+				else if(choice === 4 && mapped[url].parcel[i] !== 1000000000){
+					change = true;
+					mapped[url].parcel[i] = 1000000000;
+					mapped[url].form.find("input:text[name]").eq(i).val(1000000000);			
+				}				
+			};
+		}
+
+		if(choice === 2 || choice === 3){
+			var j = 0;
+			var supplier = [];
+			var set = 0;
+			var toset = 0;
+			for(var i = 0; i < mapped[url].type.length; i++){
+				if(choice === 2){
+					set = mapped[url].shipments[i];
+				}
+				else if(choice === 3){
+					set = Math.min(2 * mapped[url].shipments[i], Math.max(3 * mapped[url].shipments[i] - mapped[url].stock[i], 0));					
+				}
+				supplier = [];
+				while(mapped[url].type[i] === mapped[url].product[j]){
+					supplier.push({
+						available : mapped[url].available[j],
+						PQR : mapped[url].price[j] / mapped[url].quality[j],
+						index : j
+					});
+					j++;
+				}
+				
+				supplier.sort(function(a, b) {
+					return a.PQR - b.PQR;
+				});
+				
+				for(var k = 0; k < supplier.length; k++){
+					toset = Math.min(set, supplier[k].available);
+					set -= toset;
+					if(mapped[url].parcel[supplier[k].index] !== toset){
+						change = true;
+						mapped[url].form.find("input:text[name]").eq(supplier[k].index).val(toset);
+					}		
+				}
+				
+				if(set > 0){
+					console.log("Not enough suppliers for product "+mapped[url].type[i]+" in warehouse "+subid);
+				}
+			};
+		}
+
+		if(change){
+			mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
+			xPost(url, mapped[url].form.serialize(), function(){
+				xTypeDone(type);
+			});
+		}
+		else if(choice <= 4){
+			xTypeDone(type);
+		}	
+		
+		if(choice >= 5){
+			
+			function checkFinish(){	
+				if(!supcount && change){								
+					mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
+					xPost(url, mapped[url].form.serialize(), function(){
+						xTypeDone(type);
+					});
+				}								
+				else if(!supcount){
+					xTypeDone(type);
+				}
+			}
+			
+			var supcount = mapped[url].type.length;	
+			var j = 0;			
+			for(var i = 0; i < mapped[url].type.length; i++){
+								
+				var urlContract = mapped[url].contract[i];
+				var set;
+				if(choice === 5){
+					set = mapped[url].shipments[i];
+				}
+				else if(choice === 6){
+					set = Math.min(2 * mapped[url].shipments[i], Math.max(3 * mapped[url].shipments[i] - mapped[url].stock[i], 0));					
+				}
+				set = Math.max(set, 1);
+				
+				var supplier = [];
+				while(mapped[url].type[i] === mapped[url].product[j]){
+					supplier.push({
+						available : mapped[url].available[j],
+						PQR : mapped[url].price[j] / mapped[url].quality[j],
+						offer : mapped[url].offer[j],
+						index : j
+					});
+					j++;					
+				}				
+
+				var product = mapped[url].type[i];
+
+				xsupplier.push(
+					(function(product, urlContract, set, supplier){
+						xGet(urlContract, "contract", function(){
+														
+							var offers = supplier.map(function(contract){
+								return contract.offer;
+							});
+							
+							for(var k = 0; k < mapped[urlContract].offer.length; k++){
+								if(offers.indexOf(mapped[urlContract].offer[k]) === -1 && (mapped[urlContract].tm[k] === product || mapped[urlContract].product === product)){
+									supplier.push({
+										available : mapped[urlContract].available[k],
+										PQR : mapped[urlContract].price[k] / mapped[urlContract].quality[k],
+										offer : mapped[urlContract].offer[k],
+										row : k
+									});									
+								}
+							}
+							
+							supplier.sort(function(a, b) {
+								return a.PQR - b.PQR;
+							});		
+							
+							for(var k = 0; k < supplier.length; k++){
+								var toset = Math.min(set, supplier[k].available);
+								set -= toset;
+								if(supplier[k].index >= 0 && toset >= 0 && mapped[url].parcel[supplier[k].index] !== toset){
+									change = true;
+									mapped[url].form.find("input:text[name]").eq(supplier[k].index).val(toset);
+								}	
+								else if(supplier[k].row >= 0 && toset > 0){
+									supcount++;
+									xContract("/"+realm+"/ajax/unit/supply/create", {
+									'offer'  		  : supplier[k].offer,
+									'unit'  		  : subid,
+									'amount'		  : toset					
+									}, function(){
+										supcount--;
+										checkFinish();
+									});
+									mapped[urlContract].available[supplier[k].row] -= toset;								
+								}
+								else if(supplier[k].index >= 0 && toset === 0){
+									supcount++;
+									xPost(url, "contractDestroy=1&supplyContractData%5Bselected%5D%5B%5D="+supplier[k].offer, function(){
+										supcount--;
+										checkFinish();
+									})
+								}
+							}
+							
+							if(set > 0){
+								console.log("Not enough suppliers for product "+product+" in warehouse "+subid);
+							}	
+							
+							supcount--;
+							if(xsupplier.length){
+								xsupplier.shift()();
+							}
+							else{
+								firesupplier = false;
+							}	
+							
+							checkFinish();
+						});
+					}.bind(this, product, urlContract, set, supplier))
+				);
+			}
+
+			if(!firesupplier){
+				firesupplier = true;
+				xsupplier.shift()();
+			}
+		}
+	}
+	
+}
+
 var policyJSON = {
 	pc: {
 		func: salePrice, 
 		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax"], 
 		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", ],
-		name: "price",
+		name: "production price",
 		wait: []
 	},
 	pl: {
@@ -1028,22 +1372,29 @@ var policyJSON = {
 		func: prodSupply, 
 		save: ["don't change supply", "zero supply", "required", "3x stock"], 
 		order: ["don't change supply", "zero supply", "required", "3x stock"],
-		name: "supply",
+		name: "production supply",
 		wait: []
 	},
 	ss: {
 		func: storeSupply, 
 		save: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"], 
 		order: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"],
-		name: "supply",
+		name: "retail supply",
 		wait: []
+	},	
+	sw: {
+		func: wareSupply,
+		save: ["don't change supply", "zero supply", "required", "2x stock", "maximum supply", "required (world)", "2x stock (world)"], 
+		order: ["don't change supply", "zero supply", "required", "required (world)", "2x stock", "2x stock (world)", "maximum supply"],
+		name: "warehouse supply",
+		wait: ["production supply", "policy", "retail supply", "production price"]
 	},
 	es: {
 		func: salary, 
 		save: ["don't change salary", "required salary", "target salary", "maximum salary"], 
 		order: ["don't change salary", "required salary", "target salary", "maximum salary"],
 		name: "salary",
-		wait: ["equip"]
+		wait: ["equipment"]
 	},
 	et: {
 		func: training, 
@@ -1054,16 +1405,30 @@ var policyJSON = {
 	},
 	qp: {
 		func: equipment, 
-		save: ["don't change equipment", "required equipment", "maximal equipment"], 
-		order: ["don't change equipment", "required equipment", "maximal equipment"],
-		name: "equip",
-		wait: ["tech"]
+		save: ["don't change equipment", "required equipment", "maximal equipment", "Q2.00 equipment"], 
+		order: ["don't change equipment", "Q2.00 equipment", "required equipment", "maximal equipment"],
+		name: "equipment",
+		wait: ["technology", "research"]
 	},
 	tc: {
 		func: technology,
 		save: ["don't change technology", "introduce researched"],
 		order: ["don't change technology", "introduce researched"],
-		name: "tech",
+		name: "technology",
+		wait: []
+	},	
+	pb: {
+		func: prodBooster,
+		save: ["don't buy solar panels", "always buy solar panels"],
+		order: ["don't buy solar panels", "always buy solar panels"],
+		name: "booster",
+		wait: []
+	},
+	r1: {
+		func: research1,
+		save: ["don't start new project", "last researched"],
+		order: ["don't start new project", "last researched"],
+		name: "research",
 		wait: []
 	}
 };
@@ -1304,6 +1669,11 @@ function XioScript(){
 		preference(["ss"]);
 	}
 	
+	//Warehouse Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL)){
+		preference(["sw"]);
+	}
+	
 	//Main unit page: Salary and Equipment
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 && $(".fa-cogs").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1 && $("[href*='/window/unit/equipment/']").length === 1)){
 		preference(["es", "et", "qp"]);
@@ -1319,6 +1689,11 @@ function XioScript(){
 	//Technology page
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/technology$").test(document.URL)){
 		preference(["tc"]);
+	}
+	
+	//Research page
+	else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/investigation$").test(document.URL)){
+		preference(["r1"]);
 	}
 	
 }
