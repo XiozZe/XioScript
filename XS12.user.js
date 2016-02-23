@@ -8,6 +8,7 @@
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
+var version = "12.0.6";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -1549,7 +1550,7 @@ function XioMaintenance(){
 	servercount = 0;
 	suppliercount = 0;
 	
-	var tablestring = "<div style='font-size: 24px; color:gold; margin-bottom: 5px;'>XS 12 Maintenance Log</div>"
+	var tablestring = "<div style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
 		+"<table id=XMtable style='font-size: 18px; color:gold; border-spacing: 10px 0;'>";
 	
 	var subids = [];
@@ -1844,8 +1845,9 @@ function XioScript(){
 	//Unit list
 	
     if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(\/?)$").test(document.URL)){
-        $("#topblock").append("<input type=button id=XM value=XioMaintenance>")
-					  .append("<input type=button id=XO value=XioOverview>");		
+        $("#topblock").append("<div style='font-size: 24px; color:gold; margin-bottom: 5px;'>XioScript "+version+"</div>"
+							 +"<input type=button id=XM value=XioMaintenance>"
+							 +"<input type=button id=XO value=XioOverview>");		
 						  
 		$("#XM").click(function(){
 			XioMaintenance();
