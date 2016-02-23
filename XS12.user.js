@@ -2,11 +2,12 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.5
+// @version        12.0.6
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
+
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -28,11 +29,13 @@ var finUrls = [];
 var xcallback = [];
 var mapped = {};
 var xcount = {};
+var xmax = {};
 var typedone = [];
 var xwait = [];
 var xsupplier = [];
 var firesupplier = false;
 var servercount = 0;
+var suppliercount = 0;
 var processingtime = 0;
 
 function numberfy(variable){
@@ -222,14 +225,18 @@ function xGet(url, page, callback){
 			type: "GET",
 
 			success: function(html, status, xhr){
-				servercount++;
+				time();
+				servercount++;			
+				$("#XioServerCalls").text(servercount);
 				map(html, url, page);
 				callback();
 				xDone(url);
 			},
 
 			error: function(){
+				time();
 				servercount++;
+				$("#XioServerCalls").text(servercount);
 				//Resend ajax
 				setTimeout(function(){
 					$.ajax(this);
@@ -255,12 +262,16 @@ function xPost(url, form, callback){
 		type: "POST",
 
 		success: function(html, status, xhr){
+			time();
 			servercount++;
+			$("#XioServerCalls").text(servercount);
 			callback();			
 		},
 
 		error: function(){
-			servercount++;
+			time();
+			servercount++;			
+			$("#XioServerCalls").text(servercount);
 			//Resend ajax
 			setTimeout(function(){
 				$.ajax(this);
@@ -279,12 +290,16 @@ function xContract(url, data, callback){
 		dataType: "JSON",
 
 		success: function(html, status, xhr){
-			servercount++;
+			time();
+			servercount++;			
+			$("#XioServerCalls").text(servercount);
 			callback();			
 		},
 
 		error: function(){
+			time();
 			servercount++;
+			$("#XioServerCalls").text(servercount);
 			//Resend ajax
 			setTimeout(function(){
 				$.ajax(this);
@@ -297,10 +312,12 @@ function xContract(url, data, callback){
 function xTypeDone(type){	
 	
 	xcount[type]--;
-	if(xcount[type]){
+	$("[id='x"+type+"']").text(xmax[type] - xcount[type]);
+	if(xcount[type]){		
 		console.log(xcount[type]+" subdivisions with "+type+" functions to do left");
 	}
 	else{
+		$("[id='x"+type+"done']").text("Done!");
 		console.log(type+" functions completed!");
 		typedone.push(type);
 		for(var i = 0; i < xwait.length; i++){
@@ -322,8 +339,9 @@ function xTypeDone(type){
 		sum += xcount[i];
 	
 	if(sum === 0){
+		$("#xDone").text("All Done!");
 		console.log("All Done!");
-		console.log("Total server calls made: "+servercount);
+		console.log("Total server calls made: "+servercount);		
 		console.log("Total time needed: "+((new Date().getTime()-processingtime)/1000)+" seconds");
 		console.log(mapped);
 		$("#XM").attr("disabled", false);
@@ -1127,7 +1145,6 @@ function research1(type, subid, choice){
 		
 		if(choice === 1 && mapped[url].isFree){
 			var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
-			console.log(data);
 			xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
 				xTypeDone(type);
 			});
@@ -1301,7 +1318,7 @@ function wareSupply(type, subid, choice){
 							for(var k = 0; k < supplier.length; k++){
 								var toset = Math.min(set, supplier[k].available);
 								set -= toset;
-								if(supplier[k].index >= 0 && toset >= 0 && mapped[url].parcel[supplier[k].index] !== toset){
+								if(supplier[k].index >= 0 && toset > 0 && mapped[url].parcel[supplier[k].index] !== toset){
 									change = true;
 									mapped[url].form.find("input:text[name]").eq(supplier[k].index).val(toset);
 								}	
@@ -1322,6 +1339,8 @@ function wareSupply(type, subid, choice){
 									xPost(url, "contractDestroy=1&supplyContractData%5Bselected%5D%5B%5D="+supplier[k].offer, function(){
 										supcount--;
 										checkFinish();
+										suppliercount++;
+										$("#XioSuppliers").text(suppliercount);
 									})
 								}
 							}
@@ -1358,77 +1377,88 @@ var policyJSON = {
 		func: salePrice, 
 		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax"], 
 		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", ],
-		name: "production price",
+		name: "Production price",
+		group: "Price",
 		wait: []
 	},
 	pl: {
 		func: salePolicy, 
 		save: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"], 
 		order: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"],
-		name: "policy",
+		name: "Policy",
+		group: "Policy",
 		wait: []
 	},
 	sp: {
 		func: prodSupply, 
 		save: ["don't change supply", "zero supply", "required", "3x stock"], 
 		order: ["don't change supply", "zero supply", "required", "3x stock"],
-		name: "production supply",
+		name: "Production supply",
+		group: "Supply",
 		wait: []
 	},
 	ss: {
 		func: storeSupply, 
 		save: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"], 
 		order: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"],
-		name: "retail supply",
+		name: "Retail supply",
+		group: "Supply",
 		wait: []
 	},	
 	sw: {
 		func: wareSupply,
 		save: ["don't change supply", "zero supply", "required", "2x stock", "maximum supply", "required (world)", "2x stock (world)"], 
 		order: ["don't change supply", "zero supply", "required", "required (world)", "2x stock", "2x stock (world)", "maximum supply"],
-		name: "warehouse supply",
-		wait: ["production supply", "policy", "retail supply", "production price"]
+		name: "Warehouse supply",
+		group: "Supply",
+		wait: ["Production supply", "Policy", "Retail supply", "Production price"]
 	},
 	es: {
 		func: salary, 
 		save: ["don't change salary", "required salary", "target salary", "maximum salary"], 
 		order: ["don't change salary", "required salary", "target salary", "maximum salary"],
-		name: "salary",
-		wait: ["equipment"]
+		name: "Salary",
+		group: "Salary",
+		wait: ["Equipment"]
 	},
 	et: {
 		func: training, 
 		save: ["don't train", "always train", "train city salary"], 
 		order: ["don't train", "always train", "train city salary"],
-		name: "training",
-		wait: ["salary"]
+		name: "Training",
+		group: "Training",
+		wait: ["Salary"]
 	},
 	qp: {
 		func: equipment, 
 		save: ["don't change equipment", "required equipment", "maximal equipment", "Q2.00 equipment"], 
 		order: ["don't change equipment", "Q2.00 equipment", "required equipment", "maximal equipment"],
-		name: "equipment",
-		wait: ["technology", "research"]
+		name: "Equipment",
+		group: "Equipment",
+		wait: ["Technology", "Research"]
 	},
 	tc: {
 		func: technology,
 		save: ["don't change technology", "introduce researched"],
 		order: ["don't change technology", "introduce researched"],
-		name: "technology",
+		name: "Technology",
+		group: "Technology",
 		wait: []
 	},	
 	pb: {
 		func: prodBooster,
 		save: ["don't buy solar panels", "always buy solar panels"],
 		order: ["don't buy solar panels", "always buy solar panels"],
-		name: "booster",
+		name: "Booster",
+		group: "Booster",
 		wait: []
 	},
 	r1: {
 		func: research1,
 		save: ["don't start new project", "last researched"],
 		order: ["don't start new project", "last researched"],
-		name: "research",
+		name: "Research",
+		group: "Research",
 		wait: []
 	}
 };
@@ -1436,7 +1466,7 @@ var policyJSON = {
 function preference(policies){
 	//manage preference options
 	
-	var subid = parseFloat(document.URL.match(/(view\/?)\d+/)[0].split("/")[1]);	
+	var subid = numberfy(document.URL.match(/(view\/?)\d+/)[0].split("/")[1]);	
 			
 	var savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];
 	var savedPolicies = [];
@@ -1444,7 +1474,7 @@ function preference(policies){
 	var $topblock = $("#topblock");
 	for(var i = 0; i < savedPolicyStrings.length; i++){		
 		savedPolicies[i] = savedPolicyStrings[i].substring(0, 2);
-		savedPolicyChoices[i] = parseFloat(savedPolicyStrings[i].substring(2));		
+		savedPolicyChoices[i] = numberfy(savedPolicyStrings[i].substring(2));		
 	}	
 	
 	for(var i = 0; i < policies.length; i++){
@@ -1489,23 +1519,38 @@ function preference(policies){
 		};
 		
 		ls["x"+subid] = newPolicyString.substring(1);
+	}).each(function(){
+		$(this).trigger("change");
 	});
 	
+}
+
+function time(){	
+	var time = new Date().getTime();
+	var minutes = (time-processingtime)/1000/60;
+	$("#XioMinutes").text(Math.floor(minutes));
+	$("#XioSeconds").text(Math.round((minutes - Math.floor(minutes))*60));	
 }
 
 function XioMaintenance(){
 	
 	console.log("XM!");
+	processingtime = new Date().getTime();
 	
-	$("#XM").attr("disabled", true)
+	$("#XM").attr("disabled", true);	
+	$("#XMtable").remove();
 	
 	getUrls = [];
 	finUrls = [];
 	xcallback = [];
 	xcount = {};
+	xmax = {};
 	mapped = {};
 	servercount = 0;
-	processingtime = new Date().getTime();
+	suppliercount = 0;
+	
+	var tablestring = "<div style='font-size: 24px; color:gold; margin-bottom: 5px;'>XS 12 Maintenance Log</div>"
+		+"<table id=XMtable style='font-size: 18px; color:gold; border-spacing: 10px 0;'>";
 	
 	var subids = [];
 	for(var key in ls){
@@ -1515,21 +1560,21 @@ function XioMaintenance(){
 	}
 	
 	var startedPolicies = [];
-	var savedPolicyStrings = [];
-	var policy, choice;
 	for(var i = 0; i < subids.length; i++){		 
-		savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
+		var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
 		for(var j = 0; j < savedPolicyStrings.length; j++){	
-			policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
-			choice = parseFloat(savedPolicyStrings[j].substring(2));
+			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
+			var choice = parseFloat(savedPolicyStrings[j].substring(2));
 			if(!choice){
 				continue;
 			}
 			
 			if(startedPolicies.indexOf(policy.name) === -1){
 				startedPolicies.push(policy.name);
+				
 			}
 			
+			xmax[policy.name] = ++xmax[policy.name] || 1;
 			xcount[policy.name] = ++xcount[policy.name] || 1;
 			
 			if(policy.wait.length === 0){
@@ -1551,11 +1596,120 @@ function XioMaintenance(){
 	var type;
 	for(var key in policyJSON){
 		type = policyJSON[key].name;
-		if(startedPolicies.indexOf(type) === -1){
+		if(startedPolicies.indexOf(type) >= 0){
+			tablestring += "<tr><td>"+type+"</td><td id='x"+type+"'>0</td><td>of</td><td>"+xmax[type]+"</td><td id='x"+type+"done' style='color: lightgoldenrodyellow'></td></tr>";
+		}
+		else{
 			xcount[type] = 1;
 			xTypeDone(type);
+		}		
+	}
+	
+	tablestring += 	"<tr>"
+						+"<td>New suppliers: </td>"
+						+"<td id=XioSuppliers>0</td>"
+					+"</tr>"
+					+"<tr>"
+						+"<td>Total server calls: </td>"
+						+"<td id=XioServerCalls>0</td>"
+					+"</tr>"
+					+"<tr>"
+						+"<td>Time: </td>"
+						+"<td id=XioMinutes>0</td>"
+						+"<td>min</td>"
+						+"<td id=XioSeconds>0</td>"
+						+"<td>sec</td>"
+					+"</tr>"
+					+"<tr>"
+						+"<td id=xDone colspan=4 style='color: lightgoldenrodyellow'>"
+						+"</td>"
+					+"</tr>"
+				+"</table>";
+				
+	$("#topblock").append(tablestring);	
+	
+}
+
+function XioOverview(){
+		
+	$(".unit-list-2014 td:not(:nth-child(3)):not(:nth-child(8)), .unit-list-2014 th:not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
+	
+	$("#wrapper").width("auto");
+	$("#mainContent").width("100%");
+	
+	var policyString = [];
+	var groupString = [];
+	var thstring = "";
+	var tdstring = "";
+	for(var key in policyJSON){			
+		if(groupString.indexOf(policyJSON[key].group) === -1){
+			groupString.push(policyJSON[key].group);
+			policyString.push([policyJSON[key].name]);				
+			thstring += "<th class=XioOpen>"+policyJSON[key].group+"</th>";
+			tdstring += "<td class=XioOpen></td>";
+		}
+		else{
+			policyString[groupString.indexOf(policyJSON[key].group)].push(policyJSON[key].name);
+		}			
+	}			
+	$(".unit-list-2014 th:nth-child(7)").after(thstring);
+	$td = $(".unit-list-2014 td:nth-child(8)");
+	for(var i = 0; i < $td.length; i++){
+		$td.eq(i).after(tdstring);
+	}
+	
+	var subids = $(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get();		
+	for(var i = 0; i < subids.length; i++){			
+		
+		var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
+		for(var j = 0; j < savedPolicyStrings.length; j++){	
+			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)];
+			var choice = numberfy(savedPolicyStrings[j].substring(2));			
+			var policyChoice = policy.order.indexOf(policy.save[choice]);
+							
+			var htmlstring = "<select data-id="+subids[i]+" data-name="+savedPolicyStrings[j].substring(0, 2)+" class=XioChoice>";
+			for(var k = 0; k < policy.order.length; k++){
+				htmlstring += "<option>"+policy.order[k]+"</option>";
+			}
+			$(".unit-list-2014 tr").eq(i+1)
+								   .find("td").eq(groupString.indexOf(policy.group)+8)
+								   .html(htmlstring + "</select>")
+								   .find("option").eq(policyChoice)
+								   .attr("selected", true);	
+		}	
+	}
+	
+	var j = 0;
+	for(var i = 0; i < policyString.length; i++){
+		if($(".unit-list-2014 td:nth-child("+(9+i-j)+")").text() === ""){
+			$(".unit-list-2014 th:nth-child("+(8+i-j)+"), .unit-list-2014 td:nth-child("+(9+i-j)+")").remove();
+			j++;
 		}
 	}
+	
+	$(".XioChoice").change(function(){	
+	
+		var thisid = $(this).attr("data-name");
+		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
+		var subid = $(this).attr("data-id");
+		
+		savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
+		savedPolicies = [];
+		savedPolicyChoices = [];
+		for(var i = 0; i < savedPolicyStrings.length; i++){		
+			savedPolicies[i] = savedPolicyStrings[i].substring(0, 2);
+			savedPolicyChoices[i] = parseFloat(savedPolicyStrings[i].substring(2));		
+		}
+		
+		savedPolicyChoices[savedPolicies.indexOf(thisid)] = thisindex;
+		
+		newPolicyString = "";
+		for(var i = 0; i < savedPolicies.length; i++){
+			newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
+		};
+		
+		ls["x"+subid] = newPolicyString.substring(1);
+	});		
 	
 }
 
@@ -1589,7 +1743,7 @@ function calcAllEmployees(factor, manager){
 	return Math.floor(25 * factor * manager * (manager + 3)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-function topManagerStats(hasEquip){
+function topManagerStats(){
 	var url = "/"+realm+"/main/user/privat/persondata/knowledge";
 	var here = "here";
 	
@@ -1605,38 +1759,79 @@ function topManagerStats(hasEquip){
 			var factor1 = subType[mapped[here].img][0];
 			var factor3 = subType[mapped[here].img][1];			
 			
-			managerIndex = mapped[url].name.indexOf(mapped[here].manager)
-			managerBase = mapped[url].base[managerIndex];
-			managerTotal = mapped[here].qual;
+			var managerIndex = mapped[url].name.indexOf(mapped[here].manager);
+			
+			if(managerIndex >= 0){
+				managerBase = mapped[url].base[managerIndex];
+				managerTotal = mapped[here].qual;
 				
-			$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(4)").after( ""
-				+"<tr style='color: indigo'><td>Target qualification based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerBase)+"</td></tr>"
-				+"<tr style='color: crimson'><td>Maximum qualfication based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerTotal)+"</td></tr>"
-			);
+				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(4)").after( ""
+					+"<tr style='color: indigo'><td>Target qualification based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerBase)+"</td></tr>"
+					+"<tr style='color: crimson'><td>Maximum qualfication based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerTotal)+"</td></tr>"
+				);
+				
+				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(1)").after( ""
+					+"<tr style='color: indigo'><td>Target number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerBase)+"</td></tr>"
+					+"<tr style='color: crimson'><td>Maximum number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerTotal)+"</td></tr>"
+				);
+				
+				$(".unit_box:has(.fa-user) tr:not(:has([colspan])):eq(2)").after( ""
+					+"<tr style='color: indigo'><td>Target number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerBase)+"</td></tr>"
+					+"<tr style='color: crimson'><td>Maximum number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerTotal)+"</td></tr>"
+				);	
 			
-			$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(1)").after( ""
-				+"<tr style='color: indigo'><td>Target number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerBase)+"</td></tr>"
-				+"<tr style='color: crimson'><td>Maximum number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerTotal)+"</td></tr>"
-			);
-			
-			$(".unit_box:has(.fa-user) tr:not(:has([colspan])):eq(2)").after( ""
-				+"<tr style='color: indigo'><td>Target number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerBase)+"</td></tr>"
-				+"<tr style='color: crimson'><td>Maximum number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerTotal)+"</td></tr>"
-			);
-						
-			if(!hasEquip) return false;
-			
-			$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2)").after( ""
-				+"<tr style='color: darkgreen'><td>Required according to the current qualification of employees</td><td>"+calcEquip(mapped[here].skillNow)+"</td></tr>"
-				+"<tr style='color: indigo'><td>Required according to the target qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))+"</td></tr>"
-				+"<tr style='color: crimson'><td>Required according to the maximum qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))+"</td></tr>"
-			);
-			
-			$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2)").after( ""
-				+"<tr style='color: indigo'><td>Target technology level</td><td>"+calcTechLevel(managerBase)+"</td></tr>"
-				+"<tr style='color: crimson'><td>Maximum technology level</td><td>"+calcTechLevel(managerTotal)+"</td></tr>"
-			);
-			
+				$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2)").after( ""
+					+"<tr style='color: darkgreen'><td>Required according to the current qualification of employees</td><td>"+calcEquip(mapped[here].skillNow)+"</td></tr>"
+					+"<tr style='color: indigo'><td>Required according to the target qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))+"</td></tr>"
+					+"<tr style='color: crimson'><td>Required according to the maximum qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))+"</td></tr>"
+				);
+				
+				$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2)").after( ""
+					+"<tr style='color: indigo'><td>Target technology level</td><td>"+calcTechLevel(managerBase)+"</td></tr>"
+					+"<tr style='color: crimson'><td>Maximum technology level</td><td>"+calcTechLevel(managerTotal)+"</td></tr>"
+				);						
+				
+				
+			}
+			else{
+				managerBase = mapped[url].base[subType[mapped[here].img][2]];
+				managerTotal = managerBase + mapped[url].bonus[subType[mapped[here].img][2]];
+				
+				function placeText($place, text, value, color){
+					$place.html($place.html()+"<br><span style='color: "+color+"'><b>"+value+"</b>"+text+"</span>");			
+				}
+				
+				var $qualRow = $("tr:contains('Qualification of employees'), tr:contains('Qualification of scientists'), \n\
+							  tr:contains('Workers qualification')");
+				var $levelRow = $("tr:contains('Qualification of player')");
+				var $empRow = $("tr:contains('Number of employees'), tr:contains('Number of scientists'),\n\
+									tr:contains('Number of workers')");
+				var $totalEmpRow = $("tr:contains('profile qualification')");
+				var $techRow = $("tr:contains('Technology level'), tr:contains('Current research')");
+				var $equipRow = $("tr:contains('Equipment quality'), tr:contains('Computers quality'),\n\
+					 tr:contains('Livestock quality'), tr:contains('Quality of agricultural machines')");
+				var $effiRow =  $("tr:contains('Top manager efficiency')");       
+				
+				var amount = numberfy($empRow.find("td:eq(1)").text());
+				var qual = numberfy($qualRow.find("td:eq(1)").text());
+				var level = numberfy($levelRow.find("td:eq(1)").text());
+				var totalEmp = numberfy($totalEmpRow.find("td:eq(1)").text());
+				var tech = numberfy($techRow.find("td:eq(1)").text());
+				var eqQual = numberfy($equipRow.find("td:eq(1)").text());
+							
+				placeText($empRow.find("td:eq(1)")," (Target number based on the qualification of employees)", calcEmployees(qual, factor1, managerBase), "indigo");       
+				placeText($empRow.find("td:eq(1)")," (Maximum number based on the qualification of employees)", calcEmployees(qual, factor1, managerTotal), "crimson");
+				placeText($qualRow.find("td:eq(1)")," (Target qualification based on the number of employees)", calcSkill(amount, factor1, managerBase), "indigo");
+				placeText($qualRow.find("td:eq(1)")," (Maximum qualification based on the number of employees)", calcSkill(amount, factor1, managerTotal), "crimson");
+				placeText($totalEmpRow.find("td:eq(1)")," (Target number of employees on profile qualification)", calcAllEmployees(factor3, managerBase), "indigo");
+				placeText($totalEmpRow.find("td:eq(1)")," (Maximum number of employees on profile qualification)", calcAllEmployees(factor3, managerBase), "crimson");
+				placeText($equipRow.find("td:eq(1)")," (Required according to the current qualification of employees)", calcEquip(qual), "darkgreen");
+				placeText($equipRow.find("td:eq(1)")," (Required according to the target qualification of employees)", calcEquip(calcSkill(amount, factor1, managerBase)), "indigo");
+				placeText($equipRow.find("td:eq(1)")," (Required according to the maximum qualification of employees)", calcEquip(calcSkill(amount, factor1, managerTotal)), "crimson");	
+				placeText($techRow.find("td:eq(1)")," (Target technology level)", calcTechLevel(managerBase), "indigo");
+				placeText($techRow.find("td:eq(1)")," (Maximum technology level)", calcTechLevel(managerTotal), "crimson");		
+				
+			}			
 		}		
 	});
 }
@@ -1647,15 +1842,30 @@ function XioScript(){
 	console.log("XioScript 12 is running!");	
 	
 	//Unit list
-    if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list$").test(document.URL)){
-        $("#topblock").append("<input type=button id=XM value=XioMaintenance>");
+	
+    if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(\/?)$").test(document.URL)){
+        $("#topblock").append("<input type=button id=XM value=XioMaintenance>")
+					  .append("<input type=button id=XO value=XioOverview>");		
+						  
 		$("#XM").click(function(){
 			XioMaintenance();
-		});
+		});		
+		$("#XO").click(function(){
+			if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list\/$").test(document.URL)){
+				window.location.href = window.location.href.slice(0, -1);
+			}
+			else{
+				window.location.href = window.location.href+"/";
+			}
+		});		
+		
+		if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list\/$").test(document.URL)){
+			XioOverview();
+		}		
     }
 	
 	//Production and Warehouse Price/Sale page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(document.URL)){
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(document.URL) && $(".list_sublink").length === 0){
 		preference(["pc", "pl"]);
 	}
 	
@@ -1677,13 +1887,13 @@ function XioScript(){
 	//Main unit page: Salary and Equipment
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 && $(".fa-cogs").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1 && $("[href*='/window/unit/equipment/']").length === 1)){
 		preference(["es", "et", "qp"]);
-		topManagerStats(true);
+		topManagerStats();
 	}
 	
 	//Main unit page: Salary only
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1)){
 		preference(["es", "et"]);
-		topManagerStats(false);
+		topManagerStats();
 	}
 	
 	//Technology page
