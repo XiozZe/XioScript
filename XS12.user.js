@@ -2,7 +2,7 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.6
+// @version        12.0.7
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
