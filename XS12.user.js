@@ -8,7 +8,7 @@
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.6";
+var version = "12.0.7";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -60,8 +60,8 @@ function map(html, url, page){
 			isProd : !$html.find(".sel").next().attr("class"),
 			form : $html.find("[name=supplyContractForm]"),
 			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
-			required : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			stock : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
+			required : $html.find(".inner_table").length? $html.find(".list td:nth-child(3).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
 		}
 	}
 	else if(page === "consume"){
@@ -190,7 +190,7 @@ function map(html, url, page){
 			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
 			stock : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-3)").text()); }).get(),			
 			shipments : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-1)").text()); }).get(),
-			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().trim() === "Unlim."? 1000000000 : numberfy($(this).text().match(/(\d| )+/)[0]); }).get()			
+			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce(function(a, b){ return Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0]))}, Infinity); }).get()			
 		}
 	}	
 	else if(page === "contract"){
@@ -1331,6 +1331,8 @@ function wareSupply(type, subid, choice){
 									'amount'		  : toset					
 									}, function(){
 										supcount--;
+										suppliercount++;
+										$("#XioSuppliers").text(suppliercount);
 										checkFinish();
 									});
 									mapped[urlContract].available[supplier[k].row] -= toset;								
@@ -1340,8 +1342,6 @@ function wareSupply(type, subid, choice){
 									xPost(url, "contractDestroy=1&supplyContractData%5Bselected%5D%5B%5D="+supplier[k].offer, function(){
 										supcount--;
 										checkFinish();
-										suppliercount++;
-										$("#XioSuppliers").text(suppliercount);
 									})
 								}
 							}
@@ -1370,6 +1370,10 @@ function wareSupply(type, subid, choice){
 			}
 		}
 	}
+	
+}
+
+function advertisement(type, subid, choice){
 	
 }
 
@@ -1413,6 +1417,14 @@ var policyJSON = {
 		name: "Warehouse supply",
 		group: "Supply",
 		wait: ["Production supply", "Policy", "Retail supply", "Production price"]
+	},
+	ad: {
+		func: advertisement,
+		save: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"], 
+		order: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"],
+		name: "Advertisement",
+		group: "Advertisement",
+		wait: []
 	},
 	es: {
 		func: salary, 
@@ -1539,7 +1551,7 @@ function XioMaintenance(){
 	processingtime = new Date().getTime();
 	
 	$("#XM").attr("disabled", true);	
-	$("#XMtable").remove();
+	$("#XMtable, #XMtabletitle").remove();
 	
 	getUrls = [];
 	finUrls = [];
@@ -1550,7 +1562,7 @@ function XioMaintenance(){
 	servercount = 0;
 	suppliercount = 0;
 	
-	var tablestring = "<div style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
+	var tablestring = "<div id=XMtabletitle style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
 		+"<table id=XMtable style='font-size: 18px; color:gold; border-spacing: 10px 0;'>";
 	
 	var subids = [];
@@ -1819,13 +1831,15 @@ function topManagerStats(){
 				var totalEmp = numberfy($totalEmpRow.find("td:eq(1)").text());
 				var tech = numberfy($techRow.find("td:eq(1)").text());
 				var eqQual = numberfy($equipRow.find("td:eq(1)").text());
-							
+					
+				console.log(amount, qual, level, totalEmp, tech, eqQual);
+					
 				placeText($empRow.find("td:eq(1)")," (Target number based on the qualification of employees)", calcEmployees(qual, factor1, managerBase), "indigo");       
 				placeText($empRow.find("td:eq(1)")," (Maximum number based on the qualification of employees)", calcEmployees(qual, factor1, managerTotal), "crimson");
 				placeText($qualRow.find("td:eq(1)")," (Target qualification based on the number of employees)", calcSkill(amount, factor1, managerBase), "indigo");
 				placeText($qualRow.find("td:eq(1)")," (Maximum qualification based on the number of employees)", calcSkill(amount, factor1, managerTotal), "crimson");
 				placeText($totalEmpRow.find("td:eq(1)")," (Target number of employees on profile qualification)", calcAllEmployees(factor3, managerBase), "indigo");
-				placeText($totalEmpRow.find("td:eq(1)")," (Maximum number of employees on profile qualification)", calcAllEmployees(factor3, managerBase), "crimson");
+				placeText($totalEmpRow.find("td:eq(1)")," (Maximum number of employees on profile qualification)", calcAllEmployees(factor3, managerTotal), "crimson");
 				placeText($equipRow.find("td:eq(1)")," (Required according to the current qualification of employees)", calcEquip(qual), "darkgreen");
 				placeText($equipRow.find("td:eq(1)")," (Required according to the target qualification of employees)", calcEquip(calcSkill(amount, factor1, managerBase)), "indigo");
 				placeText($equipRow.find("td:eq(1)")," (Required according to the maximum qualification of employees)", calcEquip(calcSkill(amount, factor1, managerTotal)), "crimson");	
