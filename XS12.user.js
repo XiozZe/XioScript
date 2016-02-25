@@ -2,13 +2,13 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.7
+// @version        12.0.8
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.7";
+var version = "12.0.8";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -61,7 +61,8 @@ function map(html, url, page){
 			form : $html.find("[name=supplyContractForm]"),
 			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
 			required : $html.find(".inner_table").length? $html.find(".list td:nth-child(3).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()
+			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get()
 		}
 	}
 	else if(page === "consume"){
@@ -188,8 +189,8 @@ function map(html, url, page){
 			quality : $html.find("tr:has(input) td:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
 			offer : $html.find("tr input:checkbox").map(function(){ return numberfy($(this).val()); }).get(),
 			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
-			stock : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-3)").text()); }).get(),			
-			shipments : $html.find(".p_title").map(function(){ return numberfy($(this).find("table strong:eq(-1)").text()); }).get(),
+			stock : $html.find(".p_title table").map(function(){ return $(this).find("strong").length >= 2? numberfy($(this).find("strong:eq(0)").text()) : 0; }).get(),			
+			shipments : $html.find(".p_title table").map(function(){ return $(this).find("strong").length === 1? numberfy($(this).find("strong:eq(0)").text()) : numberfy($(this).find("strong:eq(2)").text()); }).get(),
 			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce(function(a, b){ return Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0]))}, Infinity); }).get()			
 		}
 	}	
@@ -206,11 +207,18 @@ function map(html, url, page){
 	else if(page === "research"){
 		mapped[url] = {
 			isFree : !$html.find(".cancel").length,
+			isAbsent : $html.find("b[style='color: red']").length,
+			isFactory : $html.find("span[style='COLOR: red;']").length,
 			unittype : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split(",")[1]),
 			industry : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split("(")[1]),
 			level : numberfy($html.find(".list tr td[style]:eq(0)").text())
 		}
 	}
+	else if(page === "experimentalunit"){
+		mapped[url] = {
+			id : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get()
+		}
+	}	
 }
 
 function xGet(url, page, callback){
@@ -266,7 +274,7 @@ function xPost(url, form, callback){
 			time();
 			servercount++;
 			$("#XioServerCalls").text(servercount);
-			callback();			
+			callback(html);			
 		},
 
 		error: function(){
@@ -290,11 +298,11 @@ function xContract(url, data, callback){
 		type: "POST",
 		dataType: "JSON",
 
-		success: function(html, status, xhr){
+		success: function(data, status, xhr){
 			time();
 			servercount++;			
 			$("#XioServerCalls").text(servercount);
-			callback();			
+			callback(data);			
 		},
 
 		error: function(){
@@ -314,12 +322,8 @@ function xTypeDone(type){
 	
 	xcount[type]--;
 	$("[id='x"+type+"']").text(xmax[type] - xcount[type]);
-	if(xcount[type]){		
-		console.log(xcount[type]+" subdivisions with "+type+" functions to do left");
-	}
-	else{
+	if(!xcount[type]){
 		$("[id='x"+type+"done']").text("Done!");
-		console.log(type+" functions completed!");
 		typedone.push(type);
 		for(var i = 0; i < xwait.length; i++){
 			var index = xwait[i][0].indexOf(type);
@@ -339,13 +343,10 @@ function xTypeDone(type){
 	for(var i in xcount)
 		sum += xcount[i];
 	
-	if(sum === 0){
+	if(sum === 0 && $("#xDone").text() !== "All Done!"){
 		$("#xDone").text("All Done!");
-		console.log("All Done!");
-		console.log("Total server calls made: "+servercount);		
-		console.log("Total time needed: "+((new Date().getTime()-processingtime)/1000)+" seconds");
-		console.log(mapped);
-		$("#XM").attr("disabled", false);
+		console.log("mapped: ", mapped);
+		$(".XioGo").attr("disabled", false);
 	}
 	
 }
@@ -569,6 +570,7 @@ function salePolicy(type, subid, choice){
 function prodSupply(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";
 	var url2 = "/"+realm+"/main/unit/view/"+subid+"/consume";
+	var urlContract = "/"+realm+"/ajax/unit/supply/create";
 	
 	
 	xGet(url, "prodsupply", function(){
@@ -588,51 +590,65 @@ function prodSupply(type, subid, choice){
 	
 	function post(){
 		
-		var change = false;
+		var change = [];
+		console.log(mapped[url]);
 		
 		if(mapped[url].parcel.length !== mapped[url].required.length){
 			choice = 1;
-			console.log("Subdivision "+subid+" is missing a supplier, or has too many suppliers!");
+			postMessage("Subdivision <a href="+url+">"+subid+"</a> is missing a supplier, or has too many suppliers!");
 		}
 		
 		for(var i = 0; i < mapped[url].parcel.length; i++){
 			if(choice === 1 && mapped[url].parcel[i] !== 0){
-				change = true;
-				mapped[url].parcel[i] = 0;
-				mapped[url].form.find("input[type=type]").eq(i).val(0);			
+				change.push({
+					amount: 0,
+					offer: mapped[url].offer[i],
+					unit: subid
+				});	
 			}		
 			else if(choice === 2 && mapped[url].isProd && mapped[url].parcel[i] !== mapped[url].required[i]){
-				change = true;
-				mapped[url].parcel[i] = mapped[url].required[i];
-				mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+				change.push({
+					amount: mapped[url].required[i],
+					offer: mapped[url].offer[i],
+					unit: subid
+				});
 			}
 			else if(choice === 2 && !mapped[url].isProd && mapped[url].parcel[i] !== mapped[url2].consump[i]){
-				change = true;
-				mapped[url].parcel[i] = mapped[url2].consump[i];
-				mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+				change.push({
+					amount: mapped[url2].consump[i],
+					offer: mapped[url].offer[i],
+					unit: subid
+				});		
 			}
 			else if(choice === 3 && mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0))){
-				change = true;
-				mapped[url].parcel[i] = Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0));
-				mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+				change.push({
+					amount: Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0)),
+					offer: mapped[url].offer[i],
+					unit: subid
+				});		
 			}
 			else if(choice === 3 && !mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0))){
-				change = true;
-				mapped[url].parcel[i] = Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0));
-				mapped[url].form.find("input[type=type]").eq(i).val(mapped[url].parcel[i]);			
+				change.push({
+					amount: Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0)),
+					offer: mapped[url].offer[i],
+					unit: subid
+				});
 			}
 		};
 
-		if(change){
-			mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
-			xPost(url, mapped[url].form.serialize(), function(){
-				xTypeDone(type);
-			});
+		var postcount = change.length;
+		if(postcount){
+			console.log(change);
+			for(var i = 0; i < change.length; i++){
+				xContract(urlContract, change[i], function(){
+					console.log(postcount);
+					!--postcount && xTypeDone(type);
+				});
+			}
 		}
 		else{
 			xTypeDone(type);
 		}
-
 		
 	}
 	
@@ -910,7 +926,7 @@ function equipment(type, subid, choice){
 				}
 				
 				if(minId === -1){
-					console.log("No equipment on the market with a sufficient quality. Could not repair subdivision "+subid);
+					postMessage("No equipment on the market with a sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 					xTypeDone(type);
 					return false;
 				}
@@ -945,7 +961,7 @@ function equipment(type, subid, choice){
 				}
 				
 				if(minId === -1){
-					console.log("No equipment on the market with sufficient quality. Could not repair subdivision "+subid);
+					postMessage("No equipment on the market with sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 					xTypeDone(type);
 					return false;
 				}
@@ -999,7 +1015,7 @@ function equipment(type, subid, choice){
 				}
 				
 				if(minId === -1 || botId === -1){
-					console.log("No equipment on the market with sufficient quality. Could not repair subdivision "+subid);
+					postMessage("No equipment on the market with sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 					xTypeDone(type);
 					return false;
 				}
@@ -1044,7 +1060,7 @@ function equipment(type, subid, choice){
 				}
 				
 				if(id === -1){
-					console.log("No equipment on the market with a quality of 2.00. Could not repair subdivision "+subid);
+					postMessage("No equipment on the market with a quality of 2.00. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 					xTypeDone(type);
 					return false;
 				}
@@ -1139,8 +1155,10 @@ function prodBooster(type, subid, choice){
 	
 }
 
-function research1(type, subid, choice){
+function research(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/investigation";
+	var urlUnit = "/"+realm+"/window/unit/view/"+subid+"/set_experemental_unit";
+	var urlForecast = "/"+realm+"/ajax/unit/forecast";
 
 	xGet(url, "research", function(){
 		
@@ -1149,6 +1167,53 @@ function research1(type, subid, choice){
 			xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
 				xTypeDone(type);
 			});
+		}
+		else if(choice === 1 && (mapped[url].isAbsent || mapped[url].isFactory)){			
+			xGet(urlUnit, "experimentalunit", function(){
+				
+				var effi = [];
+				var contractcount = mapped[urlUnit].id.length;
+				for(var i = 0; i < mapped[urlUnit].id.length; i++){
+					(function(i){
+						xContract(urlForecast, {"unit_id" : mapped[urlUnit].id[i]}, function(data){
+							effi.push({
+								"id": mapped[urlUnit].id[i], 
+								"efficiency": numberfy(data.productivity), 
+								"load": numberfy(data.loading)
+							});
+							!--contractcount && post();
+						});			
+					})(i);											
+				}
+
+				if(!mapped[urlUnit].id.length){
+					postMessage("There is no factory available to support laboratory <a href="+url+">"+subid+"</a>");
+					xTypeDone(type);
+				}
+				
+				function post(){
+							
+					var efficient = 0;
+					var index = -1;
+					for(var i = 0; i < effi.length; i++){
+						if(efficient < effi[i].efficiency * effi[i].load){
+							efficient = effi[i].efficiency * effi[i].load
+							index = i;
+						}
+					}
+					
+					if(index === -1){
+						postMessage("There is no factory available to support laboratory <a href="+url+">"+subid+"</a>");
+						xTypeDone(type);
+					}
+					else{
+						var data = "unit="+effi[index].id+"&next=Select";				
+						xPost(urlUnit, data, function(){
+							xTypeDone(type);
+						});							
+					}					
+				}				
+			});			
 		}
 		else{
 			xTypeDone(type);
@@ -1237,7 +1302,7 @@ function wareSupply(type, subid, choice){
 				}
 				
 				if(set > 0){
-					console.log("Not enough suppliers for product "+mapped[url].type[i]+" in warehouse "+subid);
+					postMessage("Not enough suppliers for product "+mapped[url].type[i]+" in warehouse <a href="+url+">"+subid+"</a>");
 				}
 			};
 		}
@@ -1347,7 +1412,7 @@ function wareSupply(type, subid, choice){
 							}
 							
 							if(set > 0){
-								console.log("Not enough suppliers for product "+product+" in warehouse "+subid);
+								postMessage("Not enough suppliers for product "+product+" in warehouse <a href="+url+">"+subid+"</a>");
 							}	
 							
 							supcount--;
@@ -1466,10 +1531,10 @@ var policyJSON = {
 		group: "Booster",
 		wait: []
 	},
-	r1: {
-		func: research1,
-		save: ["don't start new project", "last researched"],
-		order: ["don't start new project", "last researched"],
+	rs: {
+		func: research,
+		save: ["don't start new project", "continue research"],
+		order: ["don't start new project", "continue research"],
 		name: "Research",
 		group: "Research",
 		wait: []
@@ -1515,7 +1580,7 @@ function preference(policies){
 		savedPolicyChoices = [];
 		for(var i = 0; i < savedPolicyStrings.length; i++){		
 			savedPolicies[i] = savedPolicyStrings[i].substring(0, 2);
-			savedPolicyChoices[i] = parseFloat(savedPolicyStrings[i].substring(2));		
+			savedPolicyChoices[i] = numberfy(savedPolicyStrings[i].substring(2));		
 		}
 		
 		if(savedPolicies.indexOf(thisid) >= 0){
@@ -1538,6 +1603,57 @@ function preference(policies){
 	
 }
 
+function preferencePages(html, url){
+	
+	$html = $(html);
+	
+	//Production and Warehouse Price/Sale page
+    if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(url) && $html.find(".list_sublink").length === 0){
+		return ["pc", "pl"]
+	}
+	
+	//Production and Service Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(url) && $html.find(".add_contract").length === 0 && $html.find("[name=productCategory]").length === 0){
+		return ["sp"];
+	}
+	
+	//Store Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(url) && $html.find(".add_contract").length === 0){
+		return ["ss"];
+	}
+	
+	//Warehouse Supply page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(url)){
+		return ["sw"];
+	}
+	
+	//Main unit page: Salary and Equipment
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 && $html.find(".fa-cogs").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1 && $html.find("[href*='/window/unit/equipment/']").length === 1)){
+		return ["es", "et", "qp"];
+	}
+	
+	//Main unit page: Salary only
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1)){
+		return ["es", "et"];
+	}
+	
+	//Technology page
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/technology$").test(url)){
+		return ["tc"];
+	}
+	
+	//Research page
+	else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/investigation$").test(url)){
+		return ["rs"];
+	}
+	
+	//Pages with no preference
+	else{
+		return [];
+	}
+	
+}
+
 function time(){	
 	var time = new Date().getTime();
 	var minutes = (time-processingtime)/1000/60;
@@ -1545,13 +1661,17 @@ function time(){
 	$("#XioSeconds").text(Math.round((minutes - Math.floor(minutes))*60));	
 }
 
-function XioMaintenance(){
-	
+function postMessage(html){
+	$("#XMproblem").append("<div>"+html+"</div>");
+}
+
+function XioMaintenance(subids, allowedPolicies){
+		
 	console.log("XM!");
 	processingtime = new Date().getTime();
 	
-	$("#XM").attr("disabled", true);	
-	$("#XMtable, #XMtabletitle").remove();
+	$(".XioGo").attr("disabled", true);	
+	$(".XioProperty").remove();
 	
 	getUrls = [];
 	finUrls = [];
@@ -1562,15 +1682,25 @@ function XioMaintenance(){
 	servercount = 0;
 	suppliercount = 0;
 	
-	var tablestring = "<div id=XMtabletitle style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
-		+"<table id=XMtable style='font-size: 18px; color:gold; border-spacing: 10px 0;'>";
-	
-	var subids = [];
-	for(var key in ls){
-		if(/x\d+/.test(key)){
-			subids.push(key.match(/\d+/)[0]);
+	if(!subids){
+		subids = [];
+		for(var key in ls){
+			if(/x\d+/.test(key)){
+				subids.push(key.match(/\d+/)[0]);
+			}
 		}
 	}
+	
+	if(!allowedPolicies){
+		allowedPolicies = [];
+		for(var key in policyJSON){
+			allowedPolicies.push(policyJSON[key].name);
+		}
+	}
+	
+	
+	var tablestring = "<div id=XMtabletitle class=XioProperty style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
+		+"<table id=XMtable class=XioProperty style='font-size: 18px; color:gold; border-spacing: 10px 0; margin-bottom: 18px'>";	
 	
 	var startedPolicies = [];
 	for(var i = 0; i < subids.length; i++){		 
@@ -1578,13 +1708,12 @@ function XioMaintenance(){
 		for(var j = 0; j < savedPolicyStrings.length; j++){	
 			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
 			var choice = parseFloat(savedPolicyStrings[j].substring(2));
-			if(!choice){
+			if(policy === undefined || !choice || allowedPolicies.indexOf(policy.name) === -1){
 				continue;
 			}
 			
 			if(startedPolicies.indexOf(policy.name) === -1){
-				startedPolicies.push(policy.name);
-				
+				startedPolicies.push(policy.name);				
 			}
 			
 			xmax[policy.name] = ++xmax[policy.name] || 1;
@@ -1604,19 +1733,23 @@ function XioMaintenance(){
 				);
 			}						
 		}	
-	}
+	}	
+	
 	
 	var type;
 	for(var key in policyJSON){
 		type = policyJSON[key].name;
 		if(startedPolicies.indexOf(type) >= 0){
-			tablestring += "<tr><td>"+type+"</td><td id='x"+type+"'>0</td><td>of</td><td>"+xmax[type]+"</td><td id='x"+type+"done' style='color: lightgoldenrodyellow'></td></tr>";
-		}
-		else{
-			xcount[type] = 1;
-			xTypeDone(type);
-		}		
+			tablestring +=   "<tr>"
+								+"<td>"+type+"</td>"
+								+"<td id='x"+type+"'>0</td>"
+								+"<td>of</td>"
+								+"<td>"+xmax[type]+"</td>"
+								+"<td id='x"+type+"done' style='color: lightgoldenrodyellow'></td>"
+							+"</tr>";
+		}	
 	}
+	
 	
 	tablestring += 	"<tr>"
 						+"<td>New suppliers: </td>"
@@ -1637,9 +1770,140 @@ function XioMaintenance(){
 						+"<td id=xDone colspan=4 style='color: lightgoldenrodyellow'>"
 						+"</td>"
 					+"</tr>"
-				+"</table>";
+				+"</table>"
+				+"<div id=XMproblem class=XioProperty style='font-size: 18px; color:gold;'></div>";
 				
 	$("#topblock").append(tablestring);	
+	
+	var type;
+	for(var key in policyJSON){
+		type = policyJSON[key].name;
+		if(startedPolicies.indexOf(type) === -1){
+			xcount[type] = 1;
+			xTypeDone(type);
+		}	
+	}
+	
+	
+}
+
+function XioGenerator(subids){
+	
+	$(".XioGo").attr("disabled", true);
+	$(".XioProperty").remove();
+	
+	$("#topblock").append(""
+		+"<table id=XMtable class=XioProperty style='font-size: 18px; color:gold; border-spacing: 10px 0; margin-top: 10px;'>"
+			+"<tr>"
+				+"<td>Total server calls: </td>"
+				+"<td id=XioServerCalls>0</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td id=xDone colspan=4 style='color: lightgoldenrodyellow'>"
+				+"</td>"
+			+"</tr>"
+		+"</table>"	
+	);
+	
+	servercount = 0;
+	var getcount = 0;
+	var htmls = {}
+	var getUrls = {};
+	
+	for(var j = 0; j < subids.length; j++){
+		
+		var subid = subids[j];
+		
+		getUrls[subid] = [
+			"/"+realm+"/main/unit/view/"+subid,
+			"/"+realm+"/main/unit/view/"+subid+"/sale",
+			"/"+realm+"/main/unit/view/"+subid+"/supply",
+			"/"+realm+"/main/unit/view/"+subid+"/technology",
+			"/"+realm+"/main/unit/view/"+subid+"/investigation"		
+		];
+		
+		htmls[subid] = [];
+		getcount += getUrls[subid].length;
+		for(var i = 0; i < getUrls[subid].length; i++){
+			(function(i, subid){
+				$.get(getUrls[subid][i], function(html){
+					servercount++;
+					$("#XioServerCalls").text(servercount);			
+					htmls[subid][i] = html;						
+					!--getcount && checkpreference();
+				});		
+			})(i, subid);
+		}		
+	}
+	
+	function checkpreference(){
+		
+		var refresh = false;
+		for(var j = 0; j < subids.length; j++){		
+		
+			var change = false;
+			var subid = subids[j];
+		
+			var policies = [];
+			policies.push.apply(policies, preferencePages(htmls[subid][0], getUrls[subid][0]));
+			for(var i = 1; i < getUrls[subid].length; i++){
+				if(preferencePages(htmls[subid][i], getUrls[subid][0]).length === 0){
+					policies.push.apply(policies, preferencePages(htmls[subid][i], getUrls[subid][i]));			
+				}
+			}
+			
+			savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
+			savedPolicies = [];
+			savedPolicyChoices = [];
+			for(var i = 0; i < savedPolicyStrings.length; i++){		
+				savedPolicies[i] = savedPolicyStrings[i].substring(0, 2);
+				savedPolicyChoices[i] = numberfy(savedPolicyStrings[i].substring(2));					
+			}
+			
+			for(var i = 0; i < savedPolicies.length; i++){		
+				if(policies.indexOf(savedPolicies[i]) === -1){
+					savedPolicies.splice(i, 1);
+					savedPolicyChoices.splice(i, 1);
+					refresh = true;	
+					change = true;
+				}
+			}
+					
+			for(var i = 0; i < policies.length; i++){		
+				if(savedPolicies.indexOf(policies[i]) === -1){
+					savedPolicies.push(policies[i]);
+					savedPolicyChoices.push(0);		
+					refresh = true;
+					change = true;
+				}
+			}
+			
+			if(change){
+				newPolicyString = "";
+				for(var i = 0; i < savedPolicies.length; i++){
+					newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
+				};
+				
+				ls["x"+subid] = newPolicyString.substring(1);
+			}
+			
+		}
+		
+		console.log("refresh", refresh);
+		if(refresh){
+									
+			$(".XioHide").removeClass("XioHide").show();
+			$(".XOhtml").remove();
+			$(document).off("change.XO").off("click.XO");
+			XioOverview();
+			
+		}
+		
+		$("#xDone").text("All Done!");
+		$(".XioGo").attr("disabled", false);
+		
+	}
+	
 	
 }
 
@@ -1652,40 +1916,53 @@ function XioOverview(){
 	
 	var policyString = [];
 	var groupString = [];
-	var thstring = "";
+	var thstring = "<th class=XOhtml>All  <input type=button id=XioGeneratorPRO class='XioGo' value='Generate ALL'></th>";
 	var tdstring = "";
 	for(var key in policyJSON){			
 		if(groupString.indexOf(policyJSON[key].group) === -1){
 			groupString.push(policyJSON[key].group);
 			policyString.push([policyJSON[key].name]);				
-			thstring += "<th class=XioOpen>"+policyJSON[key].group+"</th>";
-			tdstring += "<td class=XioOpen></td>";
+			thstring += "<th class=XOhtml>"+policyJSON[key].group+"  <input type=button data-group="+policyJSON[key].group+" class='XioGo XioGroup' value=FIRE!></th>";
+			tdstring += "<td class=XOhtml></td>";
 		}
 		else{
 			policyString[groupString.indexOf(policyJSON[key].group)].push(policyJSON[key].name);
 		}			
 	}			
+	
 	$(".unit-list-2014 th:nth-child(7)").after(thstring);
 	$td = $(".unit-list-2014 td:nth-child(8)");
-	for(var i = 0; i < $td.length; i++){
-		$td.eq(i).after(tdstring);
-	}
 	
-	var subids = $(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get();		
+	var subids = $(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get();
+	for(var i = 0; i < subids.length; i++){
+		$td.eq(i).after("<td class=XOhtml>"
+						   +"<input type=button data-id="+subids[i]+" class='XioGo XioGenerator' value=Generate>"
+						   +"<input type=button data-id="+subids[i]+" class='XioGo XioSub' value=FIRE!>"
+					  +"</td>"
+					  +tdstring
+		);
+	}
+			
 	for(var i = 0; i < subids.length; i++){			
 		
 		var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
 		for(var j = 0; j < savedPolicyStrings.length; j++){	
 			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)];
-			var choice = numberfy(savedPolicyStrings[j].substring(2));			
+			var choice = numberfy(savedPolicyStrings[j].substring(2));		
+
+			if(policy === undefined){
+				continue;
+			}
+			
 			var policyChoice = policy.order.indexOf(policy.save[choice]);
 							
 			var htmlstring = "<select data-id="+subids[i]+" data-name="+savedPolicyStrings[j].substring(0, 2)+" class=XioChoice>";
 			for(var k = 0; k < policy.order.length; k++){
 				htmlstring += "<option>"+policy.order[k]+"</option>";
 			}
+			
 			$(".unit-list-2014 tr").eq(i+1)
-								   .find("td").eq(groupString.indexOf(policy.group)+8)
+								   .find("td").eq(groupString.indexOf(policy.group)+9)
 								   .html(htmlstring + "</select>")
 								   .find("option").eq(policyChoice)
 								   .attr("selected", true);	
@@ -1694,13 +1971,13 @@ function XioOverview(){
 	
 	var j = 0;
 	for(var i = 0; i < policyString.length; i++){
-		if($(".unit-list-2014 td:nth-child("+(9+i-j)+")").text() === ""){
-			$(".unit-list-2014 th:nth-child("+(8+i-j)+"), .unit-list-2014 td:nth-child("+(9+i-j)+")").remove();
+		if($(".unit-list-2014 td:nth-child("+(10+i-j)+")").find("select").length === 0){
+			$(".unit-list-2014 th:nth-child("+(9+i-j)+"), .unit-list-2014 td:nth-child("+(10+i-j)+")").remove();
 			j++;
 		}
 	}
 	
-	$(".XioChoice").change(function(){	
+	$(document).on('change.XO', ".XioChoice", function(){	
 	
 		var thisid = $(this).attr("data-name");
 		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
@@ -1722,7 +1999,63 @@ function XioOverview(){
 		};
 		
 		ls["x"+subid] = newPolicyString.substring(1);
+	});	
+
+	$(document).on('click.XO', "#XioGeneratorPRO", function(){
+		XioGenerator(subids);
+	});	
+	
+	$(document).on('click.XO', ".XioGenerator", function(){
+		var subid = numberfy($(this).attr("data-id"));
+		XioGenerator([subid]);
+	});	
+	
+	$(document).on('click.XO', ".XioGroup", function(){
+		var index = groupString.indexOf($(this).attr("data-group"));
+		var allowedPolicies = policyString[index];
+		
+		XioMaintenance(undefined, allowedPolicies);
+	});	
+	
+	$(document).on('click.XO', ".XioSub", function(){
+		var subid = numberfy($(this).attr("data-id"));
+		XioMaintenance([subid], undefined);
 	});		
+}
+
+function XioExport(){
+	$(".XioProperty").remove();
+	$("#topblock").append("<br class=XioProperty><textarea id=XEarea class=XioProperty style='width: 900px'></textarea>");
+	
+	var string = ""
+	for(var key in ls){
+		if(/x\d+/.test(key)){
+			string += key.match(/\d+/)+"="+ls[key]+",";
+		}
+	}
+	
+	$("#XEarea").text(string).height($("#XEarea")[0].scrollHeight);
+}
+
+function XioImport(){
+	$(".XioProperty").remove();
+	$("#topblock").append("<br class=XioProperty><textarea id=XIarea class=XioProperty style='width: 900px'></textarea><br class=XioProperty><input type=button id=XioSave class=XioProperty value=Save!>");
+	
+	$(document).on('input propertychange', "#XIarea", function(){
+		$("#XIarea").height($("#XIarea")[0].scrollHeight);
+	});
+	
+	$("#XioSave").click(function(){
+		var string = $("#XIarea").val();
+		string = string.replace(/=/g, "']='").replace(/,/g, "';localStorage['x");
+		try{
+			eval("localStorage['x"+string.slice(0, -15));
+			document.location.reload();
+		}
+		catch(e){
+			console.log("import not successful");
+		}
+	});	
 	
 }
 
@@ -1831,9 +2164,7 @@ function topManagerStats(){
 				var totalEmp = numberfy($totalEmpRow.find("td:eq(1)").text());
 				var tech = numberfy($techRow.find("td:eq(1)").text());
 				var eqQual = numberfy($equipRow.find("td:eq(1)").text());
-					
-				console.log(amount, qual, level, totalEmp, tech, eqQual);
-					
+										
 				placeText($empRow.find("td:eq(1)")," (Target number based on the qualification of employees)", calcEmployees(qual, factor1, managerBase), "indigo");       
 				placeText($empRow.find("td:eq(1)")," (Maximum number based on the qualification of employees)", calcEmployees(qual, factor1, managerTotal), "crimson");
 				placeText($qualRow.find("td:eq(1)")," (Target qualification based on the number of employees)", calcSkill(amount, factor1, managerBase), "indigo");
@@ -1856,12 +2187,23 @@ function XioScript(){
 	
 	console.log("XioScript 12 is running!");	
 	
-	//Unit list
+	//page options
+	if($(".pager_options").length){
+		$(".pager_options").append( $(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "1000") 
+								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "2000") 
+								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "4000") 
+								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "10000") 
+								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "20000") 
+		);
+	}
 	
+	//Unit list	
     if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(\/?)$").test(document.URL)){
         $("#topblock").append("<div style='font-size: 24px; color:gold; margin-bottom: 5px;'>XioScript "+version+"</div>"
-							 +"<input type=button id=XM value=XioMaintenance>"
-							 +"<input type=button id=XO value=XioOverview>");		
+							 +"<input type=button id=XM class=XioGo value=XioMaintenance>"
+							 +"<input type=button id=XO value=XioOverview>"
+							 +"<input type=button id=XE class=XioGo value=Export>"
+							 +"<input type=button id=XI class=XioGo value=Import>");		
 						  
 		$("#XM").click(function(){
 			XioMaintenance();
@@ -1873,6 +2215,12 @@ function XioScript(){
 			else{
 				window.location.href = window.location.href+"/";
 			}
+		});	
+		$("#XE").click(function(){
+			XioExport();
+		});	
+		$("#XI").click(function(){
+			XioImport();
 		});		
 		
 		if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list\/$").test(document.URL)){
@@ -1880,48 +2228,13 @@ function XioScript(){
 		}		
     }
 	
-	//Production and Warehouse Price/Sale page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(document.URL) && $(".list_sublink").length === 0){
-		preference(["pc", "pl"]);
-	}
-	
-	//Production and Service Supply page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL) && $(".add_contract").length === 0 && $("[name=productCategory]").length === 0){
-		preference(["sp"]);
-	}
-	
-	//Store Supply page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL) && $(".add_contract").length === 0){
-		preference(["ss"]);
-	}
-	
-	//Warehouse Supply page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(document.URL)){
-		preference(["sw"]);
-	}
-	
-	//Main unit page: Salary and Equipment
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 && $(".fa-cogs").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1 && $("[href*='/window/unit/equipment/']").length === 1)){
-		preference(["es", "et", "qp"]);
+	//Top Manager
+    if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1)){
 		topManagerStats();
 	}
 	
-	//Main unit page: Salary only
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(document.URL) && ($(".fa-users").length === 1 || $("[href*='/window/unit/employees/engage/']").length === 1)){
-		preference(["es", "et"]);
-		topManagerStats();
-	}
-	
-	//Technology page
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/technology$").test(document.URL)){
-		preference(["tc"]);
-	}
-	
-	//Research page
-	else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/investigation$").test(document.URL)){
-		preference(["r1"]);
-	}
-	
+	//Preferences
+	preference(preferencePages($(document), document.URL));
 }
 
 document.onreadystatechange = function () {
