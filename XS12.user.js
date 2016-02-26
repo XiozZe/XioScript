@@ -2,13 +2,23 @@
 // @name           XioScript
 // @namespace      Virtonomics
 // @description    XioScript using XioMaintenance
-// @version        12.0.8
+// @version        12.0.9
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.8";
+var version = "12.0.9";
+
+//Added get and post calls
+//Top manager tech level now rounds down to one decimal instead of integer
+//Generate function rewritten
+//Production and Retail supply functions will now always take place after the production price and policy functions
+//Production, Retail and Warehouse supply will now always update the price with the latest set even if the supply did not change
+//Warehouse supply now needs less server calls to delete suppliers
+//Fixed a bug where the warehouse supply would hang if no goods to supply were set
+//Improved XioOverview lay-out
+//Added very basic holiday function
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -35,6 +45,8 @@ var typedone = [];
 var xwait = [];
 var xsupplier = [];
 var firesupplier = false;
+var servergetcount = 0;
+var serverpostcount = 0;
 var servercount = 0;
 var suppliercount = 0;
 var processingtime = 0;
@@ -62,7 +74,8 @@ function map(html, url, page){
 			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
 			required : $html.find(".inner_table").length? $html.find(".list td:nth-child(3).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
 			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get()
+			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
+			reprice : $html.find(".inner_table").length? $html.find("td:nth-child(5) tr:nth-child(2)").map(function(){ return !!$(this).filter("[class]").length; }).get() : $html.find("[id^=totalPrice] tr:nth-child(1)").map(function(){ return !!$(this).filter("[style]").length; }).get(),
 		}
 	}
 	else if(page === "consume"){
@@ -76,7 +89,9 @@ function map(html, url, page){
 			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
 			purchase : $html.find("td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
 			quantity : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get()			
+			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
+			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
+			reprice : $html.find("td:nth-child(9) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return !!$(this).find("div").length; }).get(),
 		}
 	}
 	else if(page === "TM"){
@@ -185,7 +200,8 @@ function map(html, url, page){
 			contract : $html.find(".p_title").map(function(){ return $(this).find("a:eq(1)").attr("href"); }).get(),
 			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
 			product : $html.find("tr:has(input:text[name])").map(function(){ return $(this).prevAll(".p_title:first").find("strong:eq(0)").text(); }).get(),
-			price : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			price : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return numberfy($(this).text().match(/(\d|\.|\s)+$/)); }).get(),
+			reprice : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return !!$(this).find("span").length; }).get(),
 			quality : $html.find("tr:has(input) td:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
 			offer : $html.find("tr input:checkbox").map(function(){ return numberfy($(this).val()); }).get(),
 			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
@@ -222,10 +238,12 @@ function map(html, url, page){
 }
 
 function xGet(url, page, callback){
-		
+	
+	var unchangable = ["TM", "IP", "transport", "CTIE", "manager", "products", "none"];
+	
 	if($.inArray(url, getUrls) === -1){
-				
-		if(page !== "forget"){
+		
+		if($.inArray(page, unchangable) >= 0){
 			getUrls.push(url);			
 		}
 		
@@ -233,19 +251,21 @@ function xGet(url, page, callback){
 			url: url,				
 			type: "GET",
 
-			success: function(html, status, xhr){
+			success: function(html, status, xhr){	
 				time();
-				servercount++;			
-				$("#XioServerCalls").text(servercount);
+				servergetcount++;			
+				$("#XioGetCalls").text(servergetcount);
+				$("#XioServerCalls").text(servergetcount + serverpostcount);
 				map(html, url, page);
 				callback();
-				xDone(url);
+				xUrlDone(url);
 			},
 
 			error: function(){
 				time();
-				servercount++;
-				$("#XioServerCalls").text(servercount);
+				servergetcount++;			
+				$("#XioGetCalls").text(servergetcount);
+				$("#XioServerCalls").text(servergetcount + serverpostcount);
 				//Resend ajax
 				setTimeout(function(){
 					$.ajax(this);
@@ -253,13 +273,10 @@ function xGet(url, page, callback){
 			}			
 		});		
 	}
-	else{
-		
+	else{		
 		xcallback.push([url, function(){
 			callback();
-		}]);
-		
-		
+		}]);	
 	}	
 }
 
@@ -271,16 +288,18 @@ function xPost(url, form, callback){
 		type: "POST",
 
 		success: function(html, status, xhr){
-			time();
-			servercount++;
-			$("#XioServerCalls").text(servercount);
-			callback(html);			
+			time();			
+			serverpostcount++;			
+			$("#XioPostCalls").text(serverpostcount);
+			$("#XioServerCalls").text(servergetcount + serverpostcount);
+			callback(html);		
 		},
 
 		error: function(){
 			time();
-			servercount++;			
-			$("#XioServerCalls").text(servercount);
+			serverpostcount++;			
+			$("#XioPostCalls").text(serverpostcount);
+			$("#XioServerCalls").text(servergetcount + serverpostcount);
 			//Resend ajax
 			setTimeout(function(){
 				$.ajax(this);
@@ -300,15 +319,17 @@ function xContract(url, data, callback){
 
 		success: function(data, status, xhr){
 			time();
-			servercount++;			
-			$("#XioServerCalls").text(servercount);
-			callback(data);			
+			serverpostcount++;			
+			$("#XioPostCalls").text(serverpostcount);
+			$("#XioServerCalls").text(servergetcount + serverpostcount);
+			callback(data);		
 		},
 
 		error: function(){
-			time();
-			servercount++;
-			$("#XioServerCalls").text(servercount);
+			time();		
+			serverpostcount++;			
+			$("#XioPostCalls").text(serverpostcount);
+			$("#XioServerCalls").text(servergetcount + serverpostcount);
 			//Resend ajax
 			setTimeout(function(){
 				$.ajax(this);
@@ -343,20 +364,16 @@ function xTypeDone(type){
 	for(var i in xcount)
 		sum += xcount[i];
 	
-	if(sum === 0 && $("#xDone").text() !== "All Done!"){
-		$("#xDone").text("All Done!");
+	if(sum === 0 && $("#xDone").css("visibility") === "hidden"){
+		$("#xDone").css("visibility", "");
 		console.log("mapped: ", mapped);
 		$(".XioGo").attr("disabled", false);
-	}
-	
+	}	
 }
 
-function xDone(url){
+function xUrlDone(url){
 	
-	if(url){
-		finUrls.push(url);
-	}
-	
+	finUrls.push(url);	
 	for(var i = 0; i < xcallback.length; i++){
 		if(finUrls.indexOf(xcallback[i][0]) >= 0){
 			xcallback[i][1]();
@@ -591,57 +608,45 @@ function prodSupply(type, subid, choice){
 	function post(){
 		
 		var change = [];
-		console.log(mapped[url]);
 		
 		if(mapped[url].parcel.length !== mapped[url].required.length){
 			choice = 1;
 			postMessage("Subdivision <a href="+url+">"+subid+"</a> is missing a supplier, or has too many suppliers!");
 		}
 		
+		
 		for(var i = 0; i < mapped[url].parcel.length; i++){
-			if(choice === 1 && mapped[url].parcel[i] !== 0){
+			
+			var newsupply = 0;
+			if(choice === 1){
+				newsupply = 0;
+			}		
+			else if(choice === 2 && mapped[url].isProd){
+				newsupply =  mapped[url].required[i]
+			}
+			else if(choice === 2 && !mapped[url].isProd){
+				newsupply = mapped[url2].consump[i];
+			}
+			else if(choice === 3 && mapped[url].isProd){
+				newsupply =  Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0));	
+			}
+			else if(choice === 3 && !mapped[url].isProd){
+				newsupply =  Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0));				
+			}
+			
+			if(mapped[url].parcel[i] !== newsupply || mapped[url].reprice[i]){
 				change.push({
-					amount: 0,
+					amount: newsupply,
 					offer: mapped[url].offer[i],
 					unit: subid
 				});	
-			}		
-			else if(choice === 2 && mapped[url].isProd && mapped[url].parcel[i] !== mapped[url].required[i]){
-				change.push({
-					amount: mapped[url].required[i],
-					offer: mapped[url].offer[i],
-					unit: subid
-				});
-			}
-			else if(choice === 2 && !mapped[url].isProd && mapped[url].parcel[i] !== mapped[url2].consump[i]){
-				change.push({
-					amount: mapped[url2].consump[i],
-					offer: mapped[url].offer[i],
-					unit: subid
-				});		
-			}
-			else if(choice === 3 && mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0))){
-				change.push({
-					amount: Math.min(2 * mapped[url].required[i], Math.max(3 * mapped[url].required[i] - mapped[url].stock[i], 0)),
-					offer: mapped[url].offer[i],
-					unit: subid
-				});		
-			}
-			else if(choice === 3 && !mapped[url].isProd && mapped[url].parcel[i] !== Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0))){
-				change.push({
-					amount: Math.min(2 * mapped[url2].consump[i], Math.max(3 * mapped[url2].consump[i] - mapped[url].stock[i], 0)),
-					offer: mapped[url].offer[i],
-					unit: subid
-				});
-			}
-		};
-
+			}								
+		}
+		
 		var postcount = change.length;
 		if(postcount){
-			console.log(change);
 			for(var i = 0; i < change.length; i++){
 				xContract(urlContract, change[i], function(){
-					console.log(postcount);
 					!--postcount && xTypeDone(type);
 				});
 			}
@@ -656,42 +661,53 @@ function prodSupply(type, subid, choice){
 
 function storeSupply(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
+	var urlContract = "/"+realm+"/ajax/unit/supply/create";
 		
 	xGet(url, "storesupply", function(){
 		post();
 	});	
 	
 	function post(){
-		var change = false;
+		
+		var change = [];
+		
+		if(mapped[url].parcel.length !== mapped[url].sold.length){
+			choice = 1;
+			postMessage("Subdivision <a href="+url+">"+subid+"</a> is missing a supplier, or has too many suppliers!");
+		}
 		
 		for(var i = 0; i < mapped[url].parcel.length; i++){
-			if(choice === 1 && mapped[url].parcel[i] !== 0){
-				change = true;
-				mapped[url].parcel[i] = 0;
-				mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(0);			
+			
+			var newsupply = 0;
+			if(choice === 1){
+				newsupply = 0;
 			}		
-			else if(choice === 2 && mapped[url].parcel[i] !== mapped[url].sold[i]){
-				change = true;
-				mapped[url].parcel[i] = mapped[url].sold[i];
-				mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+			else if(choice === 2){
+				newsupply = mapped[url].sold[i];
 			}
-			else if(choice === 3 && mapped[url].parcel[i] !== mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2){
-				change = true;
-				mapped[url].parcel[i] = mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2;
-				mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+			else if(choice === 3){
+				newsupply = mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2;
 			}
-			else if(choice === 4 && mapped[url].parcel[i] !== Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0))){
-				change = true;
-				mapped[url].parcel[i] = Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
-				mapped[url].form.find("input:text[name^='supplyContractData[party_quantity]']").eq(i).val(mapped[url].parcel[i]);			
+			else if(choice === 4){
+				newsupply =  Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
 			}
-		};
-
-		if(change){
-			mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
-			xPost(url, mapped[url].form.serialize(), function(){
-				xTypeDone(type);
-			});
+			
+			if(mapped[url].parcel[i] !== newsupply || mapped[url].reprice[i]){
+				change.push({
+					amount: newsupply,
+					offer: mapped[url].offer[i],
+					unit: subid
+				});	
+			}								
+		}
+		
+		var postcount = change.length;
+		if(postcount){
+			for(var i = 0; i < change.length; i++){
+				xContract(urlContract, change[i], function(){
+					!--postcount && xTypeDone(type);
+				});
+			}
 		}
 		else{
 			xTypeDone(type);
@@ -735,7 +751,6 @@ function salary(type, subid, choice){
 			mapped[url].salaryNow = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, mapped[url].skillNow, mapped[url].skillCity, mapped[url].skillReq);
 			mapped[url].salaryNow = Math.max(mapped[url].salaryNow, (mapped[url].salaryCity+.005) * 0.8);
 			mapped[url].salaryNow = Math.min(mapped[url].salaryNow, (mapped[url].salaryCity-.005) * 500);
-			mapped[url].skillNow = mapped[url].skillReq; //not always the case
 			mapped[url].form.find("#salary").val(mapped[url].salaryNow);			
 		}
 		else if(choice === 2){
@@ -746,7 +761,6 @@ function salary(type, subid, choice){
 				mapped[url].salaryNow = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, mapped[url].skillNow, mapped[url].skillCity, skillReq);
 				mapped[url].salaryNow = Math.max(mapped[url].salaryNow, (mapped[url].salaryCity+.005) * 0.8);
 				mapped[url].salaryNow = Math.min(mapped[url].salaryNow, (mapped[url].salaryCity-.005) * 500);
-				mapped[url].skillNow = skillReq; //not always the case
 				mapped[url].form.find("#salary").val(mapped[url].salaryNow);
 			}
 			
@@ -759,7 +773,6 @@ function salary(type, subid, choice){
 				mapped[url].salaryNow = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, mapped[url].skillNow, mapped[url].skillCity, skillReq);
 				mapped[url].salaryNow = Math.max(mapped[url].salaryNow, (mapped[url].salaryCity+.005) * 0.8);
 				mapped[url].salaryNow = Math.min(mapped[url].salaryNow, (mapped[url].salaryCity-.005) * 500);
-				mapped[url].skillNow = skillReq; //not always the case
 				mapped[url].form.find("#salary").val(mapped[url].salaryNow);
 			}
 		}
@@ -773,6 +786,21 @@ function salary(type, subid, choice){
 			xTypeDone(type);
 		}
 	}
+}
+
+function holiday(type, subid, choice){
+	
+	if(choice === 1){
+		xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_set", "none", function(){
+			xTypeDone(type);
+		});
+	}
+	else if(choice === 2){		
+		xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_unset", "none", function(){
+			xTypeDone(type);
+		});
+	}
+	
 }
 
 function training(type, subid, choice){
@@ -981,8 +1009,7 @@ function equipment(type, subid, choice){
 					}			
 					equipWear--;
 				}
-				
-				mapped[url].qualNow = newQual;				
+							
 				if(botBuy){
 					equipContract("repair", botBuy, mapped[url].offer[botId]);
 				}				
@@ -1037,7 +1064,6 @@ function equipment(type, subid, choice){
 					equipWear--;
 				}
 				
-				mapped[url].qualNow = newQual;
 				if(botBuy){
 					equipContract("repair", botBuy, mapped[url].offer[botId]);
 				}				
@@ -1045,7 +1071,6 @@ function equipment(type, subid, choice){
 					equipContract("repair", minBuy, mapped[url].offer[minId]);
 				}							
 			}
-			mapped[urlSalary].skillNow = calcEquip(mapped[url].qualNow);
 		}	
 		else if(choice === 3 && equipWear !== 0){
 						
@@ -1247,42 +1272,57 @@ function wareSupply(type, subid, choice){
 
 	}
 	
-	function post(){
-
-		var change = false;
-			
+	var change = [];
+	var deletechange = false;
+	var deletestring = "contractDestroy=1";		
+	
+	function post(){		
+		
 		if(choice === 1 || choice === 4){
+			
 			for(var i = 0; i < mapped[url].parcel.length; i++){
-				if(choice === 1 && mapped[url].parcel[i] !== 0){
-					change = true;
-					mapped[url].parcel[i] = 0;
-					mapped[url].form.find("input:text[name]").eq(i).val(0);			
-				}		
-				else if(choice === 4 && mapped[url].parcel[i] !== 1000000000){
-					change = true;
-					mapped[url].parcel[i] = 1000000000;
-					mapped[url].form.find("input:text[name]").eq(i).val(1000000000);			
-				}				
-			};
+				
+				var newsupply = 0;
+				if(choice === 1){
+					newsupply = 0;
+				}
+				else if(choice === 4){
+					newsupply = 1000000000;
+				}
+				
+				if(mapped[url].parcel[i] !== newsupply || mapped[url].reprice[i]){
+					change.push({							
+						'newsup' : false,
+						'offer'  : mapped[url].offer[i],
+						'amount' : newsupply	
+					});
+				}
+				
+			}
+			
+			post2();
+			
 		}
 
-		if(choice === 2 || choice === 3){
+		else if(choice === 2 || choice === 3){
 			var j = 0;
 			var supplier = [];
-			var set = 0;
-			var toset = 0;
 			for(var i = 0; i < mapped[url].type.length; i++){
+				
+				var set = 0;
 				if(choice === 2){
 					set = mapped[url].shipments[i];
 				}
 				else if(choice === 3){
 					set = Math.min(2 * mapped[url].shipments[i], Math.max(3 * mapped[url].shipments[i] - mapped[url].stock[i], 0));					
 				}
+				
 				supplier = [];
 				while(mapped[url].type[i] === mapped[url].product[j]){
 					supplier.push({
 						available : mapped[url].available[j],
 						PQR : mapped[url].price[j] / mapped[url].quality[j],
+						offer : mapped[url].offer[j],
 						index : j
 					});
 					j++;
@@ -1292,51 +1332,38 @@ function wareSupply(type, subid, choice){
 					return a.PQR - b.PQR;
 				});
 				
+				var toset = 0;
 				for(var k = 0; k < supplier.length; k++){
 					toset = Math.min(set, supplier[k].available);
 					set -= toset;
-					if(mapped[url].parcel[supplier[k].index] !== toset){
-						change = true;
-						mapped[url].form.find("input:text[name]").eq(supplier[k].index).val(toset);
+					if(mapped[url].parcel[supplier[k].index] !== toset || mapped[url].reprice[supplier[k].index]){
+						change.push({							
+							'newsup' : false,
+							'offer'  : supplier[k].offer,
+							'amount' : toset	
+						});
 					}		
 				}
 				
 				if(set > 0){
 					postMessage("Not enough suppliers for product "+mapped[url].type[i]+" in warehouse <a href="+url+">"+subid+"</a>");
 				}
-			};
-		}
-
-		if(change){
-			mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
-			xPost(url, mapped[url].form.serialize(), function(){
-				xTypeDone(type);
-			});
-		}
-		else if(choice <= 4){
-			xTypeDone(type);
-		}	
-		
-		if(choice >= 5){
-			
-			function checkFinish(){	
-				if(!supcount && change){								
-					mapped[url].form.append(mapped[url].form.find("[name=applyChanges]").clone().wrap("<p></p>").parent().html().replace("submit","hidden"));
-					xPost(url, mapped[url].form.serialize(), function(){
-						xTypeDone(type);
-					});
-				}								
-				else if(!supcount){
-					xTypeDone(type);
-				}
 			}
 			
-			var supcount = mapped[url].type.length;	
+			post2();
+			
+		}
+		
+		else if(choice >= 5){
+				
+			var supcount = mapped[url].type.length;			
+			
 			var j = 0;			
 			for(var i = 0; i < mapped[url].type.length; i++){
 								
 				var urlContract = mapped[url].contract[i];
-				var set;
+				
+				var set = 0;				
 				if(choice === 5){
 					set = mapped[url].shipments[i];
 				}
@@ -1384,30 +1411,16 @@ function wareSupply(type, subid, choice){
 							for(var k = 0; k < supplier.length; k++){
 								var toset = Math.min(set, supplier[k].available);
 								set -= toset;
-								if(supplier[k].index >= 0 && toset > 0 && mapped[url].parcel[supplier[k].index] !== toset){
-									change = true;
-									mapped[url].form.find("input:text[name]").eq(supplier[k].index).val(toset);
-								}	
-								else if(supplier[k].row >= 0 && toset > 0){
-									supcount++;
-									xContract("/"+realm+"/ajax/unit/supply/create", {
-									'offer'  		  : supplier[k].offer,
-									'unit'  		  : subid,
-									'amount'		  : toset					
-									}, function(){
-										supcount--;
-										suppliercount++;
-										$("#XioSuppliers").text(suppliercount);
-										checkFinish();
-									});
-									mapped[urlContract].available[supplier[k].row] -= toset;								
+								if(toset > 0 && (supplier[k].row >= 0 || supplier[k].index >= 0 && mapped[url].parcel[supplier[k].index] !== toset) || mapped[url].reprice[supplier[k].index]){
+									change.push({
+										'newsup' : supplier[k].row >= 0,
+										'offer'  : supplier[k].offer,
+										'amount' : toset					
+									});																	
 								}
 								else if(supplier[k].index >= 0 && toset === 0){
-									supcount++;
-									xPost(url, "contractDestroy=1&supplyContractData%5Bselected%5D%5B%5D="+supplier[k].offer, function(){
-										supcount--;
-										checkFinish();
-									})
+									deletechange = true;
+									deletestring += "&supplyContractData%5Bselected%5D%5B%5D="+supplier[k].offer;
 								}
 							}
 							
@@ -1415,27 +1428,64 @@ function wareSupply(type, subid, choice){
 								postMessage("Not enough suppliers for product "+product+" in warehouse <a href="+url+">"+subid+"</a>");
 							}	
 							
-							supcount--;
 							if(xsupplier.length){
 								xsupplier.shift()();
 							}
 							else{
 								firesupplier = false;
-							}	
+							}
 							
-							checkFinish();
-						});
+							!--supcount && post2();
+							
+						});						
 					}.bind(this, product, urlContract, set, supplier))
 				);
 			}
+			
+			if(!supcount){
+				post2();
+			}
 
-			if(!firesupplier){
+			if(!firesupplier && xsupplier.length){
 				firesupplier = true;
 				xsupplier.shift()();
-			}
-		}
-	}
+			}		
+		}	
+	}	
 	
+	function post2(){
+		
+		var contractcount = change.length + deletechange;
+		
+		for(var i = 0; i < change.length; i++){
+			
+			(function(i){
+				xContract("/"+realm+"/ajax/unit/supply/create", {
+				'offer'  		  : change[i].offer,
+				'unit'  		  : subid,
+				'amount'		  : change[i].amount			
+				}, function(){
+					if(change[i].newsup){
+						suppliercount++;
+						$("#XioSuppliers").text(suppliercount);												
+					}
+					!--contractcount && xTypeDone(type);
+				});
+			})(i);
+		}
+		
+		if(deletechange){
+			contractcount++;
+			xPost(url, deletestring, function(){
+				!--contractcount && xTypeDone(type);
+			});
+		}
+		
+		if(contractcount === 0){
+			xTypeDone(type);
+		}	
+		
+	}
 }
 
 function advertisement(type, subid, choice){
@@ -1465,7 +1515,7 @@ var policyJSON = {
 		order: ["don't change supply", "zero supply", "required", "3x stock"],
 		name: "Production supply",
 		group: "Supply",
-		wait: []
+		wait: ["Production price", "Policy"]
 	},
 	ss: {
 		func: storeSupply, 
@@ -1473,7 +1523,7 @@ var policyJSON = {
 		order: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"],
 		name: "Retail supply",
 		group: "Supply",
-		wait: []
+		wait: ["Production price", "Policy"]
 	},	
 	sw: {
 		func: wareSupply,
@@ -1481,7 +1531,7 @@ var policyJSON = {
 		order: ["don't change supply", "zero supply", "required", "required (world)", "2x stock", "2x stock (world)", "maximum supply"],
 		name: "Warehouse supply",
 		group: "Supply",
-		wait: ["Production supply", "Policy", "Retail supply", "Production price"]
+		wait: ["Production supply", "Retail supply"]
 	},
 	ad: {
 		func: advertisement,
@@ -1498,6 +1548,14 @@ var policyJSON = {
 		name: "Salary",
 		group: "Salary",
 		wait: ["Equipment"]
+	},
+	eh: {
+		func: holiday, 
+		save: ["don't change holiday", "holiday", "working"], 
+		order: ["don't change holiday", "holiday", "working"], 
+		name: "Holiday",
+		group: "Holiday",
+		wait: []
 	},
 	et: {
 		func: training, 
@@ -1629,12 +1687,12 @@ function preferencePages(html, url){
 	
 	//Main unit page: Salary and Equipment
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 && $html.find(".fa-cogs").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1 && $html.find("[href*='/window/unit/equipment/']").length === 1)){
-		return ["es", "et", "qp"];
+		return ["es", "eh", "et", "qp"];
 	}
 	
 	//Main unit page: Salary only
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1)){
-		return ["es", "et"];
+		return ["es", "eh", "et"];
 	}
 	
 	//Technology page
@@ -1679,14 +1737,15 @@ function XioMaintenance(subids, allowedPolicies){
 	xcount = {};
 	xmax = {};
 	mapped = {};
-	servercount = 0;
+	servergetcount = 0;
+	serverpostcount = 0;
 	suppliercount = 0;
 	
 	if(!subids){
 		subids = [];
 		for(var key in ls){
 			if(/x\d+/.test(key)){
-				subids.push(key.match(/\d+/)[0]);
+				subids.push(numberfy(key.match(/\d+/)[0]));
 			}
 		}
 	}
@@ -1756,6 +1815,14 @@ function XioMaintenance(subids, allowedPolicies){
 						+"<td id=XioSuppliers>0</td>"
 					+"</tr>"
 					+"<tr>"
+						+"<td>Get calls: </td>"
+						+"<td id=XioGetCalls>0</td>"
+					+"</tr>"
+					+"<tr>"
+						+"<td>Post calls: </td>"
+						+"<td id=XioPostCalls>0</td>"
+					+"</tr>"
+					+"<tr>"
 						+"<td>Total server calls: </td>"
 						+"<td id=XioServerCalls>0</td>"
 					+"</tr>"
@@ -1767,8 +1834,7 @@ function XioMaintenance(subids, allowedPolicies){
 						+"<td>sec</td>"
 					+"</tr>"
 					+"<tr>"
-						+"<td id=xDone colspan=4 style='color: lightgoldenrodyellow'>"
-						+"</td>"
+						+"<td id=xDone colspan=4 style='visibility: hidden; color: lightgoldenrodyellow'>All Done!</td>"
 					+"</tr>"
 				+"</table>"
 				+"<div id=XMproblem class=XioProperty style='font-size: 18px; color:gold;'></div>";
@@ -1799,58 +1865,76 @@ function XioGenerator(subids){
 				+"<td id=XioServerCalls>0</td>"
 			+"</tr>"
 			+"<tr>"
-				+"<td id=xDone colspan=4 style='color: lightgoldenrodyellow'>"
-				+"</td>"
+				+"<td id=xDone colspan=4 style='visibility: hidden; color: lightgoldenrodyellow'>All Done!</td>"
 			+"</tr>"
 		+"</table>"	
 	);
 	
 	servercount = 0;
 	var getcount = 0;
-	var htmls = {}
-	var getUrls = {};
+	var data = {};
 	
 	for(var j = 0; j < subids.length; j++){
 		
 		var subid = subids[j];
+		data[subid] = [];
 		
-		getUrls[subid] = [
-			"/"+realm+"/main/unit/view/"+subid,
-			"/"+realm+"/main/unit/view/"+subid+"/sale",
-			"/"+realm+"/main/unit/view/"+subid+"/supply",
-			"/"+realm+"/main/unit/view/"+subid+"/technology",
-			"/"+realm+"/main/unit/view/"+subid+"/investigation"		
-		];
-		
-		htmls[subid] = [];
-		getcount += getUrls[subid].length;
-		for(var i = 0; i < getUrls[subid].length; i++){
-			(function(i, subid){
-				$.get(getUrls[subid][i], function(html){
-					servercount++;
-					$("#XioServerCalls").text(servercount);			
-					htmls[subid][i] = html;						
-					!--getcount && checkpreference();
-				});		
-			})(i, subid);
-		}		
+		var url = "/"+realm+"/main/unit/view/"+subid;	
+				
+		getcount++;
+		(function(url, subid){
+			$.get(url, function(htmlmain){
+				
+				servercount++;
+				$("#XioServerCalls").text(servercount);
+				
+				data[subid].push({
+					html: htmlmain,
+					url: url
+				});
+				
+				var links = $(htmlmain).find(".tabu > li > a:gt(2)").map(function(){ return $(this).attr("href"); }).get();
+				getcount += links.length;			
+				!--getcount && checkpreference();
+				for(var i = 0; i < links.length; i++){
+					(function(url, subid){
+						$.get(url, function(html){
+							
+							servercount++;
+							$("#XioServerCalls").text(servercount);	
+							
+							data[subid].push({
+								html: html,
+								url: url
+							});			
+							
+							!--getcount && checkpreference();
+						});		
+					})(links[i], subid);
+				}
+			});
+		})(url, subid);
 	}
 	
 	function checkpreference(){
 		
+		console.log(data);
+		
+		
 		var refresh = false;
+		var i = 0;
 		for(var j = 0; j < subids.length; j++){		
 		
 			var change = false;
 			var subid = subids[j];
 		
 			var policies = [];
-			policies.push.apply(policies, preferencePages(htmls[subid][0], getUrls[subid][0]));
-			for(var i = 1; i < getUrls[subid].length; i++){
-				if(preferencePages(htmls[subid][i], getUrls[subid][0]).length === 0){
-					policies.push.apply(policies, preferencePages(htmls[subid][i], getUrls[subid][i]));			
-				}
+			for(var i = 0; i < data[subid].length; i++){
+				var prePages = preferencePages(data[subid][i].html, data[subid][i].url);
+				console.log(data[subid][i].url, prePages);
+				policies.push.apply(policies, prePages);				
 			}
+			console.log(subid, policies);
 			
 			savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
 			savedPolicies = [];
@@ -1889,7 +1973,6 @@ function XioGenerator(subids){
 			
 		}
 		
-		console.log("refresh", refresh);
 		if(refresh){
 									
 			$(".XioHide").removeClass("XioHide").show();
@@ -1899,7 +1982,7 @@ function XioGenerator(subids){
 			
 		}
 		
-		$("#xDone").text("All Done!");
+		$("#xDone").css("visibility", "");
 		$(".XioGo").attr("disabled", false);
 		
 	}
@@ -1909,14 +1992,14 @@ function XioGenerator(subids){
 
 function XioOverview(){
 		
-	$(".unit-list-2014 td:not(:nth-child(3)):not(:nth-child(8)), .unit-list-2014 th:not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
-	
-	$("#wrapper").width("auto");
-	$("#mainContent").width("100%");
-	
+	$(".unit-list-2014").find("td, th").filter(":not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
+	$(".unit-list-2014 tr.odd").css("backgroundColor", "lightgoldenrodyellow");
+	$(".unit-list-2014 td:nth-child(3) span").remove(); 
+	$(".unit-list-2014").css("white-space", "nowrap");
+		
 	var policyString = [];
 	var groupString = [];
-	var thstring = "<th class=XOhtml>All  <input type=button id=XioGeneratorPRO class='XioGo' value='Generate ALL'></th>";
+	var thstring = "<th class=XOhtml><input type=button id=XioGeneratorPRO class='XioGo' value='Generate ALL'></th>";
 	var tdstring = "";
 	for(var key in policyJSON){			
 		if(groupString.indexOf(policyJSON[key].group) === -1){
@@ -1976,6 +2059,10 @@ function XioOverview(){
 			j++;
 		}
 	}
+	
+	$("#wrapper").width($(".unit-list-2014").width() + 80);
+	$("#mainContent").width($(".unit-list-2014").width());
+	
 	
 	$(document).on('change.XO', ".XioChoice", function(){	
 	
@@ -2082,7 +2169,7 @@ function calcEquip(skill){
 }
 
 function calcTechLevel(manager){
-	return Math.floor(Math.pow(manager*156.25, 1/3));
+	return Math.floor(Math.pow(manager*156.25, 1/3)*10)/10;
 }
 
 function calcAllEmployees(factor, manager){
