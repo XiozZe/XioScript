@@ -1,24 +1,20 @@
 // ==UserScript==
 // @name           XioScript
-// @namespace      Virtonomics
+// @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript using XioMaintenance
-// @version        12.0.9
+// @version        12.0.10
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.9";
+var version = "12.0.10";
 
-//Added get and post calls
-//Top manager tech level now rounds down to one decimal instead of integer
-//Generate function rewritten
-//Production and Retail supply functions will now always take place after the production price and policy functions
-//Production, Retail and Warehouse supply will now always update the price with the latest set even if the supply did not change
-//Warehouse supply now needs less server calls to delete suppliers
-//Fixed a bug where the warehouse supply would hang if no goods to supply were set
-//Improved XioOverview lay-out
-//Added very basic holiday function
+//Optimised equipment function algorithm: less server calls, more precise quality setting
+//Fixed a bug where the warehouse supply (world) did not finish execution if a supplier had to be deleted
+//Fixed a bug where the main page of a subdivision wouldn't present the necessary options if no employees were set
+//Top manager equipment quality text updated
+//XioMaintenance does not break anymore because of subdivisions that have been deleted and posts a message instead
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -28,7 +24,7 @@ function xpCookie(name){
 	for(var i = 0; i < ca.length; i++){
 		var c = ca[i];
 		while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+		if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
 	}
 	return null;
 }
@@ -44,12 +40,14 @@ var xmax = {};
 var typedone = [];
 var xwait = [];
 var xsupplier = [];
+var xequip = [];
 var firesupplier = false;
+var fireequip = false;
 var servergetcount = 0;
 var serverpostcount = 0;
-var servercount = 0;
 var suppliercount = 0;
 var processingtime = 0;
+var timeinterval;
 
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
@@ -57,7 +55,12 @@ function numberfy(variable){
 
 function map(html, url, page){
 	var $html = $(html);
-	if(page === "sale"){ 
+	if(page === "unitlist"){
+		mapped[url] = {
+			subids : $html.find(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get()
+		};
+	}
+	else if(page === "sale"){ 
 		mapped[url] = {
 			form : $html.find("[name=storageForm]"),
 			policy : $html.find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
@@ -65,7 +68,7 @@ function map(html, url, page){
 			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
 			product: $html.find(".grid a:not([onclick])").map(function(){ return $(this).text(); }).get(),
 			region: $html.find(".officePlace a:eq(-2)").text()
-		}
+		};
 	}
 	else if(page === "prodsupply"){
 		mapped[url] = { 
@@ -76,12 +79,12 @@ function map(html, url, page){
 			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
 			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
 			reprice : $html.find(".inner_table").length? $html.find("td:nth-child(5) tr:nth-child(2)").map(function(){ return !!$(this).filter("[class]").length; }).get() : $html.find("[id^=totalPrice] tr:nth-child(1)").map(function(){ return !!$(this).filter("[style]").length; }).get(),
-		}
+		};
 	}
 	else if(page === "consume"){
 		mapped[url] = {
 			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map(function(){ return numberfy($(this).text().match(/\d+/)); }).get()
-		}
+		};
 	}
 	else if(page === "storesupply"){
 		mapped[url] = {
@@ -92,19 +95,19 @@ function map(html, url, page){
 			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
 			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
 			reprice : $html.find("td:nth-child(9) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return !!$(this).find("div").length; }).get(),
-		}
+		};
 	}
 	else if(page === "TM"){
 		mapped[url] = {
 			product : $html.find(".grid td:odd").map(function(){ return $(this).clone().children().remove().end().text().trim(); }).get(),
 			franchise : $html.find(".grid b").map(function(){ return $(this).text(); }).get()
-		}
+		};
 	}
 	else if(page === "IP"){
 		mapped[url] = {
 			product : $html.find(".list td:nth-child(5n-3)").map(function(){ return $(this).text(); }).get(),
 			IP : $html.find(".list td:nth-child(5n)").map(function(){ return numberfy($(this).text()); }).get()
-		}
+		};
 	}
 	else if(page === "transport"){
 		mapped[url] = {
@@ -114,14 +117,14 @@ function map(html, url, page){
 			regionId : $html.find("select:eq(1) option").map(function(){ return numberfy($(this).val().split("/")[2]); }).get(),
 			cityName : $html.find("select:eq(2) option").map(function(){ return $(this).text(); }).get(),
 			cityId : $html.find("select:eq(2) option").map(function(){ return numberfy($(this).val().split("/")[3]); }).get()			
-		}
+		};
 	}
 	else if(page === "CTIE"){
 		mapped[url] = {
 			product : $html.find(".list td:nth-child(3n-1)").map(function(){ return $(this).text(); }).get(),
 			profitTax : numberfy($html.find(".region_data td:eq(3)").text()),
 			CTIE : $html.find(".list td:nth-child(3n)").map(function(){ return numberfy($(this).text()); }).get()
-		}
+		};
 	}
 	else if(page === "main"){
 		mapped[url] = {
@@ -141,7 +144,7 @@ function map(html, url, page){
 			maxEmployees : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(2) td:eq(1)").text()),
 			img : $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0],
 			hasService : !$html.find("[src='/img/artefact/icons/color/production.gif']").length
-		}
+		};
 	}
 	else if(page === "salary"){
 		mapped[url] = {
@@ -152,14 +155,14 @@ function map(html, url, page){
 			skillNow : numberfy($html.find("#apprisedEmployeeLevel").text()),
 			skillCity : numberfy($html.find("div span[id]:eq(1)").text().match(/[0-9]+(\.[0-9]+)?/)[0]),
 			skillReq : numberfy($html.find("div span[id]:eq(1)").text().split(",")[1])	
-		}		
+		};	
 	}	
 	else if(page === "training"){
 		mapped[url] = {
 			form : $html.filter("form"),
 			salaryNow : numberfy($html.find(".list td:eq(8)").text()),
 			salaryCity : numberfy($html.find(".list td:eq(9)").text().split("$")[1]),
-		}		
+		};	
 	}
 	else if(page === "equipment"){
 		mapped[url] = {
@@ -172,27 +175,27 @@ function map(html, url, page){
 			qualOffer : $html.find(".digits:not(:contains($)):odd").map(function(){ return numberfy($(this).text()); }).get(),
 			available : $html.find(".digits:not(:contains($)):even").map(function(){ return numberfy($(this).text()); }).get(),
 			offer : $html.find(".choose span").map(function(){ return numberfy($(this).attr("id")); }).get()
-		}		
+		};		
 	}
 	else if(page === "manager"){
 		mapped[url] = {
 			base : $html.find("input:text[readonly]").map(function(){ return numberfy($(this).val()); }).get(),
 			bonus : $html.find(".grid:eq(1) td:nth-child(5)").map(function(){ return numberfy($(this).text()); }).get(),
 			name : $html.find("[id^=title]").map(function(){ return $(this).text().trim(); }).get()
-		}
+		};
 	}
 	else if(page === "tech"){
 		mapped[url] = {
 			price : $html.find("tr td.nowrap:nth-child(2)").map(function(){ return $(this).text().trim(); }).get(),
 			tech : $html.find("tr:has([src='/img/v.gif'])").index(),
 			img: $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0]
-		}
+		};
 	}	
 	else if(page === "products"){
 		mapped[url] = {
 			name : $html.find(".list td:nth-child(2n):has(a)").map(function(){ return $(this).text(); }).get(),
 			id : $html.find(".list td:nth-child(2n) a:nth-child(1)").map(function(){ return numberfy($(this).attr("href").match(/\d+/)[0]); }).get()
-		}
+		};
 	}
 	else if(page === "waresupply"){
 		mapped[url] = {			
@@ -207,8 +210,8 @@ function map(html, url, page){
 			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
 			stock : $html.find(".p_title table").map(function(){ return $(this).find("strong").length >= 2? numberfy($(this).find("strong:eq(0)").text()) : 0; }).get(),			
 			shipments : $html.find(".p_title table").map(function(){ return $(this).find("strong").length === 1? numberfy($(this).find("strong:eq(0)").text()) : numberfy($(this).find("strong:eq(2)").text()); }).get(),
-			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce(function(a, b){ return Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0]))}, Infinity); }).get()			
-		}
+			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce(function(a, b){ return Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0])); }, Infinity); }).get()			
+		};
 	}	
 	else if(page === "contract"){
 		mapped[url] = {
@@ -218,7 +221,7 @@ function map(html, url, page){
 			quality : $html.find("td:nth-child(7)").map(function(){ return numberfy($(this).text()); }).get(),
 			tm : $html.find(".unit-list-2014 td:nth-child(1)").map(function(){ return $(this).find("img").length ? $(this).find("img").attr("title") : ""; }).get(),
 			product : $html.find("img:eq(0)").attr("title")
-		}
+		};
 	}
 	else if(page === "research"){
 		mapped[url] = {
@@ -228,12 +231,12 @@ function map(html, url, page){
 			unittype : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split(",")[1]),
 			industry : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split("(")[1]),
 			level : numberfy($html.find(".list tr td[style]:eq(0)").text())
-		}
+		};
 	}
 	else if(page === "experimentalunit"){
 		mapped[url] = {
 			id : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get()
-		}
+		};
 	}	
 }
 
@@ -352,7 +355,7 @@ function xTypeDone(type){
 				xwait[i][0].splice(index, 1);
 				if(xwait[i][0].length === 0){
 					xwait[i][1]();
-					xwait.splice(i, 1)
+					xwait.splice(i, 1);
 					i--;
 				}
 			}			
@@ -368,6 +371,7 @@ function xTypeDone(type){
 		$("#xDone").css("visibility", "");
 		console.log("mapped: ", mapped);
 		$(".XioGo").attr("disabled", false);
+		clearInterval(timeinterval);
 	}	
 }
 
@@ -896,213 +900,342 @@ function equipment(type, subid, choice){
 		});
 	}
 	
-	function equipContract(op, amount, offer, callback){
-		// op = repair, buy or terminate
-		equipcount++;
-		if(op === "repair" || op === "buy"){
-			xContract("/"+realm+"/ajax/unit/supply/equipment", {
-			'operation'       : op,
-			'offer'  		  : offer,
-			'unit'  		  : subid,
-			'supplier'		  : offer,
-			'amount'		  : amount							
-			}, function(){
-				if(callback){
-					callback;
-				}
-				else{
-					!--equipcount && xTypeDone(type);						
-				}	
-			});
-		}
-		else{
-			xContract("/"+realm+"/ajax/unit/supply/equipment", {
-				'operation'       : "terminate",
-				'unit'  		  : subid,
-				'amount'		  : amount					
-			}, function(){
-				equipcount--;
-				if(callback){
-					callback();
-				}
-				else{
-					!equipcount && xTypeDone(type);
-				}
-			});
-		}
-		
-	}
-	
 	function post(){
-		var change = false;		
 		
-		var equipWear = Math.floor(mapped[url].equipNum * mapped[url].equipPerc / 100);
-		if(choice === 1 && (mapped[url].qualNow < mapped[url].qualReq || equipWear !== 0)){
-						
-			while(mapped[url].qualNow < mapped[url].qualReq){
-							
-				var PQR = 0;
-				var minPQR = Infinity;
-				var minId = -1;
-				
-				for(var i = 0; i < mapped[url].offer.length; i++){
-					PQR = mapped[url].price[i] / (mapped[url].qualOffer[i] - mapped[url].qualReq + 0.001);
-					if(PQR < minPQR && PQR > 0 && mapped[url].available[i]){
-						minPQR = PQR;
-						minId = i;
-					}
-				}
-				
-				if(minId === -1){
-					postMessage("No equipment on the market with a sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
-					xTypeDone(type);
-					return false;
-				}
-				
-				var tobuy = Math.ceil(mapped[url].equipNum * (mapped[url].qualReq - mapped[url].qualNow) / (mapped[url].qualOffer[minId] - mapped[url].qualNow));
-				tobuy = Math.min(tobuy, mapped[url].available[minId]);
-				mapped[url].available[minId] -= tobuy;
-				
-				mapped[url].qualNow = (mapped[url].qualOffer[minId] * tobuy + mapped[url].qualNow * (mapped[url].equipNum - tobuy)) / mapped[url].equipNum;					
-				equipContract("terminate", tobuy, mapped[url].offer[minId], function(){
-					equipContract("buy", tobuy, mapped[url].offer[minId]);
-				});	
-				
-			}
+		var change = [];		
+		
+		var equipPerc = mapped[urlMain].img === "animalfarm"? 100 - mapped[url].equipPerc : mapped[url].equipPerc;
+		var equipWear = Math.floor(mapped[url].equipNum * equipPerc / 100);		
+		
+		if(choice === 1){
+								
+			var offer = {
+				low : [],
+				high : [],
+			};
 			
-			while(equipWear > 0){
-				
-				var minPrice = Infinity;
-				var minId = -1;
-				var botPrice = Infinity;
-				var botId = -1;
-				
-				for(var i = 0; i < mapped[url].offer.length; i++){
-					if(mapped[url].price[i] < minPrice && mapped[url].qualOffer[i] >= mapped[url].qualReq && mapped[url].available[i]){
-						minPrice = mapped[url].price[i];
-						minId = i;
-					}
-					if(mapped[url].price[i] < botPrice && mapped[url].available[i]){
-						botPrice = mapped[url].price[i];
-						botId = i;
-					}
-				}
-				
-				if(minId === -1){
-					postMessage("No equipment on the market with sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
-					xTypeDone(type);
-					return false;
-				}
-				
-				var newQual = 0;
-				var minBuy = 0;
-				var botBuy = 0;
-				while(mapped[url].available[minId] && mapped[url].available[botId] && equipWear > 0){
-					newQual = ((mapped[url].equipNum - 1 - minBuy - botBuy) * mapped[url].qualNow + (botBuy + 1) * mapped[url].qualOffer[botId] + minBuy * mapped[url].qualOffer[minId]) / mapped[url].equipNum;
-					if(newQual > mapped[url].qualReq && botId >= 0 && botPrice < minPrice){
-						botBuy++;
-						mapped[url].available[botId]--;
-					}
-					else{
-						minBuy++;
-						mapped[url].available[minId]--;
-					}			
-					equipWear--;
-				}
-							
-				if(botBuy){
-					equipContract("repair", botBuy, mapped[url].offer[botId]);
+			var qualReq = mapped[url].qualReq + 0.005;
+			var qualNow = mapped[url].qualNow - 0.005;
+			
+			for(var i = 0; i < mapped[url].offer.length; i++){
+				var data = {
+					PQR : mapped[url].price[i] / mapped[url].qualOffer[i],
+					quality : mapped[url].qualOffer[i] - 0.005,
+					available : mapped[url].available[i],
+					buy : 0,
+					offer : mapped[url].offer[i]
 				}				
-				if(minBuy){
-					equipContract("repair", minBuy, mapped[url].offer[minId]);
-				}			
+				if(data.quality < qualReq){
+					offer.low.push(data);
+				}
+				else{
+					offer.high.push(data);
+				}
 			}
-		}
-		else if(choice === 2 && equipWear !== 0){
 			
+			for(var key in offer){
+				offer[key].sort(function(a, b) {
+					return a.PQR - b.PQR;
+				});
+			}
+			
+			var l = 0;
+			var h = 0;
+			var qualEst = 0;
+			var qualNew = qualNow;
+			
+			while(equipWear > 0 && h < offer.high.length){
+				
+				qualEst = qualNew;
+				l < offer.low.length && offer.low[l].buy++;
+				for(var key in offer){
+					for(var i = 0; i < offer[key].length; i++){
+						if(offer[key][i].buy){
+							qualEst = ((mapped[url].equipNum - offer[key][i].buy) * qualEst + offer[key][i].buy * offer[key][i].quality) / mapped[url].equipNum;
+						}						
+					}
+				}
+				l < offer.low.length && offer.low[l].buy++;
+				
+				if(l < offer.low.length && qualEst > qualReq && offer.low[l].PQR < offer.high[h].PQR){
+					offer.low[l].buy++;
+					offer.low[l].available--;
+					if(offer.low[l].available === 0){
+						l++;
+					}
+				}
+				else{
+					offer.high[h].buy++;
+					offer.high[h].available--;
+					if(offer.high[h].available === 0){
+						h++;
+					}
+				}
+				
+				equipWear--;				
+			}		
+			
+			for(var key in offer){
+				for(var i = 0; i < offer[key].length; i++){
+					if(offer[key][i].buy){
+						change.push({
+							op : "repair",
+							offer : offer[key][i].offer,
+							amount : offer[key][i].buy
+						});
+						qualNew = ((mapped[url].equipNum - offer[key][i].buy) * qualNew + offer[key][i].buy * offer[key][i].quality) / mapped[url].equipNum;
+					}
+				}
+			}
+			
+			var offer = {
+				inc : []
+			};
+			
+			for(var i = 0; i < mapped[url].offer.length; i++){
+				var data = {
+					PQR : mapped[url].price[i] / (mapped[url].qualOffer[i] - qualReq),
+					quality : mapped[url].qualOffer[i] - 0.005,
+					available : mapped[url].available[i],
+					buy : 0,
+					offer : mapped[url].offer[i]
+				}				
+				if(data.quality > qualReq){
+					offer.inc.push(data);
+				}
+			}
+			
+			offer.inc.sort(function(a, b) {
+				return a.PQR - b.PQR;
+			});			
+			
+			var n = 0;
+			qualEst = 0;	
+			var torepair = 0;
+			for(var i = 0; i < offer.inc.length; i++){
+				if(offer.inc[i].buy){
+					torepair += offer.inc[i].buy;
+					qualEst += offer.inc[i].buy * offer.inc[i].quality;
+				}						
+			}
+			qualEst = (qualEst + (mapped[url].equipNum - torepair) * qualNow) / mapped[url].equipNum;
+						
+			while(qualEst < qualReq && n < offer.inc.length){
+				
+				offer.inc[n].buy++;
+				offer.inc[n].available--;
+				if(offer.inc[n].available === 0){
+					n++;
+				}
+				
+				qualEst = 0;	
+				torepair = 0;
+				for(var i = 0; i < offer.inc.length; i++){
+					if(offer.inc[i].buy){
+						torepair += offer.inc[i].buy;
+						qualEst += offer.inc[i].buy * offer.inc[i].quality;
+					}						
+				}
+				qualEst = (qualEst + (mapped[url].equipNum - torepair) * qualNow) / mapped[url].equipNum;							
+			}		
+			
+			if(torepair){
+				change.push({
+					op : "terminate",
+					amount : torepair
+				});
+			}
+			
+			for(var i = 0; i < offer.inc.length; i++){
+				if(offer.inc[i].buy){
+					change.push({
+						op : "buy",
+						offer : offer.inc[i].offer,
+						amount : offer.inc[i].buy
+					});
+				}
+			}						
+			
+			if(equipWear > 0 && (h < offer.high.length || n < offer.inc.length)){
+				postMessage("No equipment on the market with a quality higher than required. Could not repair subdivision <a href="+url+">"+subid+"</a>");
+			}			
+			
+		}
+		
+		else if(choice === 2 && equipWear !== 0){
+						
 			var s = subType[mapped[urlMain].img];
 			var equipMax = calcEquip(calcSkill(mapped[urlSalary].employees, s[0], mapped[urlManager].base[s[2]] + mapped[urlManager].bonus[s[2]]));
-						
-			while(equipWear > 0){
-				
-				var minPrice = Infinity;
-				var minId = -1;
-				var botPrice = Infinity;
-				var botId = -1;
-				
-				for(var i = 0; i < mapped[url].offer.length; i++){
-					if(mapped[url].price[i] < minPrice && mapped[url].qualOffer[i] >= mapped[url].qualNow && mapped[url].available[i]){
-						minPrice = mapped[url].price[i];
-						minId = i;
-					}
-					if(mapped[url].price[i] < botPrice && mapped[url].qualOffer[i] <= equipMax && mapped[url].available[i]){
-						botPrice = mapped[url].price[i];
-						botId = i;
-					}
-				}
-				
-				if(minId === -1 || botId === -1){
-					postMessage("No equipment on the market with sufficient quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
-					xTypeDone(type);
-					return false;
-				}
 								
-				var newQual = 0;
-				var minBuy = 0;
-				var botBuy = 0;
-				while(mapped[url].available[minId] && mapped[url].available[botId] && equipWear > 0){
-					newQual = ((mapped[url].equipNum - 1 - minBuy - botBuy) * mapped[url].qualNow + botBuy * mapped[url].qualOffer[botId] + (minBuy + 1) * mapped[url].qualOffer[minId]) / mapped[url].equipNum;
-					if(newQual < equipMax){
-						minBuy++;
-						mapped[url].available[minId]--;
+			var offer = {
+				low : [],
+				mid : [],
+				high : [],
+			};
+			
+			var qualNow = mapped[url].qualNow + 0.005;
+			
+			for(var i = 0; i < mapped[url].offer.length; i++){
+				var data = {
+					PQR : mapped[url].price[i] / mapped[url].qualOffer[i],
+					quality : mapped[url].qualOffer[i] + 0.005,
+					available : mapped[url].available[i],
+					buy : 0,
+					offer : mapped[url].offer[i]
+				}				
+				if(data.quality < qualNow){
+					offer.low.push(data);
+				}
+				else if(data.quality < equipMax){
+					offer.mid.push(data);
+				}
+				else{
+					offer.high.push(data);
+				}
+			}
+			
+			for(var key in offer){
+				offer[key].sort(function(a, b) {
+					return a.PQR - b.PQR;
+				});
+			}
+			
+			var l = 0;
+			var m = 0;
+			var h = 0;
+			var qualEst = 0;
+			var qualNew = qualNow;
+			
+			while(equipWear > 0 && l + m < offer.low.length + offer.mid.length && m + h < offer.mid.length + offer.high.length){
+				
+				qualEst = qualNew;
+				h < offer.high.length && offer.high[h].buy++;
+				for(var key in offer){
+					for(var i = 0; i < offer[key].length; i++){
+						if(offer[key][i].buy){
+							qualEst = ((mapped[url].equipNum - offer[key][i].buy) * qualEst + offer[key][i].buy * offer[key][i].quality) / mapped[url].equipNum;
+						}						
 					}
-					else{
-						botBuy++;
-						mapped[url].available[botId]--;
-						
-					}			
-					equipWear--;
+				}
+				h < offer.high.length && offer.high[h].buy--;
+				
+				if(h < offer.high.length && qualEst < equipMax && (m === offer.mid.length || offer.high[h].PQR < offer.mid[m].PQR)){
+					offer.high[h].buy++;
+					offer.high[h].available--;
+					if(offer.high[h].available === 0){
+						h++;
+					}
+				}
+				else if(l < offer.low.length && qualEst > equipMax && (m === offer.mid.length || offer.low[l].PQR < offer.mid[m].PQR)){
+					offer.low[l].buy++;
+					offer.low[l].available--;
+					if(offer.low[l].available === 0){
+						l++;
+					}
+				}
+				else{
+					offer.mid[m].buy++;
+					offer.mid[m].available--;
+					if(offer.mid[m].available === 0){
+						m++;
+					}
 				}
 				
-				if(botBuy){
-					equipContract("repair", botBuy, mapped[url].offer[botId]);
-				}				
-				if(minBuy){
-					equipContract("repair", minBuy, mapped[url].offer[minId]);
-				}							
+				equipWear--;				
 			}
+			
+			for(var key in offer){
+				for(var i = 0; i < offer[key].length; i++){
+					if(offer[key][i].buy){
+						change.push({
+							op : "repair",
+							offer : offer[key][i].offer,
+							amount : offer[key][i].buy
+						});	
+						qualNew = ((mapped[url].equipNum - offer[key][i].buy) * qualNew + offer[key][i].buy * offer[key][i].quality) / mapped[url].equipNum;
+					}
+				}
+			}	
+			
+			if(equipWear > 0 && l + m < offer.low.length + offer.mid.length){
+				postMessage("No equipment on the market with a quality lower than the maximum quality defined by the Top1. Could not repair subdivision <a href="+url+">"+subid+"</a>");
+			}
+			else if(equipWear > 0 && m + h < offer.mid.length + offer.high.length){
+				postMessage("No equipment on the market with a quality higher than the current quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
+			}				
+			
 		}	
 		else if(choice === 3 && equipWear !== 0){
-						
-			while(equipWear > 0){
-							
-				var id = -1;
-				for(var i = 0; i < mapped[url].offer.length; i++){
-					if(mapped[url].qualOffer[i] === 2.00 && mapped[url].available[i]){
-						id = i;
-						break;
-					}
-				}
+			
+			var offer = [];
+			
+			for(var i = 0; i < mapped[url].offer.length; i++){
+				offer.push({
+					price : mapped[url].price[i],
+					quality : mapped[url].qualOffer[i],
+					available : mapped[url].available[i],
+					offer : mapped[url].offer[i]
+				});
+			}
+			
+			offer.sort(function(a, b){
+				return a.price - b.price;
+			});
+			
+			var i = 0;
+			while(equipWear > 0 && i < offer.length){
 				
-				if(id === -1){
-					postMessage("No equipment on the market with a quality of 2.00. Could not repair subdivision <a href="+url+">"+subid+"</a>");
-					xTypeDone(type);
-					return false;
-				}
-							
-				var tobuy = Math.min(equipWear, mapped[url].available[id]);
-				mapped[url].available[id] -= tobuy;
-				equipWear -= tobuy;
-				
-				mapped[url].qualNow = ((mapped[url].equipNum - tobuy) * mapped[url].qualNow + tobuy * 2.00) / mapped[url].equipNum;				
-				equipContract("repair", tobuy, mapped[url].offer[i]);
-				
+				var tobuy = 0;
+				if(offer[i].quality === 2.00){
+					
+					tobuy = Math.min(equipWear, offer[i].available);
+					equipWear -= tobuy;			
+					change.push({
+						op : "repair",
+						offer : offer[i].offer,
+						amount : tobuy
+					});
+					
+				}				
+				i++;
+			}
+			
+			if(i === offer.length){
+				postMessage("No equipment on the market with a quality of 2.00. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 			}
 			
 		}
-		else{
+		
+		var equipcount = change.length;
+		for(var i = 0; i < change.length; i++){
+			xequip.push(
+				(function(i){
+					xContract("/"+realm+"/ajax/unit/supply/equipment", {
+						'operation'       : change[i].op,
+						'offer'  		  : change[i].offer,
+						'unit'  		  : subid,
+						'supplier'		  : change[i].offer,
+						'amount'		  : change[i].amount							
+					}, 
+					function(){
+						if(xequip.length){
+							xequip.shift()();
+						}
+						!--equipcount && xTypeDone(type);							
+					});						
+				}.bind(this, i))
+			);
+		}
+		
+		if(xequip.length && !fireequip){
+			fireequip = true;
+			xequip.shift()();
+		}
+		else if(equipcount === 0){
 			xTypeDone(type);
 		}
+		
+		
 	}
 }
 
@@ -1475,7 +1608,6 @@ function wareSupply(type, subid, choice){
 		}
 		
 		if(deletechange){
-			contractcount++;
 			xPost(url, deletestring, function(){
 				!--contractcount && xTypeDone(type);
 			});
@@ -1602,6 +1734,10 @@ var policyJSON = {
 function preference(policies){
 	//manage preference options
 	
+	if(document.URL.match(/(view\/?)\d+/) === null){
+		return false;
+	}
+	
 	var subid = numberfy(document.URL.match(/(view\/?)\d+/)[0].split("/")[1]);	
 			
 	var savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];
@@ -1686,12 +1822,12 @@ function preferencePages(html, url){
 	}
 	
 	//Main unit page: Salary and Equipment
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 && $html.find(".fa-cogs").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1 && $html.find("[href*='/window/unit/equipment/']").length === 1)){
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length && $html.find(".fa-cogs").length || $html.find("[href*='/window/unit/employees/engage/']").length && $html.find("[href*='/window/unit/equipment/']").length)){
 		return ["es", "eh", "et", "qp"];
 	}
 	
 	//Main unit page: Salary only
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length === 1 || $html.find("[href*='/window/unit/employees/engage/']").length === 1)){
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length || $html.find("[href*='/window/unit/employees/engage/']").length)){
 		return ["es", "eh", "et"];
 	}
 	
@@ -1727,6 +1863,7 @@ function XioMaintenance(subids, allowedPolicies){
 		
 	console.log("XM!");
 	processingtime = new Date().getTime();
+	timeinterval = setInterval(time, 1000);	
 	
 	$(".XioGo").attr("disabled", true);	
 	$(".XioProperty").remove();
@@ -1758,99 +1895,121 @@ function XioMaintenance(subids, allowedPolicies){
 	}
 	
 	
-	var tablestring = "<div id=XMtabletitle class=XioProperty style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
-		+"<table id=XMtable class=XioProperty style='font-size: 18px; color:gold; border-spacing: 10px 0; margin-bottom: 18px'>";	
-	
-	var startedPolicies = [];
-	for(var i = 0; i < subids.length; i++){		 
-		var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
-		for(var j = 0; j < savedPolicyStrings.length; j++){	
-			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
-			var choice = parseFloat(savedPolicyStrings[j].substring(2));
-			if(policy === undefined || !choice || allowedPolicies.indexOf(policy.name) === -1){
-				continue;
-			}
-			
-			if(startedPolicies.indexOf(policy.name) === -1){
-				startedPolicies.push(policy.name);				
-			}
-			
-			xmax[policy.name] = ++xmax[policy.name] || 1;
-			xcount[policy.name] = ++xcount[policy.name] || 1;
-			
-			if(policy.wait.length === 0){
-				policy.func(policy.name, subids[i], choice);
-			}
-			else{
-				xwait.push(
-					[						
-						policy.wait.slice(), 
-						function(i, j, policy, savedPolicyStrings){							
-							policy.func(policy.name, subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
-						}.bind(this, i, j, policy, savedPolicyStrings)
-					]
-				);
-			}						
-		}	
-	}	
-	
-	
-	var type;
-	for(var key in policyJSON){
-		type = policyJSON[key].name;
-		if(startedPolicies.indexOf(type) >= 0){
-			tablestring +=   "<tr>"
-								+"<td>"+type+"</td>"
-								+"<td id='x"+type+"'>0</td>"
-								+"<td>of</td>"
-								+"<td>"+xmax[type]+"</td>"
-								+"<td id='x"+type+"done' style='color: lightgoldenrodyellow'></td>"
-							+"</tr>";
-		}	
-	}
-	
-	
-	tablestring += 	"<tr>"
-						+"<td>New suppliers: </td>"
-						+"<td id=XioSuppliers>0</td>"
-					+"</tr>"
-					+"<tr>"
-						+"<td>Get calls: </td>"
-						+"<td id=XioGetCalls>0</td>"
-					+"</tr>"
-					+"<tr>"
-						+"<td>Post calls: </td>"
-						+"<td id=XioPostCalls>0</td>"
-					+"</tr>"
-					+"<tr>"
-						+"<td>Total server calls: </td>"
-						+"<td id=XioServerCalls>0</td>"
-					+"</tr>"
-					+"<tr>"
-						+"<td>Time: </td>"
-						+"<td id=XioMinutes>0</td>"
-						+"<td>min</td>"
-						+"<td id=XioSeconds>0</td>"
-						+"<td>sec</td>"
-					+"</tr>"
-					+"<tr>"
-						+"<td id=xDone colspan=4 style='visibility: hidden; color: lightgoldenrodyellow'>All Done!</td>"
-					+"</tr>"
-				+"</table>"
-				+"<div id=XMproblem class=XioProperty style='font-size: 18px; color:gold;'></div>";
+	var tablestring = ""
+		+"<div id=XMtabletitle class=XioProperty style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top: 15px;'>XS 12 Maintenance Log</div>"
+		+"<table id=XMtable class=XioProperty style='font-size: 18px; color:gold; border-spacing: 10px 0; margin-bottom: 18px'>"
+			+"<tr id=XSplit></tr>"
+			+"<tr>"
+				+"<td>New suppliers: </td>"
+				+"<td id=XioSuppliers>0</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td>Get calls: </td>"
+				+"<td id=XioGetCalls>0</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td>Post calls: </td>"
+				+"<td id=XioPostCalls>0</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td>Total server calls: </td>"
+				+"<td id=XioServerCalls>0</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td>Time: </td>"
+				+"<td id=XioMinutes>0</td>"
+				+"<td>min</td>"
+				+"<td id=XioSeconds>0</td>"
+				+"<td>sec</td>"
+			+"</tr>"
+			+"<tr>"
+				+"<td id=xDone colspan=4 style='visibility: hidden; color: lightgoldenrodyellow'>All Done!</td>"
+			+"</tr>"
+		+"</table>"
+		+"<div id=XMproblem class=XioProperty style='font-size: 18px; color:gold;'></div>";
 				
 	$("#topblock").append(tablestring);	
 	
-	var type;
-	for(var key in policyJSON){
-		type = policyJSON[key].name;
-		if(startedPolicies.indexOf(type) === -1){
-			xcount[type] = 1;
-			xTypeDone(type);
+	var companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
+	var urlUnitlist = "/"+realm+"/main/company/view/"+companyid+"/unit_list";
+	xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000", "none", function(){
+		xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", function(){		
+			xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", function(){
+				further(mapped[urlUnitlist].subids);
+			});
+		});
+	});
+	
+	function further(realsubids){
+		
+		var startedPolicies = [];
+		console.log(realsubids);
+		for(var i = 0; i < subids.length; i++){
+			if(realsubids.indexOf(subids[i]) === -1){
+				var urlSubid = "/"+realm+"/main/unit/view/"+subids[i];
+				postMessage("Subdivision <a href="+urlSubid+">"+subids[i]+"</a> is missing from the company. Options have been erased from the Local Storage");
+				ls.removeItem("x"+subids[i]);
+				continue;
+			}
+			var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
+			for(var j = 0; j < savedPolicyStrings.length; j++){	
+				var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
+				var choice = parseFloat(savedPolicyStrings[j].substring(2));
+				if(policy === undefined || !choice || allowedPolicies.indexOf(policy.name) === -1){
+					continue;
+				}
+				
+				if(startedPolicies.indexOf(policy.name) === -1){
+					startedPolicies.push(policy.name);				
+				}
+				
+				xmax[policy.name] = ++xmax[policy.name] || 1;
+				xcount[policy.name] = ++xcount[policy.name] || 1;
+				
+				if(policy.wait.length === 0){
+					policy.func(policy.name, subids[i], choice);
+				}
+				else{
+					xwait.push(
+						[						
+							policy.wait.slice(), 
+							function(i, j, policy, savedPolicyStrings){							
+								policy.func(policy.name, subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
+							}.bind(this, i, j, policy, savedPolicyStrings)
+						]
+					);
+				}						
+			}	
 		}	
+					
+		var type;
+		for(var key in policyJSON){
+			type = policyJSON[key].name;
+			if(startedPolicies.indexOf(type) >= 0){
+				$("#XSplit").before( "<tr>"
+										+"<td>"+type+"</td>"
+										+"<td id='x"+type+"'>0</td>"
+										+"<td>of</td>"
+										+"<td>"+xmax[type]+"</td>"
+										+"<td id='x"+type+"done' style='color: lightgoldenrodyellow'></td>"
+									+"</tr>"
+				);
+			}	
+		}		
+		
+		var type;
+		for(var key in policyJSON){
+			type = policyJSON[key].name;
+			if(startedPolicies.indexOf(type) === -1){
+				xcount[type] = 1;
+				xTypeDone(type);
+			}	
+		}
+
+	
 	}
 	
-	
+
 }
 
 function XioGenerator(subids){
@@ -1870,7 +2029,7 @@ function XioGenerator(subids){
 		+"</table>"	
 	);
 	
-	servercount = 0;
+	servergetcount = 0;
 	var getcount = 0;
 	var data = {};
 	
@@ -1885,8 +2044,8 @@ function XioGenerator(subids){
 		(function(url, subid){
 			$.get(url, function(htmlmain){
 				
-				servercount++;
-				$("#XioServerCalls").text(servercount);
+				servergetcount++;
+				$("#XioServerCalls").text(servergetcount);
 				
 				data[subid].push({
 					html: htmlmain,
@@ -1900,8 +2059,8 @@ function XioGenerator(subids){
 					(function(url, subid){
 						$.get(url, function(html){
 							
-							servercount++;
-							$("#XioServerCalls").text(servercount);	
+							servergetcount++;
+							$("#XioServerCalls").text(servergetcount);	
 							
 							data[subid].push({
 								html: html,
@@ -2214,9 +2373,9 @@ function topManagerStats(){
 				);	
 			
 				$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2)").after( ""
-					+"<tr style='color: darkgreen'><td>Required according to the current qualification of employees</td><td>"+calcEquip(mapped[here].skillNow)+"</td></tr>"
-					+"<tr style='color: indigo'><td>Required according to the target qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))+"</td></tr>"
-					+"<tr style='color: crimson'><td>Required according to the maximum qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))+"</td></tr>"
+					+"<tr style='color: darkgreen'><td>Maximum quality according to the current qualification of employees</td><td>"+calcEquip(mapped[here].skillNow)+"</td></tr>"
+					+"<tr style='color: indigo'><td>Maximum quality according to the target qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))+"</td></tr>"
+					+"<tr style='color: crimson'><td>Maximum quality according to the maximum qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))+"</td></tr>"
 				);
 				
 				$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2)").after( ""
