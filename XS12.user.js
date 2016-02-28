@@ -8,7 +8,7 @@
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.11";
+var version = "12.0.12";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -42,6 +42,7 @@ var serverpostcount = 0;
 var suppliercount = 0;
 var processingtime = 0;
 var timeinterval;
+var XOcopystring = "";
 
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
@@ -2070,10 +2071,7 @@ function XioGenerator(subids){
 	}
 	
 	function checkpreference(){
-		
-		console.log(data);
-		
-		
+				
 		var refresh = false;
 		var i = 0;
 		for(var j = 0; j < subids.length; j++){		
@@ -2084,11 +2082,8 @@ function XioGenerator(subids){
 			var policies = [];
 			for(var i = 0; i < data[subid].length; i++){
 				var prePages = preferencePages(data[subid][i].html, data[subid][i].url);
-				console.log(data[subid][i].url, prePages);
 				policies.push.apply(policies, prePages);				
-			}
-			console.log(subid, policies);
-			
+			}			
 			savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
 			savedPolicies = [];
 			savedPolicyChoices = [];
@@ -2143,6 +2138,44 @@ function XioGenerator(subids){
 	
 }
 
+function XioCopy(subid){
+	
+	var $choices = $(".XioChoice[data-id="+subid+"]");
+	XOcopystring = ""
+	for(var i = 0; i < $choices.length; i++){
+		XOcopystring += $choices.eq(i).attr("data-name");
+		XOcopystring += $choices.eq(i).val();
+		XOcopystring += ";"
+	}
+	
+	XOcopystring = XOcopystring.slice(0, -1);
+		
+}
+
+function XioPaste(subid){
+	
+	if(XOcopystring.length){
+		
+		var array = XOcopystring.split(";");
+		var $options = $(".XioChoice[data-id="+subid+"]");
+		for(var i = 0; i < array.length; i++){
+			
+			var name = array[i].substring(0, 2);
+			var choiceindex = array[i].substring(2);
+			
+			var $choice = $options.filter("[data-name="+name+"]");
+			
+			if($choice.length){				
+				$choice.val(choiceindex);
+				$choice.trigger("change.XO");
+			}
+			
+		}
+		
+	}
+	
+}
+
 function XioOverview(){
 		
 	$(".unit-list-2014").find("td, th").filter(":not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
@@ -2174,6 +2207,8 @@ function XioOverview(){
 		$td.eq(i).after("<td class=XOhtml>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioGenerator' value=Generate>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioSub' value=FIRE!>"
+						   +"<input type=button data-id="+subids[i]+" class='XioCopy' value=Copy>"
+						   +"<input type=button data-id="+subids[i]+" class='XioPaste' value=Paste>"
 					  +"</td>"
 					  +tdstring
 		);
@@ -2194,14 +2229,13 @@ function XioOverview(){
 							
 			var htmlstring = "<select data-id="+subids[i]+" data-name="+savedPolicyStrings[j].substring(0, 2)+" class=XioChoice>";
 			for(var k = 0; k < policy.order.length; k++){
-				htmlstring += "<option>"+policy.order[k]+"</option>";
+				htmlstring += "<option value="+k+">"+policy.order[k]+"</option>";
 			}
 			
 			$(".unit-list-2014 tr").eq(i+1)
 								   .find("td").eq(groupString.indexOf(policy.group)+9)
 								   .html(htmlstring + "</select>")
-								   .find("option").eq(policyChoice)
-								   .attr("selected", true);	
+								   .find("select").val(policyChoice);					   
 		}	
 	}
 	
@@ -2218,9 +2252,9 @@ function XioOverview(){
 	
 	
 	$(document).on('change.XO', ".XioChoice", function(){	
-	
+		
 		var thisid = $(this).attr("data-name");
-		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
+		var thisindex = policyJSON[thisid].save.indexOf(policyJSON[thisid].order[$(this).val()]);
 		var subid = $(this).attr("data-id");
 		
 		savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
@@ -2248,7 +2282,17 @@ function XioOverview(){
 	$(document).on('click.XO', ".XioGenerator", function(){
 		var subid = numberfy($(this).attr("data-id"));
 		XioGenerator([subid]);
-	});	
+	});
+
+	$(document).on('click.XO', ".XioCopy", function(){
+		var subid = numberfy($(this).attr("data-id"));
+		XioCopy(subid);
+	});
+	
+	$(document).on('click.XO', ".XioPaste", function(){
+		var subid = numberfy($(this).attr("data-id"));
+		XioPaste(subid);
+	});
 	
 	$(document).on('click.XO', ".XioGroup", function(){
 		var index = groupString.indexOf($(this).attr("data-group"));
