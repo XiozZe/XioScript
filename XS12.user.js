@@ -2,19 +2,13 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript using XioMaintenance
-// @version        12.0.10
+// @version        12.0.11
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.10";
-
-//Optimised equipment function algorithm: less server calls, more precise quality setting
-//Fixed a bug where the warehouse supply (world) did not finish execution if a supplier had to be deleted
-//Fixed a bug where the main page of a subdivision wouldn't present the necessary options if no employees were set
-//Top manager equipment quality text updated
-//XioMaintenance does not break anymore because of subdivisions that have been deleted and posts a message instead
+var version = "12.0.11";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -1740,7 +1734,7 @@ function preference(policies){
 	
 	var subid = numberfy(document.URL.match(/(view\/?)\d+/)[0].split("/")[1]);	
 			
-	var savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];
+	var savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];
 	var savedPolicies = [];
 	var savedPolicyChoices = [];
 	var $topblock = $("#topblock");
@@ -1769,7 +1763,7 @@ function preference(policies){
 		var thisid = $(this).attr("id");
 		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
 		
-		savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
+		savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
 		savedPolicies = [];
 		savedPolicyChoices = [];
 		for(var i = 0; i < savedPolicyStrings.length; i++){		
@@ -1790,7 +1784,7 @@ function preference(policies){
 			newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
 		};
 		
-		ls["x"+subid] = newPolicyString.substring(1);
+		ls["x"+realm+subid] = newPolicyString.substring(1);
 	}).each(function(){
 		$(this).trigger("change");
 	});
@@ -1951,7 +1945,7 @@ function XioMaintenance(subids, allowedPolicies){
 				ls.removeItem("x"+subids[i]);
 				continue;
 			}
-			var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
+			var savedPolicyStrings = ls["x"+realm+subids[i]]? ls["x"+realm+subids[i]].split(";") : [];
 			for(var j = 0; j < savedPolicyStrings.length; j++){	
 				var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
 				var choice = parseFloat(savedPolicyStrings[j].substring(2));
@@ -2095,7 +2089,7 @@ function XioGenerator(subids){
 			}
 			console.log(subid, policies);
 			
-			savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
+			savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
 			savedPolicies = [];
 			savedPolicyChoices = [];
 			for(var i = 0; i < savedPolicyStrings.length; i++){		
@@ -2127,7 +2121,7 @@ function XioGenerator(subids){
 					newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
 				};
 				
-				ls["x"+subid] = newPolicyString.substring(1);
+				ls["x"+realm+subid] = newPolicyString.substring(1);
 			}
 			
 		}
@@ -2187,7 +2181,7 @@ function XioOverview(){
 			
 	for(var i = 0; i < subids.length; i++){			
 		
-		var savedPolicyStrings = ls["x"+subids[i]]? ls["x"+subids[i]].split(";") : [];
+		var savedPolicyStrings = ls["x"+realm+subids[i]]? ls["x"+realm+subids[i]].split(";") : [];
 		for(var j = 0; j < savedPolicyStrings.length; j++){	
 			var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)];
 			var choice = numberfy(savedPolicyStrings[j].substring(2));		
@@ -2229,7 +2223,7 @@ function XioOverview(){
 		var thisindex = policyJSON[thisid].save.indexOf($(this).find("option:selected").text());
 		var subid = $(this).attr("data-id");
 		
-		savedPolicyStrings = ls["x"+subid]? ls["x"+subid].split(";") : [];	
+		savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
 		savedPolicies = [];
 		savedPolicyChoices = [];
 		for(var i = 0; i < savedPolicyStrings.length; i++){		
@@ -2244,7 +2238,7 @@ function XioOverview(){
 			newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
 		};
 		
-		ls["x"+subid] = newPolicyString.substring(1);
+		ls["x"+realm+subid] = newPolicyString.substring(1);
 	});	
 
 	$(document).on('click.XO', "#XioGeneratorPRO", function(){
@@ -2275,8 +2269,9 @@ function XioExport(){
 	
 	var string = ""
 	for(var key in ls){
-		if(/x\d+/.test(key)){
-			string += key.match(/\d+/)+"="+ls[key]+",";
+		var patt = new RegExp("x"+realm+"\d+");
+		if(patt.test(key)){
+			string += key.substring(1)+"="+ls[key]+",";
 		}
 	}
 	
