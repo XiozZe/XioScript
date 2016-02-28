@@ -2,13 +2,13 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript using XioMaintenance
-// @version        12.0.11
+// @version        12.0.13
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.12";
+var version = "12.0.13";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -1876,7 +1876,9 @@ function XioMaintenance(subids, allowedPolicies){
 	if(!subids){
 		subids = [];
 		for(var key in ls){
-			if(/x\d+/.test(key)){
+			var patt = new RegExp("x"+realm+"\\d+");
+			console.log(patt, patt.test(key));
+			if(patt.test(key)){
 				subids.push(numberfy(key.match(/\d+/)[0]));
 			}
 		}
@@ -1938,7 +1940,7 @@ function XioMaintenance(subids, allowedPolicies){
 	function further(realsubids){
 		
 		var startedPolicies = [];
-		console.log(realsubids);
+		console.log(subids);
 		for(var i = 0; i < subids.length; i++){
 			if(realsubids.indexOf(subids[i]) === -1){
 				var urlSubid = "/"+realm+"/main/unit/view/"+subids[i];
@@ -2313,7 +2315,7 @@ function XioExport(){
 	
 	var string = ""
 	for(var key in ls){
-		var patt = new RegExp("x"+realm+"\d+");
+		var patt = new RegExp("x"+realm+"\\d+");
 		if(patt.test(key)){
 			string += key.substring(1)+"="+ls[key]+",";
 		}
