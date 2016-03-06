@@ -2,15 +2,18 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript using XioMaintenance
-// @version        12.0.13
+// @version        12.0.14
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.13";
+var version = "12.0.14";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
+
+//ProdSupply price change?
+//EQ: 24.03, 24.04, 24.34, 26.34, 23.98, 23.98, 34.62, 24.04, 23.98, 28.30, 23.98, 24.04, 25.78, 24.03, 34.66, 23.76
 
 function xpCookie(name){
 	var nameEQ = name + "=";
@@ -41,7 +44,7 @@ var servergetcount = 0;
 var serverpostcount = 0;
 var suppliercount = 0;
 var processingtime = 0;
-var timeinterval;
+var timeinterval = 0;
 var XOcopystring = "";
 
 function numberfy(variable){
@@ -92,6 +95,11 @@ function map(html, url, page){
 			reprice : $html.find("td:nth-child(9) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return !!$(this).find("div").length; }).get(),
 		};
 	}
+	else if(page === "tradehall"){
+		mapped[url] = {
+			stock : $html.find(".nowrap:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),			
+		};
+	}
 	else if(page === "TM"){
 		mapped[url] = {
 			product : $html.find(".grid td:odd").map(function(){ return $(this).clone().children().remove().end().text().trim(); }).get(),
@@ -136,9 +144,12 @@ function map(html, url, page){
 			equipWearRed : $html.find(".unit_box:has(.fa-cogs) tr:eq(4) td:eq(1) span").length === 1,
 			manager : $html.find(".unit_box:has(.fa-user) tr:eq(0) td:eq(1)").text(),
 			qual : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(1) td:eq(1)").text()),
+			techLevel : numberfy($html.find(".unit_box:has(.fa-industry) tr:eq(3) td:eq(1)").text()),
 			maxEmployees : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(2) td:eq(1)").text()),
 			img : $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0],
-			hasService : !$html.find("[src='/img/artefact/icons/color/production.gif']").length
+			hasService : !$html.find("[src='/img/artefact/icons/color/production.gif']").length,
+			onHoliday : $html.find("[href$=unset]").length,
+			isStore : $html.find("[href$=trading_hall]").length
 		};
 	}
 	else if(page === "salary"){
@@ -235,13 +246,11 @@ function map(html, url, page){
 	}	
 }
 
-function xGet(url, page, callback){
+function xGet(url, page, force, callback){
 	
-	var unchangable = ["TM", "IP", "transport", "CTIE", "manager", "products", "none"];
-	
-	if($.inArray(url, getUrls) === -1){
-		
-		if($.inArray(page, unchangable) >= 0){
+	if($.inArray(url, getUrls) === -1 || force){
+				
+		if($.inArray(url, getUrls) === -1){
 			getUrls.push(url);			
 		}
 		
@@ -339,10 +348,35 @@ function xContract(url, data, callback){
 
 function xTypeDone(type){	
 	
+	var group;
+	for(var key in policyJSON){
+		if(policyJSON[key].name === type){
+			group = policyJSON[key].group;
+			break;
+		}
+	}
+	
+	var typeArray = [];
+	for(var key in policyJSON){
+		if(policyJSON[key].group === group){
+			typeArray.push(policyJSON[key].name);
+		}
+	}
+	
 	xcount[type]--;
-	$("[id='x"+type+"']").text(xmax[type] - xcount[type]);
+	
+	var groupcount = 0;
+	var maxcount = 0;
+	for(var i = 0; i < typeArray.length; i++){
+		groupcount += xcount[typeArray[i]];
+		maxcount += xmax[typeArray[i]];
+	}
+	
+	$("[id='x"+group+"']").text(maxcount - groupcount);
 	if(!xcount[type]){
-		$("[id='x"+type+"done']").text("Done!");
+		if(!groupcount){
+			$("[id='x"+group+"done']").text("Done!");
+		}		
 		typedone.push(type);
 		for(var i = 0; i < xwait.length; i++){
 			var index = xwait[i][0].indexOf(type);
@@ -359,8 +393,9 @@ function xTypeDone(type){
 	}	
 	
 	var sum = 0;
-	for(var i in xcount)
+	for(var i in xcount){
 		sum += xcount[i];
+	}
 	
 	if(sum === 0 && $("#xDone").css("visibility") === "hidden"){
 		$("#xDone").css("visibility", "");
@@ -393,24 +428,24 @@ function salePrice(type, subid, choice){
 	var getcount = 0;
 	if(choice >= 1){
 		getcount++;
-		xGet(url, "sale", function(){
+		xGet(url, "sale", false, function(){
 			!--getcount && phase();
 		});
 	}
 	
 	if(choice >= 2){
 		getcount = getcount + 2;
-		xGet(urlTM, "TM", function(){
+		xGet(urlTM, "TM", false, function(){
 			!--getcount && phase();
 		});
-		xGet(urlIP, "IP", function(){
+		xGet(urlIP, "IP", false, function(){
 			!--getcount && phase();
 		});
 	}
 	
 	if(choice >= 5){
 		getcount++;
-		xGet(urlTrans, "transport", function(){
+		xGet(urlTrans, "transport", false, function(){
 			!--getcount && phase();
 		});
 	}
@@ -418,7 +453,7 @@ function salePrice(type, subid, choice){
 	function phase(){
 		if(choice === 5){
 			getcount++;
-			xGet(urlCTIE, "CTIE", function(){
+			xGet(urlCTIE, "CTIE", false, function(){
 				!--getcount && post();
 			});
 		}
@@ -428,7 +463,7 @@ function salePrice(type, subid, choice){
 			regionId = mapped[urlTrans].regionId[ indexRegion ];	
 			urlCTIE = "/"+realm+"/main/geo/regionENVD/"+regionId;
 			
-			xGet(urlCTIE, "CTIE", function(){
+			xGet(urlCTIE, "CTIE", false, function(){
 				!--getcount && post();
 			});	
 		}
@@ -540,7 +575,7 @@ function salePrice(type, subid, choice){
 function salePolicy(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
 		
-	xGet(url, "sale", function(){
+	xGet(url, "sale", false, function(){
 		post();
 	});
 	
@@ -589,13 +624,13 @@ function prodSupply(type, subid, choice){
 	var urlContract = "/"+realm+"/ajax/unit/supply/create";
 	
 	
-	xGet(url, "prodsupply", function(){
+	xGet(url, "prodsupply", false, function(){
 		phase();
 	});	
 	
 	function phase(){
 		if(choice >= 2 && !mapped[url].isProd){
-			xGet(url2, "consume", function(){
+			xGet(url2, "consume", false, function(){
 				post();
 			});
 		}
@@ -662,7 +697,7 @@ function storeSupply(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
 	var urlContract = "/"+realm+"/ajax/unit/supply/create";
 		
-	xGet(url, "storesupply", function(){
+	xGet(url, "storesupply", true, function(){
 		post();
 	});	
 	
@@ -722,17 +757,17 @@ function salary(type, subid, choice){
 	
 	if(choice >= 1){
 		getcount++;
-		xGet(url, "salary", function(){
+		xGet(url, "salary", true, function(){
 			!--getcount && post();
 		});
 	}
 	
 	if(choice >= 2){
 		getcount += 2;
-		xGet(urlMain, "main", function(){
+		xGet(urlMain, "main", false, function(){
 			!--getcount && post();
 		});
-		xGet(urlManager, "manager", function(){
+		xGet(urlManager, "manager", false, function(){
 			!--getcount && post();
 		});
 		
@@ -775,6 +810,20 @@ function salary(type, subid, choice){
 				mapped[url].form.find("#salary").val(mapped[url].salaryNow);
 			}
 		}
+		else if(choice === 4){
+			var manager = mapped[urlManager].base[subType[mapped[urlMain].img][2]] + mapped[urlManager].bonus[subType[mapped[urlMain].img][2]];
+			var factor3 = subType[mapped[urlMain].img][1];
+			var managerNew = manager * calcOverflowTop1(mapped[urlMain].maxEmployees, factor3, manager);	
+			var skillReq = calcSkill(mapped[url].employees, subType[mapped[urlMain].img][0], managerNew);
+						
+			if(mapped[url].skillNow !== skillReq){
+				change = true;
+				mapped[url].salaryNow = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, mapped[url].skillNow, mapped[url].skillCity, skillReq);
+				mapped[url].salaryNow = Math.max(mapped[url].salaryNow, (mapped[url].salaryCity+.005) * 0.8);
+				mapped[url].salaryNow = Math.min(mapped[url].salaryNow, (mapped[url].salaryCity-.005) * 500);
+				mapped[url].form.find("#salary").val(mapped[url].salaryNow);
+			}
+		}
 
 		if(change){
 			xPost(url, mapped[url].form.serialize(), function(){
@@ -789,23 +838,96 @@ function salary(type, subid, choice){
 
 function holiday(type, subid, choice){
 	
-	if(choice === 1){
-		xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_set", "none", function(){
-			xTypeDone(type);
-		});
-	}
-	else if(choice === 2){		
-		xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_unset", "none", function(){
-			xTypeDone(type);
-		});
-	}
+	var urlMain = "/"+realm+"/main/unit/view/"+subid;
+	xGet(urlMain, "main", false, function(){
+		post();
+	});
 	
+	function post(){
+		console.log("post?>");
+		
+		if(choice === 1 && !mapped[urlMain].onHoliday){
+			xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_set", "none", false, function(){
+				xTypeDone(type);
+			});
+		}
+		else if(choice === 2 && mapped[urlMain].onHoliday){		
+			xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_unset", "none", false, function(){
+				xTypeDone(type);
+			});
+		}
+		else if(choice === 3){
+			
+			var urlSupply = "/"+realm+"/main/unit/view/"+subid+"/supply";
+			var urlTrade = "/"+realm+"/main/unit/view/"+subid+"/trading_hall";	
+			var stockfull;
+			
+			if(mapped[urlMain].isStore){
+				xGet(urlTrade, "tradehall", false, function(){
+					
+					stockfull = false;
+					for(var i = 0; i < mapped[urlTrade].stock.length; i++){
+						if(mapped[urlTrade].stock[i]){
+							stockfull = true;
+						}
+					}
+					
+					if(!mapped[urlTrade].stock.length){
+						stockfull = false;
+					}
+					
+					post2();				
+				
+				});
+			}
+			else{
+				xGet(urlSupply, "prodsupply", false, function(){
+					
+					stockfull = true;
+					for(var i = 0; i < mapped[urlSupply].stock.length; i++){
+						if(!mapped[urlSupply].stock[i]){
+							stockfull = false;
+						}
+					}
+					
+					if(mapped[urlSupply].stock.length !== mapped[urlSupply].required.length){
+						stockfull = false;
+					}				
+					
+					post2();
+					
+				});
+			}
+			
+			function post2(){					
+				
+				if(!stockfull && !mapped[urlMain].onHoliday){
+					xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_set", "none", false, function(){
+						xTypeDone(type);
+					});
+				}
+				else if(stockfull && mapped[urlMain].onHoliday){
+					xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_unset", "none", false, function(){
+						xTypeDone(type);
+					});
+				}
+				else{
+					xTypeDone(type);
+				}
+				
+			};
+		}	
+		else{
+			xTypeDone(type);
+		}
+		
+	}
 }
 
 function training(type, subid, choice){
 	var url = "/"+realm+"/window/unit/employees/education/"+subid;
 		
-	xGet(url, "training", function(){
+	xGet(url, "training", false, function(){
 		post();
 	});	
 	
@@ -863,23 +985,23 @@ function equipment(type, subid, choice){
 	var equipcount = 0;
 	
 	getcount++;
-	xGet(urlMain, "main", function(){
+	xGet(urlMain, "main", false, function(){
 		!--getcount && phase();
 	});	
 	
 	if(choice === 2){
 		getcount += 2;
-		xGet(urlSalary, "salary", function(){
+		xGet(urlSalary, "salary", false, function(){
 			!--getcount && phase();
 		});
-		xGet(urlManager, "manager", function(){
+		xGet(urlManager, "manager", false, function(){
 			!--getcount && phase();
 		});
 	}
 	
 	function phase(){
 		getcount += 2;
-		xGet("/"+realm+"/window/common/util/setpaging/db"+mapped[urlMain].img+"/equipmentSupplierListByUnit/40000", "none", function(){
+		xGet("/"+realm+"/window/common/util/setpaging/db"+mapped[urlMain].img+"/equipmentSupplierListByUnit/40000", "none", false, function(){
 			!--getcount && phase2();
 		});
 		var data = "total_price%5Bfrom%5D=&total_price%5Bto%5D=&quality%5Bfrom%5D=&quality%5Bto%5D=&quantity%5Bisset%5D=1&quantity%5Bfrom%5D=1&total_price%5Bfrom%5D=0&total_price%5Bto%5D=0&total_price_isset=0&quality%5Bfrom%5D=0&quality%5Bto%5D=0&quality_isset=0&quantity_isset=1";
@@ -890,7 +1012,7 @@ function equipment(type, subid, choice){
 	
 	function phase2(){
 		
-		xGet(url, "equipment", function(){
+		xGet(url, "equipment", true, function(){
 			post();
 		});
 	}
@@ -950,7 +1072,7 @@ function equipment(type, subid, choice){
 						}						
 					}
 				}
-				l < offer.low.length && offer.low[l].buy++;
+				l < offer.low.length && offer.low[l].buy--;				
 				
 				if(l < offer.low.length && qualEst > qualReq && offer.low[l].PQR < offer.high[h].PQR){
 					offer.low[l].buy++;
@@ -968,7 +1090,7 @@ function equipment(type, subid, choice){
 				}
 				
 				equipWear--;				
-			}		
+			}	
 			
 			for(var key in offer){
 				for(var i = 0; i < offer[key].length; i++){
@@ -1157,7 +1279,9 @@ function equipment(type, subid, choice){
 			}
 			else if(equipWear > 0 && m + h < offer.mid.length + offer.high.length){
 				postMessage("No equipment on the market with a quality higher than the current quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
-			}				
+			}			
+
+			change.length && console.log(change);
 			
 		}	
 		else if(choice === 3 && equipWear !== 0){
@@ -1216,7 +1340,10 @@ function equipment(type, subid, choice){
 						if(xequip.length){
 							xequip.shift()();
 						}
-						!--equipcount && xTypeDone(type);							
+						else{
+							fireequip = false;
+						}
+						!--equipcount && xTypeDone(type);					
 					});						
 				}.bind(this, i))
 			);
@@ -1239,10 +1366,10 @@ function technology(type, subid, choice){
 	var urlManager = "/"+realm+"/main/user/privat/persondata/knowledge";
 
 	var getcount = 2;
-	xGet(url, "tech", function(){
+	xGet(url, "tech", false, function(){
 		!--getcount && post();
 	});
-	xGet(urlManager, "manager", function(){
+	xGet(urlManager, "manager", false, function(){
 		!--getcount && post();
 	});
 	
@@ -1283,7 +1410,7 @@ function prodBooster(type, subid, choice){
 	
 	var url = "/"+realm+"/main/unit/view/"+subid;
 	
-	xGet(url, "main", function(){
+	xGet(url, "main", false, function(){
 		post();
 	});
 	
@@ -1313,7 +1440,7 @@ function research(type, subid, choice){
 	var urlUnit = "/"+realm+"/window/unit/view/"+subid+"/set_experemental_unit";
 	var urlForecast = "/"+realm+"/ajax/unit/forecast";
 
-	xGet(url, "research", function(){
+	xGet(url, "research", false, function(){
 		
 		if(choice === 1 && mapped[url].isFree){
 			var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
@@ -1322,7 +1449,7 @@ function research(type, subid, choice){
 			});
 		}
 		else if(choice === 1 && (mapped[url].isAbsent || mapped[url].isFactory)){			
-			xGet(urlUnit, "experimentalunit", function(){
+			xGet(urlUnit, "experimentalunit", false, function(){
 				
 				var effi = [];
 				var contractcount = mapped[urlUnit].id.length;
@@ -1381,20 +1508,20 @@ function wareSupply(type, subid, choice){
 	var getcount = 0;
 	
 	getcount++;
-	xGet(url, "waresupply", function(){
+	xGet(url, "waresupply", true, function(){
 		!--getcount && post();
 	});
 	
 	if(choice >= 5){
 		getcount += 3;
-		xGet("/"+realm+"/window/common/util/setpaging/dbwarehouse/supplyList/40000", "none", function(){
+		xGet("/"+realm+"/window/common/util/setpaging/dbwarehouse/supplyList/40000", "none", false, function(){
 			!--getcount && post();
 		});
 		var data = "total_price%5Bfrom%5D=&total_price%5Bto%5D=&quality%5Bfrom%5D=&quality%5Bto%5D=&quantity%5Bfrom%5D=&free_for_buy%5Bfrom%5D=1&brand_value%5Bfrom%5D=&brand_value%5Bto%5D=";
 		xPost("/"+realm+"/window/common/util/setfiltering/dbwarehouse/supplyList", data, function(){
 			!--getcount && post();
 		});
-		xGet("/"+realm+"/window/common/util/setfiltering/dbwarehouse/supplyList/supplierType=all/tm=all", "none", function(){
+		xGet("/"+realm+"/window/common/util/setfiltering/dbwarehouse/supplyList/supplierType=all/tm=all", "none", false, function(){
 			!--getcount && post();
 		});
 
@@ -1515,7 +1642,7 @@ function wareSupply(type, subid, choice){
 
 				xsupplier.push(
 					(function(product, urlContract, set, supplier){
-						xGet(urlContract, "contract", function(){
+						xGet(urlContract, "contract", true, function(){
 														
 							var offers = supplier.map(function(contract){
 								return contract.offer;
@@ -1624,7 +1751,7 @@ var policyJSON = {
 		func: salePrice, 
 		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax"], 
 		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", ],
-		name: "Production price",
+		name: "priceProd",
 		group: "Price",
 		wait: []
 	},
@@ -1632,7 +1759,7 @@ var policyJSON = {
 		func: salePolicy, 
 		save: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"], 
 		order: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"],
-		name: "Policy",
+		name: "policy",
 		group: "Policy",
 		wait: []
 	},
@@ -1640,31 +1767,31 @@ var policyJSON = {
 		func: prodSupply, 
 		save: ["don't change supply", "zero supply", "required", "3x stock"], 
 		order: ["don't change supply", "zero supply", "required", "3x stock"],
-		name: "Production supply",
+		name: "supplyProd",
 		group: "Supply",
-		wait: ["Production price", "Policy"]
+		wait: ["priceProd", "policy", "tech", "equip"]
 	},
 	ss: {
 		func: storeSupply, 
 		save: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"], 
 		order: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"],
-		name: "Retail supply",
+		name: "supplyRetail",
 		group: "Supply",
-		wait: ["Production price", "Policy"]
+		wait: ["priceProd", "policy"]
 	},	
 	sw: {
 		func: wareSupply,
 		save: ["don't change supply", "zero supply", "required", "2x stock", "maximum supply", "required (world)", "2x stock (world)"], 
 		order: ["don't change supply", "zero supply", "required", "required (world)", "2x stock", "2x stock (world)", "maximum supply"],
-		name: "Warehouse supply",
+		name: "supplyWare",
 		group: "Supply",
-		wait: ["Production supply", "Retail supply"]
+		wait: ["supplyProd", "supplyRetail"]
 	},
 	ad: {
 		func: advertisement,
 		save: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"], 
 		order: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"],
-		name: "Advertisement",
+		name: "ads",
 		group: "Advertisement",
 		wait: []
 	},
@@ -1672,39 +1799,55 @@ var policyJSON = {
 		func: salary, 
 		save: ["don't change salary", "required salary", "target salary", "maximum salary"], 
 		order: ["don't change salary", "required salary", "target salary", "maximum salary"],
-		name: "Salary",
+		name: "salaryOldInterface",
 		group: "Salary",
-		wait: ["Equipment"]
+		wait: ["equip"]
+	},	
+	en: {
+		func: salary, 
+		save: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"], 
+		order: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"],
+		name: "salaryNewinterface",
+		group: "Salary",
+		wait: ["equip"]
 	},
 	eh: {
 		func: holiday, 
 		save: ["don't change holiday", "holiday", "working"], 
 		order: ["don't change holiday", "holiday", "working"], 
-		name: "Holiday",
+		name: "holidayElse",
 		group: "Holiday",
 		wait: []
+	},	
+	ep: {
+		func: holiday, 
+		save: ["don't change holiday", "holiday", "working", "has stock"], 
+		order: ["don't change holiday", "holiday", "working", "has stock"], 
+		name: "holidayProd",
+		group: "Holiday",
+		wait: ["priceProd"]
 	},
 	et: {
 		func: training, 
 		save: ["don't train", "always train", "train city salary"], 
 		order: ["don't train", "always train", "train city salary"],
-		name: "Training",
+		name: "training",
 		group: "Training",
-		wait: ["Salary"]
+		wait: ["salary"]
 	},
 	qp: {
 		func: equipment, 
 		save: ["don't change equipment", "required equipment", "maximal equipment", "Q2.00 equipment"], 
 		order: ["don't change equipment", "Q2.00 equipment", "required equipment", "maximal equipment"],
-		name: "Equipment",
+		name: "equip",
 		group: "Equipment",
-		wait: ["Technology", "Research"]
+		wait: ["tech", "research"]
 	},
 	tc: {
 		func: technology,
 		save: ["don't change technology", "introduce researched"],
 		order: ["don't change technology", "introduce researched"],
-		name: "Technology",
+		name: "tech",
 		group: "Technology",
 		wait: []
 	},	
@@ -1712,7 +1855,7 @@ var policyJSON = {
 		func: prodBooster,
 		save: ["don't buy solar panels", "always buy solar panels"],
 		order: ["don't buy solar panels", "always buy solar panels"],
-		name: "Booster",
+		name: "booster",
 		group: "Booster",
 		wait: []
 	},
@@ -1720,7 +1863,7 @@ var policyJSON = {
 		func: research,
 		save: ["don't start new project", "continue research"],
 		order: ["don't start new project", "continue research"],
-		name: "Research",
+		name: "research",
 		group: "Research",
 		wait: []
 	}
@@ -1816,14 +1959,37 @@ function preferencePages(html, url){
 		return ["sw"];
 	}
 	
-	//Main unit page: Salary and Equipment
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length && $html.find(".fa-cogs").length || $html.find("[href*='/window/unit/employees/engage/']").length && $html.find("[href*='/window/unit/equipment/']").length)){
-		return ["es", "eh", "et", "qp"];
-	}
 	
-	//Main unit page: Salary only
-    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && ($html.find(".fa-users").length || $html.find("[href*='/window/unit/employees/engage/']").length)){
-		return ["es", "eh", "et"];
+	//Main unit page excluding warehouses
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && !$html.find("[href$=delivery]").length){
+		
+		var policyArray = [];
+		
+		//New Interface
+		if($html.find(".fa-users").length){		
+			policyArray.push("en");
+		}
+		else{
+			policyArray.push("es");
+		}
+		
+		//Has stock holiday
+		if($html.find("a[href$=supply]").length){
+			policyArray.push("ep");
+		}
+		else{
+			policyArray.push("eh");
+		}		
+		
+		policyArray.push("et");
+		
+		//Has Equipment
+		if($html.find(".fa-cogs").length || $html.find("[href*='/window/unit/equipment/']").length){
+			policyArray.push("qp");
+		}
+		
+		return policyArray;
+		
 	}
 	
 	//Technology page
@@ -1877,7 +2043,6 @@ function XioMaintenance(subids, allowedPolicies){
 		subids = [];
 		for(var key in ls){
 			var patt = new RegExp("x"+realm+"\\d+");
-			console.log(patt, patt.test(key));
 			if(patt.test(key)){
 				subids.push(numberfy(key.match(/\d+/)[0]));
 			}
@@ -1887,7 +2052,7 @@ function XioMaintenance(subids, allowedPolicies){
 	if(!allowedPolicies){
 		allowedPolicies = [];
 		for(var key in policyJSON){
-			allowedPolicies.push(policyJSON[key].name);
+			allowedPolicies.push(policyJSON[key].group);
 		}
 	}
 	
@@ -1929,9 +2094,9 @@ function XioMaintenance(subids, allowedPolicies){
 	
 	var companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
 	var urlUnitlist = "/"+realm+"/main/company/view/"+companyid+"/unit_list";
-	xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000", "none", function(){
-		xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", function(){		
-			xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", function(){
+	xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000", "none", false, function(){
+		xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", true, function(){		
+			xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", false, function(){
 				further(mapped[urlUnitlist].subids);
 			});
 		});
@@ -1940,19 +2105,19 @@ function XioMaintenance(subids, allowedPolicies){
 	function further(realsubids){
 		
 		var startedPolicies = [];
-		console.log(subids);
+		var xgroup = {};
 		for(var i = 0; i < subids.length; i++){
 			if(realsubids.indexOf(subids[i]) === -1){
 				var urlSubid = "/"+realm+"/main/unit/view/"+subids[i];
 				postMessage("Subdivision <a href="+urlSubid+">"+subids[i]+"</a> is missing from the company. Options have been erased from the Local Storage");
-				ls.removeItem("x"+subids[i]);
+				ls.removeItem("x"+realm+subids[i]);
 				continue;
 			}
 			var savedPolicyStrings = ls["x"+realm+subids[i]]? ls["x"+realm+subids[i]].split(";") : [];
 			for(var j = 0; j < savedPolicyStrings.length; j++){	
 				var policy = policyJSON[savedPolicyStrings[j].substring(0, 2)]
 				var choice = parseFloat(savedPolicyStrings[j].substring(2));
-				if(policy === undefined || !choice || allowedPolicies.indexOf(policy.name) === -1){
+				if(policy === undefined || !choice || allowedPolicies.indexOf(policy.group) === -1){
 					continue;
 				}
 				
@@ -1962,6 +2127,7 @@ function XioMaintenance(subids, allowedPolicies){
 				
 				xmax[policy.name] = ++xmax[policy.name] || 1;
 				xcount[policy.name] = ++xcount[policy.name] || 1;
+				xgroup[policy.group] = ++xgroup[policy.group] || 1;
 				
 				if(policy.wait.length === 0){
 					policy.func(policy.name, subids[i], choice);
@@ -1978,30 +2144,33 @@ function XioMaintenance(subids, allowedPolicies){
 				}						
 			}	
 		}	
-					
-		var type;
+				
 		for(var key in policyJSON){
-			type = policyJSON[key].name;
-			if(startedPolicies.indexOf(type) >= 0){
+			var name = policyJSON[key].name;
+			if(startedPolicies.indexOf(name) === -1){
+				xcount[name] = 1;
+				xmax[name] = 0;
+				xTypeDone(name);
+			}	
+		}
+		
+		var displayedPolicies = [];
+		for(var key in policyJSON){
+			var name = policyJSON[key].name;
+			var type = policyJSON[key].group;
+			if(startedPolicies.indexOf(name) >= 0 && displayedPolicies.indexOf(type) === -1){
+				displayedPolicies.push(type);
 				$("#XSplit").before( "<tr>"
 										+"<td>"+type+"</td>"
 										+"<td id='x"+type+"'>0</td>"
 										+"<td>of</td>"
-										+"<td>"+xmax[type]+"</td>"
+										+"<td>"+xgroup[type]+"</td>"
 										+"<td id='x"+type+"done' style='color: lightgoldenrodyellow'></td>"
 									+"</tr>"
 				);
 			}	
 		}		
 		
-		var type;
-		for(var key in policyJSON){
-			type = policyJSON[key].name;
-			if(startedPolicies.indexOf(type) === -1){
-				xcount[type] = 1;
-				xTypeDone(type);
-			}	
-		}
 
 	
 	}
@@ -2297,9 +2466,7 @@ function XioOverview(){
 	});
 	
 	$(document).on('click.XO', ".XioGroup", function(){
-		var index = groupString.indexOf($(this).attr("data-group"));
-		var allowedPolicies = policyString[index];
-		
+		var allowedPolicies = $(this).attr("data-group");	
 		XioMaintenance(undefined, allowedPolicies);
 	});	
 	
@@ -2353,27 +2520,57 @@ function calcSalary(sn, sc, kn, kc, kr){
 }
 
 function calcEmployees(skill, factor, manager){
-	return Math.floor(Math.pow(5,1+skill) * Math.pow(7, 1-skill) * factor * Math.pow(manager, 2)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");	
+	return Math.pow(5,1+skill) * Math.pow(7, 1-skill) * factor * Math.pow(manager, 2);	
 }
 
 function calcSkill(employees, factor, manager){
-	return Math.floor(-Math.log(employees/(35*factor*Math.pow(manager, 2)))/Math.log(7/5)*100)/100;
-}
-
-function calcReqSkill(equip){
-	return Math.ceil(Math.pow(skill, 2/3)*100)/100;
+	return -Math.log(employees/(35*factor*Math.pow(manager, 2)))/Math.log(7/5);
 }
 
 function calcEquip(skill){
-	return Math.floor(Math.pow(skill, 1.5)*100)/100;
+	return Math.pow(skill, 1.5);
 }
 
 function calcTechLevel(manager){
-	return Math.floor(Math.pow(manager*156.25, 1/3)*10)/10;
+	return Math.pow(manager*156.25, 1/3);
+}
+
+function calcTopTech (tech){
+	return Math.pow(tech, 3) / 156.25;
 }
 
 function calcAllEmployees(factor, manager){
-	return Math.floor(25 * factor * manager * (manager + 3)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+	return 25 * factor * manager * (manager + 3);
+}
+
+function calcTop1(empl, qual, factor){
+	return Math.pow(5, 1/2*(-1-qual)) * Math.pow(7, 1/2*(-1+qual)) * Math.sqrt(empl / factor);
+}
+
+function calcTop3(empl, factor){
+	return (-15*factor+Math.sqrt(225*factor*factor + 4*factor*empl))/(10*factor);
+}
+
+function calcEfficiency(employees, allEmployees, manager, factor1, factor3, qualification, techLevel){
+	
+	var effi = [];
+	effi[0] = 100;
+	effi[1] = manager / calcTop1(employees, qualification, factor1) * calcAllEmployees(factor3, manager) / allEmployees * 100;
+	effi[2] = manager / calcTop1(employees, qualification, factor1) * 6/5 * 100;
+	effi[3] = calcAllEmployees(factor3, manager) / allEmployees * 6/5 * 100;
+	effi[4] = manager / calcTopTech(techLevel) * calcAllEmployees(factor3, manager) / allEmployees * 100;
+	effi[5] = manager / calcTopTech(techLevel) * 6/5 * 100;
+	
+	console.log(effi);
+	return (Math.round(Math.min.apply(null, effi)*10)/10).toFixed(2) + "%";
+}
+
+function calcOverflowTop1(allEmployees, factor3, manager){
+	return Math.max(Math.min(6/5, calcAllEmployees(factor3, manager) / allEmployees), 5/6);
+}
+
+function calcOverflowTop3(employees, qualification, techLevel, factor1, manager){
+	return Math.max(Math.min(6/5, manager / calcTopTech(techLevel), manager / calcTop1(employees, qualification, factor1)), 5/6);
 }
 
 function topManagerStats(){
@@ -2397,32 +2594,42 @@ function topManagerStats(){
 			if(managerIndex >= 0){
 				managerBase = mapped[url].base[managerIndex];
 				managerTotal = mapped[here].qual;
-				
-				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(4)").after( ""
-					+"<tr style='color: indigo'><td>Target qualification based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerBase)+"</td></tr>"
-					+"<tr style='color: crimson'><td>Maximum qualfication based on the number of employees</td><td>"+calcSkill(mapped[here].employees, factor1, managerTotal)+"</td></tr>"
+				ov1 = calcOverflowTop1(mapped[here].maxEmployees, factor3, managerTotal);
+				ov3 = calcOverflowTop3(mapped[here].employees, mapped[here].skillNow, mapped[here].techLevel, factor1, managerTotal);
+								
+				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(4) td:eq(1)").append( " (current)"
+					+"<div style='color: darkgreen'>"+(Math.floor(calcSkill(mapped[here].employees, factor1, managerBase)*100)/100).toFixed(2)+" (target) </div>"
+					+"<div style='color: indigo'>"+(Math.floor(calcSkill(mapped[here].employees, factor1, managerTotal)*100)/100).toFixed(2)+" (maximum) </div>"
+					+"<div style='color: crimson'>"+(Math.floor(calcSkill(mapped[here].employees, factor1, managerTotal*ov1)*100)/100).toFixed(2)+" (overflow) </div>"
 				);
 				
-				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(1)").after( ""
-					+"<tr style='color: indigo'><td>Target number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerBase)+"</td></tr>"
-					+"<tr style='color: crimson'><td>Maximum number based on the qualification of employees</td><td>"+calcEmployees(mapped[here].skillNow, factor1, managerTotal)+"</td></tr>"
+				$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(1) td:eq(1)").append( " (current)"
+					+"<div style='color: darkgreen'>"+Math.floor(calcEmployees(mapped[here].skillNow, factor1, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (target) </div>"
+					+"<div style='color: indigo'>"+Math.floor(calcEmployees(mapped[here].skillNow, factor1, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (maximum) </div>"
+					+"<div style='color: crimson'>"+Math.floor(calcEmployees(mapped[here].skillNow, factor1, managerTotal*ov1)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (overflow) </div>"
 				);
 				
-				$(".unit_box:has(.fa-user) tr:not(:has([colspan])):eq(2)").after( ""
-					+"<tr style='color: indigo'><td>Target number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerBase)+"</td></tr>"
-					+"<tr style='color: crimson'><td>Maximum number of employees on profile qualification</td><td>"+calcAllEmployees(factor3, managerTotal)+"</td></tr>"
+				$(".unit_box:has(.fa-user) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
+					+"<div style='color: darkgreen'>"+Math.floor(calcAllEmployees(factor3, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (target) </div>"
+					+"<div style='color: indigo'>"+Math.floor(calcAllEmployees(factor3, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (maximum) </div>"
+					+"<div style='color: crimson'>"+Math.floor(calcAllEmployees(factor3, managerTotal)*ov3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (overflow) </div>"
+				);
+				
+				$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
+					+"<div style='color: darkgreen'>"+(Math.floor(calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))*100)/100).toFixed(2)+" (target) </div>"
+					+"<div style='color: indigo'>"+(Math.floor(calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))*100)/100).toFixed(2)+" (maximum) </div>"
+					+"<div style='color: crimson'>"+(Math.floor(calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal*ov1))*100)/100).toFixed(2)+" (overflow) </div>"
+				);
+				
+				$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
+					+"<div style='color: darkgreen'>"+Math.floor(calcTechLevel(managerBase))+" (target) </div>"
+					+"<div style='color: indigo'>"+Math.floor(calcTechLevel(managerTotal))+" (maximum) </div>"
+					+"<div style='color: crimson'>"+Math.floor(calcTechLevel(managerTotal*ov1))+" (overflow) </div>"
+				);
+				
+				$(".unit_box:has(.fa-tasks) tr:not(:has([colspan])):eq(7)").after( ""
+					+"<tr style='color: blue'><td>Expected top manager efficiency</td><td>"+calcEfficiency(mapped[here].employees, mapped[here].maxEmployees, managerTotal, factor1, factor3, mapped[here].skillNow, mapped[here].techLevel)+"</td></tr>"
 				);	
-			
-				$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2)").after( ""
-					+"<tr style='color: darkgreen'><td>Maximum quality according to the current qualification of employees</td><td>"+calcEquip(mapped[here].skillNow)+"</td></tr>"
-					+"<tr style='color: indigo'><td>Maximum quality according to the target qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerBase))+"</td></tr>"
-					+"<tr style='color: crimson'><td>Maximum quality according to the maximum qualification of employees</td><td>"+calcEquip(calcSkill(mapped[here].employees, factor1, managerTotal))+"</td></tr>"
-				);
-				
-				$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2)").after( ""
-					+"<tr style='color: indigo'><td>Target technology level</td><td>"+calcTechLevel(managerBase)+"</td></tr>"
-					+"<tr style='color: crimson'><td>Maximum technology level</td><td>"+calcTechLevel(managerTotal)+"</td></tr>"
-				);						
 				
 				
 			}
@@ -2451,18 +2658,26 @@ function topManagerStats(){
 				var totalEmp = numberfy($totalEmpRow.find("td:eq(1)").text());
 				var tech = numberfy($techRow.find("td:eq(1)").text());
 				var eqQual = numberfy($equipRow.find("td:eq(1)").text());
+							
+				ov1 = calcOverflowTop1(mapped[here].maxEmployees, factor3, managerTotal);
+				ov3 = calcOverflowTop3(mapped[here].employees, mapped[here].skillNow, mapped[here].techLevel, factor1, managerTotal);
 										
-				placeText($empRow.find("td:eq(1)")," (Target number based on the qualification of employees)", calcEmployees(qual, factor1, managerBase), "indigo");       
-				placeText($empRow.find("td:eq(1)")," (Maximum number based on the qualification of employees)", calcEmployees(qual, factor1, managerTotal), "crimson");
-				placeText($qualRow.find("td:eq(1)")," (Target qualification based on the number of employees)", calcSkill(amount, factor1, managerBase), "indigo");
-				placeText($qualRow.find("td:eq(1)")," (Maximum qualification based on the number of employees)", calcSkill(amount, factor1, managerTotal), "crimson");
-				placeText($totalEmpRow.find("td:eq(1)")," (Target number of employees on profile qualification)", calcAllEmployees(factor3, managerBase), "indigo");
-				placeText($totalEmpRow.find("td:eq(1)")," (Maximum number of employees on profile qualification)", calcAllEmployees(factor3, managerTotal), "crimson");
-				placeText($equipRow.find("td:eq(1)")," (Required according to the current qualification of employees)", calcEquip(qual), "darkgreen");
-				placeText($equipRow.find("td:eq(1)")," (Required according to the target qualification of employees)", calcEquip(calcSkill(amount, factor1, managerBase)), "indigo");
-				placeText($equipRow.find("td:eq(1)")," (Required according to the maximum qualification of employees)", calcEquip(calcSkill(amount, factor1, managerTotal)), "crimson");	
-				placeText($techRow.find("td:eq(1)")," (Target technology level)", calcTechLevel(managerBase), "indigo");
-				placeText($techRow.find("td:eq(1)")," (Maximum technology level)", calcTechLevel(managerTotal), "crimson");		
+				placeText($empRow.find("td:eq(1)")," (target)", Math.floor(calcEmployees(qual, factor1, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "darkgreen");       
+				placeText($empRow.find("td:eq(1)")," (maximum)", Math.floor(calcEmployees(qual, factor1, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "indigo");
+				placeText($empRow.find("td:eq(1)")," (overflow)", Math.floor(calcEmployees(qual, factor1, managerTotal*ov1)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "crimson");
+				placeText($qualRow.find("td:eq(1)")," (target)", (Math.floor(calcSkill(amount, factor1, managerBase)*100)/100).toFixed(2), "darkgreen");
+				placeText($qualRow.find("td:eq(1)")," (maximum)", (Math.floor(calcSkill(amount, factor1, managerTotal)*100)/100).toFixed(2), "indigo");
+				placeText($qualRow.find("td:eq(1)")," (overflow)", (Math.floor(calcSkill(amount, factor1, managerTotal*ov1)*100)/100).toFixed(2), "crimson");
+				placeText($totalEmpRow.find("td:eq(1)")," (target)", Math.floor(calcAllEmployees(factor3, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "darkgreen");
+				placeText($totalEmpRow.find("td:eq(1)")," (maximum)", Math.floor(calcAllEmployees(factor3, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "indigo");
+				placeText($totalEmpRow.find("td:eq(1)")," (overflow)", Math.floor(calcAllEmployees(factor3, managerTotal)*ov3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "crimson");
+				placeText($equipRow.find("td:eq(1)")," (target)", (Math.floor(calcEquip(calcSkill(amount, factor1, managerBase))*100)/100).toFixed(2), "darkgreen");
+				placeText($equipRow.find("td:eq(1)")," (maximum)", (Math.floor(calcEquip(calcSkill(amount, factor1, managerTotal))*100)/100).toFixed(2), "indigo");	
+				placeText($equipRow.find("td:eq(1)")," (overflow)", (Math.floor(calcEquip(calcSkill(amount, factor1, managerTotal*ov1))*100)/100).toFixed(2), "crimson");	
+				placeText($techRow.find("td:eq(1)")," (target)", Math.floor(calcTechLevel(managerBase)), "darkgreen");
+				placeText($techRow.find("td:eq(1)")," (maximum)", Math.floor(calcTechLevel(managerTotal)), "indigo");
+				placeText($techRow.find("td:eq(1)")," (overflow)", Math.floor(calcTechLevel(managerTotal*ov1)), "crimson");
+				placeText($effiRow.find("td:eq(1)"), " (Expected top Manager efficiency)", calcEfficiency(amount, totalEmp, managerTotal, factor1, factor3, qual, tech), "blue");
 				
 			}			
 		}		
