@@ -1807,7 +1807,7 @@ var policyJSON = {
 		func: salary, 
 		save: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"], 
 		order: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"],
-		name: "salaryNewinterface",
+		name: "salaryNewInterface",
 		group: "Salary",
 		wait: ["equip"]
 	},
@@ -1833,7 +1833,7 @@ var policyJSON = {
 		order: ["don't train", "always train", "train city salary"],
 		name: "training",
 		group: "Training",
-		wait: ["salary"]
+		wait: ["salaryNewInterface", "salaryOldInterface"]
 	},
 	qp: {
 		func: equipment, 
