@@ -2,18 +2,15 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript using XioMaintenance
-// @version        12.0.14
+// @version        12.0.15
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.14";
+var version = "12.0.15";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
-
-//ProdSupply price change?
-//EQ: 24.03, 24.04, 24.34, 26.34, 23.98, 23.98, 34.62, 24.04, 23.98, 28.30, 23.98, 24.04, 25.78, 24.03, 34.66, 23.76
 
 function xpCookie(name){
 	var nameEQ = name + "=";
@@ -45,7 +42,9 @@ var serverpostcount = 0;
 var suppliercount = 0;
 var processingtime = 0;
 var timeinterval = 0;
-var XOcopystring = "";
+var optionclick = false;
+var mousedown = false;
+var $tron;
 
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
@@ -63,9 +62,18 @@ function map(html, url, page){
 			form : $html.find("[name=storageForm]"),
 			policy : $html.find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
 			price : $html.find("input.money:even").map(function(){ return numberfy($(this).val()); }).get(),
+			quality : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(2) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
 			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			product: $html.find(".grid a:not([onclick])").map(function(){ return $(this).text(); }).get(),
-			region: $html.find(".officePlace a:eq(-2)").text()
+			product : $html.find(".grid a:not([onclick])").map(function(){ return $(this).text(); }).get(),
+			productId : $html.find(":checkbox:gt(0)").map(function(){ return numberfy($(this).val()); }).get(),
+			region : $html.find(".officePlace a:eq(-2)").text(),
+			contractpage : !!$html.find(".tabsub").length,
+			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.)+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map(function(e){ return e[0] === "["? e.slice(13, -1) : numberfy(e); })
+		};
+	}
+	else if(page === "salecontract"){ 
+		mapped[url] = {
+			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.)+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map(function(e){ return e[0] === "["? e.slice(13, -1) : numberfy(e); })
 		};
 	}
 	else if(page === "prodsupply"){
@@ -168,6 +176,10 @@ function map(html, url, page){
 			form : $html.filter("form"),
 			salaryNow : numberfy($html.find(".list td:eq(8)").text()),
 			salaryCity : numberfy($html.find(".list td:eq(9)").text().split("$")[1]),
+			weekcost : numberfy($html.find("#educationCost").text()),
+			employees : numberfy($html.find("#unitEmployeesData_employees").val()),	
+			skillNow : numberfy($html.find(".list span:eq(0)").text()),			
+			skillCity : numberfy($html.find(".list span:eq(1)").text()),
 		};	
 	}
 	else if(page === "equipment"){
@@ -232,11 +244,22 @@ function map(html, url, page){
 	else if(page === "research"){
 		mapped[url] = {
 			isFree : !$html.find(".cancel").length,
-			isAbsent : $html.find("b[style='color: red']").length,
-			isFactory : $html.find("span[style='COLOR: red;']").length,
+			isHypothesis : !!$html.find("#selectIt").length,
+			isBusy : !!numberfy($html.find(".progress_static_bar:eq(1)").text()),
+			hypId : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get(),
+			curIndex : $html.find("tr:has([src='/img/v.gif'])").index() - 1,
+			chance : $html.find(".grid td.nowrap:nth-child(3)").map(function(){ return numberfy($(this).text()); }).get(),
+			time : $html.find(".grid td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			isAbsent : !!$html.find("b[style='color: red']").length,
+			isFactory : !!$html.find("span[style='COLOR: red;']").length,
 			unittype : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split(",")[1]),
 			industry : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split("(")[1]),
 			level : numberfy($html.find(".list tr td[style]:eq(0)").text())
+		};
+	}
+	else if(page === "projectcreate"){
+		mapped[url] = {
+			isContinue : !!$html.find(":submit").length
 		};
 	}
 	else if(page === "experimentalunit"){
@@ -244,6 +267,13 @@ function map(html, url, page){
 			id : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get()
 		};
 	}	
+	else if(page === "productreport"){
+		mapped[url] = {
+			maxed : $html.find(".grid td.nowrap:nth-child(2)").map(function(){ return !!$(this).find("span").length; }).get(),
+			quality : $html.find(".grid td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			price : $html.find(".grid td.nowrap:nth-child(5)").map(function(){ return numberfy($(this).text()); }).get()
+		};
+	}
 }
 
 function xGet(url, page, force, callback){
@@ -420,10 +450,12 @@ function xUrlDone(url){
 
 function salePrice(type, subid, choice){	
 	var url = "/"+realm+"/main/unit/view/"+subid+"/sale";
+	var urlContract = "/"+realm+"/main/unit/view/"+subid+"/sale/product";
 	var urlIP = "/"+realm+"/main/geo/countrydutylist/359837";
 	var urlTM = "/"+realm+"/main/globalreport/tm/info";
 	var urlCTIE = "/"+realm+"/main/geo/regionENVD/359838";
 	var urlTrans = "/"+realm+"/main/common/main_page/game_info/transport";
+	var urlReport = [];
 
 	var getcount = 0;
 	if(choice >= 1){
@@ -443,7 +475,7 @@ function salePrice(type, subid, choice){
 		});
 	}
 	
-	if(choice >= 5){
+	if(choice === 5 || choice === 6){
 		getcount++;
 		xGet(urlTrans, "transport", false, function(){
 			!--getcount && phase();
@@ -459,13 +491,35 @@ function salePrice(type, subid, choice){
 		}
 		else if(choice === 6){
 			getcount++;				
-			indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
-			regionId = mapped[urlTrans].regionId[ indexRegion ];	
+			var indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
+			var regionId = mapped[urlTrans].regionId[ indexRegion ];	
 			urlCTIE = "/"+realm+"/main/geo/regionENVD/"+regionId;
 			
 			xGet(urlCTIE, "CTIE", false, function(){
 				!--getcount && post();
 			});	
+		}
+		else if(choice === 7){			
+		
+			getcount += mapped[url].price.length + 1;
+			xGet("/"+realm+"/main/common/util/setpaging/reportcompany/marketingProduct/40000", "none", false, function(){
+				!--getcount && post();
+			});	
+			
+			for(var i = 0; i < mapped[url].price.length; i++){
+				urlReport.push("/"+realm+"/main/globalreport/marketing/by_products/"+mapped[url].productId[i]);
+				xGet(urlReport[i], "productreport", false, function(){
+					!--getcount && post();
+				});
+			}
+			
+			if(mapped[url].contractpage){
+				getcount++;
+				xGet(urlContract, "salecontract", false, function(){
+					!--getcount && post();
+				});
+			}
+			
 		}
 		else{
 			post();
@@ -476,87 +530,133 @@ function salePrice(type, subid, choice){
 	function post(){
 		var change = false;
 	
+		var contractprices = mapped[url].contractpage && mapped[urlContract]? mapped[urlContract].contractprice : mapped[url].contractprice;
+				
 		for(var i = 0; i < mapped[url].price.length; i++){
+			
 			if(choice === 1 && mapped[url].price[i] !== 0){
 				change = true;
-				mapped[url].price[i] = 0;
 				mapped[url].form.find("input.money:even").eq(i).val(0);
 				
 			}
 			else if(choice === 2){
-				indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
-				product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
-				indexIP = mapped[urlIP].product.indexOf(product);
-				IP = mapped[urlIP].IP[indexIP];
-				price = mapped[url].primecost[i]+0.01 < 30 * IP? mapped[url].primecost[i] + 0.01 : mapped[url].primecost[i];
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
+				var price = mapped[url].primecost[i]+0.01 < 30 * IP? mapped[url].primecost[i] + 0.01 : mapped[url].primecost[i];
 							
 				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
 					change = true;
-					mapped[url].price[i] = price
 					mapped[url].form.find("input.money:even").eq(i).val(price);
 				}			
 			}
 			else if(choice === 3){			
-				indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
-				product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
-				indexIP = mapped[urlIP].product.indexOf(product);
-				IP = mapped[urlIP].IP[indexIP];
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
 				
 				if(mapped[url].price[i] !== IP){
 					change = true;
-					mapped[url].price[i] = IP;
 					mapped[url].form.find("input.money:even").eq(i).val(IP);
 				}		
 			}
 			else if(choice === 4){
-				indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
-				product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
-				indexIP = mapped[urlIP].product.indexOf(product);
-				IP = mapped[urlIP].IP[indexIP];
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
 				
 				if(mapped[url].price[i] !== 30*IP){
 					change = true;
-					mapped[url].price[i] = 30*IP;
 					mapped[url].form.find("input.money:even").eq(i).val(30*IP);
 				}
 			}
 			else if(choice === 5){
-				indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
-				product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
-				indexIP = mapped[urlIP].product.indexOf(product);
-				IP = mapped[urlIP].IP[indexIP];
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
 				
-				indexCTIE = mapped[urlCTIE].product.indexOf(product);
-				CTIE = mapped[urlCTIE].CTIE[indexCTIE];
-				priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100);
-				price = Math.min( Math.round(priceCTIE*100)/100, 30 * IP);
+				var indexCTIE = mapped[urlCTIE].product.indexOf(product);
+				var CTIE = mapped[urlCTIE].CTIE[indexCTIE];
+				var priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100);
+				var price = Math.round(priceCTIE*100)/100;
+				price = price < 30 * IP? price: mapped[url].primecost[i];
 				
 				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
 					change = true;
-					mapped[url].price[i] = price;
 					mapped[url].form.find("input.money:even").eq(i).val(price);
 				}
 			}
 			else if(choice === 6){
-				indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
-				regionId = mapped[urlTrans].regionId[indexRegion];
+				var indexRegion = mapped[urlTrans].regionName.indexOf(mapped[url].region);
+				var regionId = mapped[urlTrans].regionId[indexRegion];
 				urlCTIE = "/"+realm+"/main/geo/regionENVD/"+regionId;
 				
-				indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
-				product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
-				indexIP = mapped[urlIP].product.indexOf(product);
-				IP = mapped[urlIP].IP[indexIP];
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
 				
-				indexCTIE = mapped[urlCTIE].product.indexOf(product);
-				CTIE = mapped[urlCTIE].CTIE[indexCTIE];
-				priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100 * mapped["/"+realm+"/main/geo/regionENVD/"+regionId].profitTax/100);
-				price = Math.min( Math.round(priceCTIE*100)/100, 30 * IP);
+				var indexCTIE = mapped[urlCTIE].product.indexOf(product);
+				var CTIE = mapped[urlCTIE].CTIE[indexCTIE];
+				var priceCTIE = mapped[url].primecost[i] * (1 + CTIE/100 * mapped["/"+realm+"/main/geo/regionENVD/"+regionId].profitTax/100);
+				var price = Math.round(priceCTIE*100)/100;
+				price = price < 30 * IP? price: mapped[url].primecost[i];
 				
 				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
 					change = true;
-					mapped[url].price[i] = price;
 					mapped[url].form.find("input.money:even").eq(i).val(price);
 				}
+			}
+			else if(choice === 7){								
+				var indexFranchise = mapped[urlTM].franchise.indexOf( mapped[url].product[i] );
+				var product = mapped[urlTM].product[indexFranchise] || mapped[url].product[i];
+				var indexIP = mapped[urlIP].product.indexOf(product);
+				var IP = mapped[urlIP].IP[indexIP];
+								
+				var favPQR = Infinity;
+				for(var j = 0; j < mapped[urlReport[i]].maxed.length; j++){
+					if(!mapped[urlReport[i]].maxed[j]){
+						var PQR = mapped[urlReport[i]].price[j] / mapped[urlReport[i]].quality[j];
+						if(PQR < favPQR){
+							favPQR = PQR;
+						}
+					}					
+				}
+				
+				var thisproduct = false;
+				var highprice = Infinity;
+				for(var j = 0; j < contractprices.length; j++){
+					if(contractprices[j] === mapped[url].product[i]){
+						thisproduct = true;
+					}
+					else if(typeof contractprices[j] === "string"){
+						thisproduct = false;
+					}
+					else if(thisproduct){
+						highprice = Math.min(highprice, contractprices[j]);
+					}
+					
+				}
+								
+				var price = favPQR * mapped[url].quality[i];					
+								
+				if(highprice){
+					price = Math.min(Math.floor(highprice * 1.09 * 100)/100, price);
+					price = Math.max(Math.ceil(highprice * 0.91 * 100)/100, price);
+				}			
+				
+				price = price < 30 * IP? price: mapped[url].primecost[i];
+				price = Math.max(price, mapped[url].primecost[i]);
+								
+				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
+					change = true;
+					mapped[url].form.find("input.money:even").eq(i).val(price);
+				}
+				
 			}
 		}
 		
@@ -844,7 +944,6 @@ function holiday(type, subid, choice){
 	});
 	
 	function post(){
-		console.log("post?>");
 		
 		if(choice === 1 && !mapped[urlMain].onHoliday){
 			xGet("/"+realm+"/main/unit/view/"+subid+"/holiday_set", "none", false, function(){
@@ -926,10 +1025,27 @@ function holiday(type, subid, choice){
 
 function training(type, subid, choice){
 	var url = "/"+realm+"/window/unit/employees/education/"+subid;
+	var urlValue = "/"+realm+"/ajax/unit/employees/calc_new_lvl_after_train/"+subid;
 		
 	xGet(url, "training", false, function(){
-		post();
+		phase();
 	});	
+	
+	var expectedSkill = 0;
+	
+	function phase(){
+		
+		if(choice === 3){
+			xContract(urlValue, "employees="+mapped[url].employees+"&weeks=4", function(data){
+				expectedSkill = data.employees_level;
+				post();
+			});			
+		}
+		else{
+			post();
+		}
+		
+	}
 	
 	function post(){
 		
@@ -941,8 +1057,20 @@ function training(type, subid, choice){
 		}		
 		else if(choice === 2 && mapped[url].form.length && mapped[url].salaryNow > mapped[url].salaryCity){
 			change = true;
-			mapped[url].form.find("#unitEmployeesData_timeCount").val(4);			
-		}	
+			mapped[url].form.find("#unitEmployeesData_timeCount").val(4);	
+		}
+		else if(choice === 3){
+			
+			var salaryNew = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, expectedSkill, mapped[url].skillCity, mapped[url].skillNow);
+			var savings = (mapped[url].salaryNow - salaryNew) * 365;
+			var costs = mapped[url].weekcost * 4 / mapped[url].employees;
+			
+			if(savings > costs){
+				change = true;
+				mapped[url].form.find("#unitEmployeesData_timeCount").val(4);
+			}			
+			
+		}
 
 		if(change){
 			xPost(url, mapped[url].form.serialize(), function(){
@@ -1437,17 +1565,73 @@ function prodBooster(type, subid, choice){
 
 function research(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/investigation";
+	var urlProject = "/"+realm+"/window/unit/view/"+subid+"/project_create";
 	var urlUnit = "/"+realm+"/window/unit/view/"+subid+"/set_experemental_unit";
 	var urlForecast = "/"+realm+"/ajax/unit/forecast";
 
 	xGet(url, "research", false, function(){
 		
 		if(choice === 1 && mapped[url].isFree){
-			var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
-			xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
-				xTypeDone(type);
+			console.log(mapped[url].isFree);
+			xGet(urlProject, "projectcreate", false, function(){
+				if(mapped[urlProject].isContinue){
+					var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
+					xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
+						xTypeDone(type);
+					});
+				}
+				else{
+					postMessage("Laboratory <a href="+url+">"+subid+"</a> reached the maximum technology level for its size. Could not research the next level.");
+				}				
 			});
 		}
+		else if(choice === 1 && mapped[url].isHypothesis && !mapped[url].isBusy){
+			
+			function calcProduct(p, n){
+				var value = 1;
+
+				for(var m = 1; m <= n-1; m++){
+					value = value * (1-(1/100*(m-1)+p));
+				}
+				return value;
+			}   
+
+			function calcStudyTime(p, k){
+				//p is possibility between 0 and 1
+				//k is reference time between 0 and +infinite    
+				var value = 0;
+
+				for(var n = 1; n <= 100*(1-p); n++){
+					value += k*n*(1/100*(n-1)+p)*calcProduct(p, n);
+				}
+
+				return value;
+			}
+			
+			var favid = -1;
+			var favindex = -1;
+			var lowtime = Infinity;
+			for(var i = 0; i < mapped[url].chance.length; i++){
+				var studytime = calcStudyTime(mapped[url].chance[i]/100, mapped[url].time[i]);
+				if(studytime < lowtime){
+					lowtime = studytime;
+					favid = mapped[url].hypId[i];
+					favindex = i;
+				}
+				
+			}
+			
+			if(mapped[url].curIndex !== favindex){
+				var data = "selectedHypotesis="+favid+"&selectIt=Select+a+hypothesis";
+				xPost(url, data, function(){
+					xTypeDone(type);
+				});	
+			}
+			else{
+				xTypeDone(type);				
+			}
+			
+		}	
 		else if(choice === 1 && (mapped[url].isAbsent || mapped[url].isFactory)){			
 			xGet(urlUnit, "experimentalunit", false, function(){
 				
@@ -1472,7 +1656,7 @@ function research(type, subid, choice){
 				}
 				
 				function post(){
-							
+											
 					var efficient = 0;
 					var index = -1;
 					for(var i = 0; i < effi.length; i++){
@@ -1666,7 +1850,7 @@ function wareSupply(type, subid, choice){
 							for(var k = 0; k < supplier.length; k++){
 								var toset = Math.min(set, supplier[k].available);
 								set -= toset;
-								if(toset > 0 && (supplier[k].row >= 0 || supplier[k].index >= 0 && mapped[url].parcel[supplier[k].index] !== toset) || mapped[url].reprice[supplier[k].index]){
+								if(toset > 0 && (supplier[k].row >= 0 || supplier[k].index >= 0 && (mapped[url].parcel[supplier[k].index] !== toset || mapped[url].reprice[supplier[k].index]))){
 									change.push({
 										'newsup' : supplier[k].row >= 0,
 										'offer'  : supplier[k].offer,
@@ -1749,8 +1933,8 @@ function advertisement(type, subid, choice){
 var policyJSON = {
 	pc: {
 		func: salePrice, 
-		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax"], 
-		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", ],
+		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax", "Market PQR"], 
+		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", "Market PQR"],
 		name: "priceProd",
 		group: "Price",
 		wait: []
@@ -1829,8 +2013,8 @@ var policyJSON = {
 	},
 	et: {
 		func: training, 
-		save: ["don't train", "always train", "train city salary"], 
-		order: ["don't train", "always train", "train city salary"],
+		save: ["don't train", "always train", "train city salary", "1 year training"], 
+		order: ["don't train", "always train", "train city salary", "1 year training"],
 		name: "training",
 		group: "Training",
 		wait: ["salaryNewInterface", "salaryOldInterface"]
@@ -2094,12 +2278,17 @@ function XioMaintenance(subids, allowedPolicies){
 	
 	var companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
 	var urlUnitlist = "/"+realm+"/main/company/view/"+companyid+"/unit_list";
+	var filtersetting = $(".u-s").attr("href") || "/"+realm+"/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/size=0/type=" + $(".unittype").val();
 	xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000", "none", false, function(){
-		xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", true, function(){		
-			xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", false, function(){
-				further(mapped[urlUnitlist].subids);
+		xGet("/"+realm+"/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/type=0", "none", false, function(){
+			xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", false, function(){		
+				xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", false, function(){
+					xGet(filtersetting, "none", false, function(){
+						further(mapped[urlUnitlist].subids);
+					});
+				});
 			});
-		});
+		})
 	});
 	
 	function further(realsubids){
@@ -2296,7 +2485,7 @@ function XioGenerator(subids){
 									
 			$(".XioHide").removeClass("XioHide").show();
 			$(".XOhtml").remove();
-			$(document).off("change.XO").off("click.XO");
+			$(document).off(".XO");
 			XioOverview();
 			
 		}
@@ -2309,50 +2498,12 @@ function XioGenerator(subids){
 	
 }
 
-function XioCopy(subid){
-	
-	var $choices = $(".XioChoice[data-id="+subid+"]");
-	XOcopystring = ""
-	for(var i = 0; i < $choices.length; i++){
-		XOcopystring += $choices.eq(i).attr("data-name");
-		XOcopystring += $choices.eq(i).val();
-		XOcopystring += ";"
-	}
-	
-	XOcopystring = XOcopystring.slice(0, -1);
-		
-}
-
-function XioPaste(subid){
-	
-	if(XOcopystring.length){
-		
-		var array = XOcopystring.split(";");
-		var $options = $(".XioChoice[data-id="+subid+"]");
-		for(var i = 0; i < array.length; i++){
-			
-			var name = array[i].substring(0, 2);
-			var choiceindex = array[i].substring(2);
-			
-			var $choice = $options.filter("[data-name="+name+"]");
-			
-			if($choice.length){				
-				$choice.val(choiceindex);
-				$choice.trigger("change.XO");
-			}
-			
-		}
-		
-	}
-	
-}
-
-function XioOverview(){
+function XioOverview(){	
 		
 	$(".unit-list-2014").find("td, th").filter(":not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
 	$(".unit-list-2014 tr.odd").css("backgroundColor", "lightgoldenrodyellow");
 	$(".unit-list-2014 td:nth-child(3) span").remove(); 
-	$(".unit-list-2014").css("white-space", "nowrap");
+	$(".unit-list-2014").css("white-space", "nowrap").css("user-select", "none");
 		
 	var policyString = [];
 	var groupString = [];
@@ -2378,8 +2529,6 @@ function XioOverview(){
 		$td.eq(i).after("<td class=XOhtml>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioGenerator' value=Generate>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioSub' value=FIRE!>"
-						   +"<input type=button data-id="+subids[i]+" class='XioCopy' value=Copy>"
-						   +"<input type=button data-id="+subids[i]+" class='XioPaste' value=Paste>"
 					  +"</td>"
 					  +tdstring
 		);
@@ -2421,29 +2570,86 @@ function XioOverview(){
 	$("#wrapper").width($(".unit-list-2014").width() + 80);
 	$("#mainContent").width($(".unit-list-2014").width());
 	
+	$(document).on("mousedown.XO", ".wborder", function(e){
+		if(!$(e.target).is('.XioChoice')){
+			$(".trXIO").css("backgroundColor", "").filter(".odd").css("backgroundColor", "lightgoldenrodyellow");
+			$(".trXIO").removeClass("trXIO");			
+			$(this).addClass("trXIO").css("backgroundColor", "#CAE1FF");
+			mousedown = true;
+			$tron = $(e.target).is("tr")? $(e.target) : $(e.target).parents("tr");			
+		}
+	  
+	});	
 	
-	$(document).on('change.XO', ".XioChoice", function(){	
-		
+	$(document).on("mouseup.XO", ".wborder", function(){
+		mousedown = false;
+	});
+	
+	$(document).on("mouseover.XO", ".wborder", function(){
+		if(mousedown){
+			$(".trXIO").css("backgroundColor", "").filter(".odd").css("backgroundColor", "lightgoldenrodyellow");
+			$(".trXIO").removeClass("trXIO");
+			$this = $(this);	
+			if($this.index() < $tron.index()){
+				$this.nextUntil($tron).andSelf().add($tron).addClass("trXIO").css("backgroundColor", "#CAE1FF");
+			}
+			else if($this.index() > $tron.index()){
+				$tron.nextUntil($this).andSelf().add($this).addClass("trXIO").css("backgroundColor", "#CAE1FF");
+			}
+			$this.addClass("trXIO").css("backgroundColor", "#CAE1FF");
+		}
+	});	
+	
+	$(document).on('click.XO', "", function(){
+		if(optionclick){
+			optionclick = false;
+		}
+	});	
+	$(document).on('click.XO', ".XioChoice", function(){	
+	
+		if(!optionclick){
+			optionclick = true;
+			return false;
+		}	
+				
 		var thisid = $(this).attr("data-name");
-		var thisindex = policyJSON[thisid].save.indexOf(policyJSON[thisid].order[$(this).val()]);
-		var subid = $(this).attr("data-id");
+		var choice = policyJSON[thisid].order[$(this).val()];
+		var column = $(this).parent().index();	
 		
-		savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
-		savedPolicies = [];
-		savedPolicyChoices = [];
-		for(var i = 0; i < savedPolicyStrings.length; i++){		
-			savedPolicies[i] = savedPolicyStrings[i].substring(0, 2);
-			savedPolicyChoices[i] = parseFloat(savedPolicyStrings[i].substring(2));		
+		var arr = $(".trXIO td:nth-child("+(column+1)+") .XioChoice");		
+		for(var i = 0; i < arr.length; i++){
+			
+						
+			var type = arr.eq(i).attr("data-name");
+			var index = policyJSON[type].save.indexOf(choice);
+			var value = policyJSON[type].order.indexOf(choice);
+						
+			if(index >= 0){
+				
+				arr.eq(i).val(value);
+				var subid = arr.eq(i).attr("data-id");
+				savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
+				savedPolicies = [];
+				savedPolicyChoices = [];
+				for(var j = 0; j < savedPolicyStrings.length; j++){		
+					savedPolicies[j] = savedPolicyStrings[j].substring(0, 2);
+					savedPolicyChoices[j] = parseFloat(savedPolicyStrings[j].substring(2));		
+				}
+				
+				savedPolicyChoices[savedPolicies.indexOf(thisid)] = index;
+				
+				newPolicyString = "";
+				for(var j = 0; j < savedPolicies.length; j++){
+					newPolicyString += ";"+savedPolicies[j] + savedPolicyChoices[j];
+				};
+							
+				ls["x"+realm+subid] = newPolicyString.substring(1);
+				
+			}
+			
 		}
 		
-		savedPolicyChoices[savedPolicies.indexOf(thisid)] = thisindex;
 		
-		newPolicyString = "";
-		for(var i = 0; i < savedPolicies.length; i++){
-			newPolicyString += ";"+savedPolicies[i] + savedPolicyChoices[i];
-		};
-		
-		ls["x"+realm+subid] = newPolicyString.substring(1);
 	});	
 
 	$(document).on('click.XO', "#XioGeneratorPRO", function(){
@@ -2453,16 +2659,6 @@ function XioOverview(){
 	$(document).on('click.XO', ".XioGenerator", function(){
 		var subid = numberfy($(this).attr("data-id"));
 		XioGenerator([subid]);
-	});
-
-	$(document).on('click.XO', ".XioCopy", function(){
-		var subid = numberfy($(this).attr("data-id"));
-		XioCopy(subid);
-	});
-	
-	$(document).on('click.XO', ".XioPaste", function(){
-		var subid = numberfy($(this).attr("data-id"));
-		XioPaste(subid);
 	});
 	
 	$(document).on('click.XO', ".XioGroup", function(){
