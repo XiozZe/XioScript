@@ -2,13 +2,15 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.0.16
+// @version        12.0.17
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.16";
+var version = "12.0.17";
+
+//Warehouse TM goods
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -2211,7 +2213,7 @@ function wareSize(type, subid, choice){
 var policyJSON = {
 	pc: {
 		func: salePrice, 
-		save: ["-", "Zero", "Prime Cost", "1x IP", "30x IP", "CTIE", "Profit", "PQR"], 
+		save: ["-", "Zero", "Prime Cost", "1x IP", "30x IP", "CTIE", "Profit Tax", "PQR"], 
 		order: ["-", "Zero", "Prime Cost", "CTIE", "Profit Tax", "1x IP", "30x IP", "PQR"],
 		name: "priceProd",
 		group: "Price",
