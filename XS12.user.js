@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
-// @description    XioScript using XioMaintenance
-// @version        12.0.15
+// @description    XioScript with XioMaintenance
+// @version        12.0.16
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.15";
+var version = "12.0.16";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -45,97 +45,117 @@ var timeinterval = 0;
 var optionclick = false;
 var mousedown = false;
 var $tron;
+var XMreload = false;
+var equiplist = {};
+var urlUnitlist = "";
 
 function numberfy(variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
 }
 
 function map(html, url, page){
-	var $html = $(html);
+	
+	if(page === "ajax"){
+		mapped[url] = JSON.parse(html);
+		return false;
+	}
+	else if(page === "none"){
+		return false;
+	}	
+	
+	var $html = $(html)
 	if(page === "unitlist"){
 		mapped[url] = {
-			subids : $html.find(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get()
-		};
+			subids : $html.find(".unit-list-2014 td:nth-child(1)").map( (i, e) => numberfy($(e).text()) ).get(),
+			type: $html.find(".unit-list-2014 td:nth-child(3)").map( (i, e) => $(e).attr("class").split("-")[1] ).get()
+		}
 	}
 	else if(page === "sale"){ 
 		mapped[url] = {
 			form : $html.find("[name=storageForm]"),
-			policy : $html.find("select:even").map(function(){ return $(this).find("[selected]").index(); }).get(),
-			price : $html.find("input.money:even").map(function(){ return numberfy($(this).val()); }).get(),
-			quality : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(2) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			product : $html.find(".grid a:not([onclick])").map(function(){ return $(this).text(); }).get(),
-			productId : $html.find(":checkbox:gt(0)").map(function(){ return numberfy($(this).val()); }).get(),
+			policy : $html.find("select:even").map( (i, e) => $(e).find("[selected]").index() ).get(),
+			price : $html.find("input.money:even").map( (i, e) => numberfy($(e).val()) ).get(),
+			quality : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(2) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			primecost : $html.find("td:has('table'):nth-last-child(5)  tr:nth-child(3) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			product : $html.find(".grid a:not([onclick])").map( (i, e) => $(e).text() ).get(),
+			productId : $html.find(".grid a:not([onclick])").map( (i, e) => numberfy($(e).attr("href").match(/\d+/)[0]) ).get(),
 			region : $html.find(".officePlace a:eq(-2)").text(),
 			contractpage : !!$html.find(".tabsub").length,
-			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.)+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map(function(e){ return e[0] === "["? e.slice(13, -1) : numberfy(e); })
-		};
+			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.| )+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map( (e) => e[0] === "["? e.slice(13, -1) : numberfy(e) )
+		}
 	}
 	else if(page === "salecontract"){ 
 		mapped[url] = {
-			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.)+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map(function(e){ return e[0] === "["? e.slice(13, -1) : numberfy(e); })
-		};
+			contractprice : ($html.find("script:contains(mm_Msg)").text().match(/(\$(\d|\.| )+)|(\[\'name\'\]		= \"[a-zA-Zа-яА-ЯёЁ ]+\")/g) || []).map( (e) => e[0] === "["? e.slice(13, -1) : numberfy(e) )
+		}
 	}
 	else if(page === "prodsupply"){
 		mapped[url] = { 
 			isProd : !$html.find(".sel").next().attr("class"),
 			form : $html.find("[name=supplyContractForm]"),
-			parcel: $html.find("input[type=type]").map(function(){ return numberfy($(this).val()); }).get(),
-			required : $html.find(".inner_table").length? $html.find(".list td:nth-child(3).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
-			reprice : $html.find(".inner_table").length? $html.find("td:nth-child(5) tr:nth-child(2)").map(function(){ return !!$(this).filter("[class]").length; }).get() : $html.find("[id^=totalPrice] tr:nth-child(1)").map(function(){ return !!$(this).filter("[style]").length; }).get(),
-		};
+			parcel: $html.find("input[type=type]").map( (i, e) => numberfy($(e).val()) ).get(),
+			required : $html.find(".inner_table").length? $html.find(".list td:nth-child(3).inner_table tr:nth-child(1) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get() : $html.find(".list td:nth-child(2) table tr:nth-child(1) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			stock : $html.find(".inner_table").length? $html.find(".list td:nth-child(4).inner_table tr:nth-child(1) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get() : $html.find(".list td:nth-child(3) table tr:nth-child(1) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			offer : $html.find(".destroy").map( (i, e) => numberfy($(e).val()) ).get(),
+			reprice : $html.find(".inner_table").length? $html.find("td:nth-child(5) tr:nth-child(2)").map( (i, e) => !!$(e).filter("[class]").length ).get() : $html.find("[id^=totalPrice] tr:nth-child(1)").map( (i, e) => !!$(e).filter("[style]").length ).get(),
+		}
 	}
 	else if(page === "consume"){
 		mapped[url] = {
-			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map(function(){ return numberfy($(this).text().match(/\d+/)); }).get()
-		};
+			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map( (i, e) => numberfy($(e).text().match(/\d+/)) ).get()
+		}
 	}
 	else if(page === "storesupply"){
 		mapped[url] = {
-			form : $html.find("[name=supplyContractForm]"),
-			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
-			purchase : $html.find("td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
-			quantity : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map(function(){ return numberfy($(this).text()); }).get(),
-			offer : $html.find(".destroy").map(function(){ return numberfy($(this).val()); }).get(),
-			reprice : $html.find("td:nth-child(9) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map(function(){ return !!$(this).find("div").length; }).get(),
-		};
+			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map( (i, e) => numberfy($(e).val()) ).get(),
+			purchase : $html.find("td.nowrap:nth-child(4)").map( (i, e) => numberfy($(e).text()) ).get(),
+			quantity : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			sold : $html.find("td:nth-child(2) table:nth-child(1) tr:nth-child(5) td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			offer : $html.find(".destroy").map( (i, e) => numberfy($(e).val()) ).get(),
+			reprice : $html.find("td:nth-child(9) table:nth-child(1) tr:nth-child(1) td:nth-child(2)").map( (i, e) => !!$(e).find("div").length ).get(),
+			img : $html.find(".noborder td > img").map( (i, e) => $(e).attr("src") ).get()
+		}
 	}
 	else if(page === "tradehall"){
 		mapped[url] = {
-			stock : $html.find(".nowrap:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),			
-		};
+			stock : $html.find(".nowrap:nth-child(6)").map( (i, e) => numberfy($(e).text()) ).get(),
+			report : $html.find(".grid a:has(img)").map( (i, e) => $(e).attr("href") ).get(),
+			img : $html.find(".grid a img").map( (i, e) => $(e).attr("src") ).get()
+		}
+	}
+	else if(page === "retailreport"){
+		mapped[url] = {
+			marketsize : numberfy($html.find("b:eq(1)").text())
+		}
 	}
 	else if(page === "TM"){
 		mapped[url] = {
-			product : $html.find(".grid td:odd").map(function(){ return $(this).clone().children().remove().end().text().trim(); }).get(),
-			franchise : $html.find(".grid b").map(function(){ return $(this).text(); }).get()
-		};
+			product : $html.find(".grid td:odd").map( (i, e) => $(e).clone().children().remove().end().text().trim() ).get(),
+			franchise : $html.find(".grid b").map( (i, e) => $(e).text() ).get()
+		}
 	}
 	else if(page === "IP"){
 		mapped[url] = {
-			product : $html.find(".list td:nth-child(5n-3)").map(function(){ return $(this).text(); }).get(),
-			IP : $html.find(".list td:nth-child(5n)").map(function(){ return numberfy($(this).text()); }).get()
-		};
+			product : $html.find(".list td:nth-child(5n-3)").map( (i, e) => $(e).text() ).get(),
+			IP : $html.find(".list td:nth-child(5n)").map( (i, e) => numberfy($(e).text()) ).get()
+		}
 	}
 	else if(page === "transport"){
 		mapped[url] = {
-			countryName : $html.find("select:eq(0) option").map(function(){ return $(this).text(); }).get(),
-			countryId : $html.find("select:eq(0) option").map(function(){ return numberfy($(this).val().split("/")[1]); }).get(),
-			regionName : $html.find("select:eq(1) option").map(function(){ return $(this).text(); }).get(),
-			regionId : $html.find("select:eq(1) option").map(function(){ return numberfy($(this).val().split("/")[2]); }).get(),
-			cityName : $html.find("select:eq(2) option").map(function(){ return $(this).text(); }).get(),
-			cityId : $html.find("select:eq(2) option").map(function(){ return numberfy($(this).val().split("/")[3]); }).get()			
-		};
+			countryName : $html.find("select:eq(0) option").map( (i, e) => $(e).text() ).get(),
+			countryId : $html.find("select:eq(0) option").map( (i, e) => numberfy($(e).val().split("/")[1]) ).get(),
+			regionName : $html.find("select:eq(1) option").map( (i, e) => $(e).text() ).get(),
+			regionId : $html.find("select:eq(1) option").map( (i, e) => numberfy($(e).val().split("/")[2]) ).get(),
+			cityName : $html.find("select:eq(2) option").map( (i, e) => $(e).text() ).get(),
+			cityId : $html.find("select:eq(2) option").map( (i, e) => numberfy($(e).val().split("/")[3]) ).get()			
+		}
 	}
 	else if(page === "CTIE"){
 		mapped[url] = {
-			product : $html.find(".list td:nth-child(3n-1)").map(function(){ return $(this).text(); }).get(),
+			product : $html.find(".list td:nth-child(3n-1)").map( (i, e) => $(e).text() ).get(),
 			profitTax : numberfy($html.find(".region_data td:eq(3)").text()),
-			CTIE : $html.find(".list td:nth-child(3n)").map(function(){ return numberfy($(this).text()); }).get()
-		};
+			CTIE : $html.find(".list td:nth-child(3n)").map( (i, e) => numberfy($(e).text()) ).get()
+		}
 	}
 	else if(page === "main"){
 		mapped[url] = {
@@ -155,10 +175,11 @@ function map(html, url, page){
 			techLevel : numberfy($html.find(".unit_box:has(.fa-industry) tr:eq(3) td:eq(1)").text()),
 			maxEmployees : numberfy($html.find(".unit_box:has(.fa-user) tr:eq(2) td:eq(1)").text()),
 			img : $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0],
-			hasService : !$html.find("[src='/img/artefact/icons/color/production.gif']").length,
-			onHoliday : $html.find("[href$=unset]").length,
-			isStore : $html.find("[href$=trading_hall]").length
-		};
+			size : numberfy($html.find("#unitImage img").attr("src").split("_")[1]),
+			hasBooster : !$html.find("[src='/img/artefact/icons/color/production.gif']").length,
+			onHoliday : !!$html.find("[href$=unset]").length,
+			isStore : !!$html.find("[href$=trading_hall]").length,
+		}
 	}
 	else if(page === "salary"){
 		mapped[url] = {
@@ -169,7 +190,7 @@ function map(html, url, page){
 			skillNow : numberfy($html.find("#apprisedEmployeeLevel").text()),
 			skillCity : numberfy($html.find("div span[id]:eq(1)").text().match(/[0-9]+(\.[0-9]+)?/)[0]),
 			skillReq : numberfy($html.find("div span[id]:eq(1)").text().split(",")[1])	
-		};	
+		}	
 	}	
 	else if(page === "training"){
 		mapped[url] = {
@@ -180,7 +201,7 @@ function map(html, url, page){
 			employees : numberfy($html.find("#unitEmployeesData_employees").val()),	
 			skillNow : numberfy($html.find(".list span:eq(0)").text()),			
 			skillCity : numberfy($html.find(".list span:eq(1)").text()),
-		};	
+		}	
 	}
 	else if(page === "equipment"){
 		mapped[url] = {
@@ -189,91 +210,113 @@ function map(html, url, page){
 			equipNum : numberfy($html.find("#quantity_corner").text()),
 			equipMax : numberfy($html.find(".contract:eq(1)").text().split("(")[1].match(/\d+/)[0]),
 			equipPerc : numberfy($html.find("#wear").text()),
-			price : $html.find(".digits:contains($):odd:odd").map(function(){ return numberfy($(this).text()); }).get(),
-			qualOffer : $html.find(".digits:not(:contains($)):odd").map(function(){ return numberfy($(this).text()); }).get(),
-			available : $html.find(".digits:not(:contains($)):even").map(function(){ return numberfy($(this).text()); }).get(),
-			offer : $html.find(".choose span").map(function(){ return numberfy($(this).attr("id")); }).get()
-		};		
+			price : $html.find(".digits:contains($):odd:odd").map( (i, e) => numberfy($(e).text()) ).get(),
+			qualOffer : $html.find(".digits:not(:contains($)):odd").map( (i, e) => numberfy($(e).text()) ).get(),
+			available : $html.find(".digits:not(:contains($)):even").map( (i, e) => numberfy($(e).text()) ).get(),
+			offer : $html.find(".choose span").map( (i, e) => numberfy($(e).attr("id")) ).get(),
+			img : $html.find(".rightImg").attr("src")
+		}		
 	}
 	else if(page === "manager"){
 		mapped[url] = {
-			base : $html.find("input:text[readonly]").map(function(){ return numberfy($(this).val()); }).get(),
-			bonus : $html.find(".grid:eq(1) td:nth-child(5)").map(function(){ return numberfy($(this).text()); }).get(),
-			name : $html.find("[id^=title]").map(function(){ return $(this).text().trim(); }).get()
-		};
+			base : $html.find("input:text[readonly]").map( (i, e) => numberfy($(e).val()) ).get(),
+			bonus : $html.find(".grid:eq(1) td:nth-child(5)").map( (i, e) => numberfy($(e).text()) ).get(),
+			name : $html.find("[id^=title]").map( (i, e) => $(e).text().trim() ).get()
+		}
 	}
 	else if(page === "tech"){
 		mapped[url] = {
-			price : $html.find("tr td.nowrap:nth-child(2)").map(function(){ return $(this).text().trim(); }).get(),
+			price : $html.find("tr td.nowrap:nth-child(2)").map( (i, e) => $(e).text().trim() ).get(),
 			tech : $html.find("tr:has([src='/img/v.gif'])").index(),
 			img: $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0]
-		};
+		}
 	}	
 	else if(page === "products"){
 		mapped[url] = {
-			name : $html.find(".list td:nth-child(2n):has(a)").map(function(){ return $(this).text(); }).get(),
-			id : $html.find(".list td:nth-child(2n) a:nth-child(1)").map(function(){ return numberfy($(this).attr("href").match(/\d+/)[0]); }).get()
-		};
+			name : $html.find(".list td:nth-child(2n):has(a)").map( (i, e) => $(e).text() ).get(),
+			id : $html.find(".list td:nth-child(2n) a:nth-child(1)").map( (i, e) => numberfy($(e).attr("href").match(/\d+/)[0]) ).get()
+		}
 	}
 	else if(page === "waresupply"){
 		mapped[url] = {			
 			form : $html.find("[name=supplyContractForm]"),
-			contract : $html.find(".p_title").map(function(){ return $(this).find("a:eq(1)").attr("href"); }).get(),
-			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map(function(){ return numberfy($(this).val()); }).get(),
-			product : $html.find("tr:has(input:text[name])").map(function(){ return $(this).prevAll(".p_title:first").find("strong:eq(0)").text(); }).get(),
-			price : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return numberfy($(this).text().match(/(\d|\.|\s)+$/)); }).get(),
-			reprice : $html.find("tr:has(input) td:nth-child(4)").map(function(){ return !!$(this).find("span").length; }).get(),
-			quality : $html.find("tr:has(input) td:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
-			offer : $html.find("tr input:checkbox").map(function(){ return numberfy($(this).val()); }).get(),
-			type : $html.find(".p_title").map(function(){ return $(this).find("strong:eq(0)").text(); }).get(),
-			stock : $html.find(".p_title table").map(function(){ return $(this).find("strong").length >= 2? numberfy($(this).find("strong:eq(0)").text()) : 0; }).get(),			
-			shipments : $html.find(".p_title table").map(function(){ return $(this).find("strong").length === 1? numberfy($(this).find("strong:eq(0)").text()) : numberfy($(this).find("strong:eq(2)").text()); }).get(),
-			available : $html.find("tr:has(input) td:nth-child(9)").map(function(){ return $(this).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce(function(a, b){ return Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0])); }, Infinity); }).get()			
-		};
+			contract : $html.find(".p_title").map( (i, e) => $(e).find("a:eq(1)").attr("href") ).get(),
+			parcel : $html.find("input:text[name^='supplyContractData[party_quantity]']").map( (i, e) => numberfy($(e).val()) ).get(),
+			product : $html.find("tr:has(input:text[name])").map( (i, e) => $(e).prevAll(".p_title:first").find("strong:eq(0)").text() ).get(),
+			price : $html.find("tr:has(input) td:nth-child(4)").map( (i, e) => numberfy($(e).text().match(/(\d|\.|\s)+$/)) ).get(),
+			reprice : $html.find("tr:has(input) td:nth-child(4)").map( (i, e) => !!$(e).find("span").length ).get(),
+			quality : $html.find("tr:has(input) td:nth-child(6)").map( (i, e) => numberfy($(e).text()) ).get(),
+			offer : $html.find("tr input:checkbox").map( (i, e) => numberfy($(e).val()) ).get(),
+			type : $html.find(".p_title").map( (i, e) => $(e).find("strong:eq(0)").text() ).get(),
+			stock : $html.find(".p_title table").map( (i, e) => $(e).find("strong").length >= 2? numberfy($(e).find("strong:eq(0)").text()) : 0 ).get(),			
+			shipments : $html.find(".p_title table").map( (i, e) => $(e).find("strong").length === 1? numberfy($(e).find("strong:eq(0)").text()) : numberfy($(e).find("strong:eq(2)").text()) ).get(),
+			available : $html.find("tr:has(input) td:nth-child(9)").map((i, e) => $(e).text().split(/\s[a-zA-Zа-яА-ЯёЁ]+\s/).reduce( (a, b) => Math.min(a, b.match(/\d+/) === null? Infinity : numberfy(b.match(/(\d| )+/)[0])), Infinity) ).get()
+		}
 	}	
 	else if(page === "contract"){
 		mapped[url] = {
-			available : $html.find(".price_w_tooltip:nth-child(4)").map(function(){ $(this).find("i").remove(); return  numberfy($(this).text()); }).get(),
-			offer : $html.find(".unit-list-2014 tr[id]").map(function(){ return numberfy($(this).attr("id").match(/\d+/)[0]); }).get(),
-			price : $html.find(".price_w_tooltip:nth-child(6)").map(function(){ return numberfy($(this).text()); }).get(),
-			quality : $html.find("td:nth-child(7)").map(function(){ return numberfy($(this).text()); }).get(),
-			tm : $html.find(".unit-list-2014 td:nth-child(1)").map(function(){ return $(this).find("img").length ? $(this).find("img").attr("title") : ""; }).get(),
+			available : $html.find(".price_w_tooltip:nth-child(4)").map( (i, e) => numberfy($(e).find("i").remove().end().text()) ).get(),
+			offer : $html.find(".unit-list-2014 tr[id]").map( (i, e) => numberfy($(e).attr("id").match(/\d+/)[0]) ).get(),
+			price : $html.find(".price_w_tooltip:nth-child(6)").map( (i, e) => numberfy($(e).text()) ).get(),
+			quality : $html.find("td:nth-child(7)").map( (i, e) => numberfy($(e).text()) ).get(),
+			tm : $html.find(".unit-list-2014 td:nth-child(1)").map( (i, e) => $(e).find("img").length ? $(e).find("img").attr("title") : "" ).get(),
 			product : $html.find("img:eq(0)").attr("title")
-		};
+		}
 	}
 	else if(page === "research"){
 		mapped[url] = {
 			isFree : !$html.find(".cancel").length,
 			isHypothesis : !!$html.find("#selectIt").length,
-			isBusy : !!numberfy($html.find(".progress_static_bar:eq(1)").text()),
-			hypId : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get(),
+			isBusy : !!numberfy($html.find(".grid .progress_static_bar").text()),
+			hypId : $html.find(":radio").map( (i, e) => numberfy($(e).val()) ).get(),
 			curIndex : $html.find("tr:has([src='/img/v.gif'])").index() - 1,
-			chance : $html.find(".grid td.nowrap:nth-child(3)").map(function(){ return numberfy($(this).text()); }).get(),
-			time : $html.find(".grid td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
+			chance : $html.find(".grid td.nowrap:nth-child(3)").map( (i, e) => numberfy($(e).text()) ).get(),
+			time : $html.find(".grid td.nowrap:nth-child(4)").map( (i, e) => numberfy($(e).text()) ).get(),
 			isAbsent : !!$html.find("b[style='color: red']").length,
-			isFactory : !!$html.find("span[style='COLOR: red;']").length,
+			isFactory : !!$html.find("span[style='COLOR: red']").length,
 			unittype : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split(",")[1]),
 			industry : $html.find(":button:eq(2)").attr("onclick") && numberfy($html.find(":button:eq(2)").attr("onclick").split("(")[1]),
 			level : numberfy($html.find(".list tr td[style]:eq(0)").text())
-		};
-	}
-	else if(page === "projectcreate"){
-		mapped[url] = {
-			isContinue : !!$html.find(":submit").length
-		};
+		}
 	}
 	else if(page === "experimentalunit"){
 		mapped[url] = {
-			id : $html.find(":radio").map(function(){ return numberfy($(this).val()); }).get()
-		};
+			id : $html.find(":radio").map( (i, e) => numberfy($(e).val()) ).get()
+		}
 	}	
 	else if(page === "productreport"){
 		mapped[url] = {
-			maxed : $html.find(".grid td.nowrap:nth-child(2)").map(function(){ return !!$(this).find("span").length; }).get(),
-			quality : $html.find(".grid td.nowrap:nth-child(4)").map(function(){ return numberfy($(this).text()); }).get(),
-			price : $html.find(".grid td.nowrap:nth-child(5)").map(function(){ return numberfy($(this).text()); }).get()
-		};
+			maxed : $html.find(".grid td.nowrap:nth-child(2)").map( (i, e) => !!$(e).find("span").length ).get(),
+			quality : $html.find(".grid td.nowrap:nth-child(4)").map( (i, e) => numberfy($(e).text()) ).get(),
+			price : $html.find(".grid td.nowrap:nth-child(5)").map( (i, e) => numberfy($(e).text()) ).get(),
+			subid : $html.find(".grid td:nth-child(1) td:nth-child(1) a").map( (i, e) => numberfy($(e).attr("href").match(/\d+/)[0]) ).get()
+		}
 	}
+	else if(page === "financeitem"){
+		mapped[url] = {
+			energy : numberfy($html.find(".list tr:has(span[style]) td:eq(1)").text()),
+		}
+	}
+	else if(page === "size"){
+		mapped[url] = {
+			size : $html.find(".nowrap:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			rent : $html.find(".nowrap:nth-child(3)").map( (i, e) => numberfy($(e).text()) ).get(),
+			id : $html.find(":radio").map( (i, e) => numberfy($(e).val()) ).get()
+		}
+	}
+	else if(page === "waremain"){
+		mapped[url] = {
+			size : numberfy($html.find(".infoblock td:eq(1)").text()),
+			full : numberfy($html.find("[nowrap]:eq(0)").text())
+		}
+	}
+	else if(page === "ads"){
+		mapped[url] = {
+			pop : numberfy($html.find("script").text().match(/params\['population'\] = \d+/)[0].substring(23)),
+			budget : numberfy($html.find(":text:not([readonly])").val())
+		}
+	}
+	
 }
 
 function xGet(url, page, force, callback){
@@ -431,7 +474,7 @@ function xTypeDone(type){
 		$("#xDone").css("visibility", "");
 		console.log("mapped: ", mapped);
 		$(".XioGo").attr("disabled", false);
-		clearInterval(timeinterval);
+		clearInterval(timeinterval);		
 	}	
 }
 
@@ -545,7 +588,8 @@ function salePrice(type, subid, choice){
 				var indexIP = mapped[urlIP].product.indexOf(product);
 				var IP = mapped[urlIP].IP[indexIP];
 				var price = mapped[url].primecost[i]+0.01 < 30 * IP? mapped[url].primecost[i] + 0.01 : mapped[url].primecost[i];
-							
+				price = Math.round(price*100)/100;
+				
 				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
 					change = true;
 					mapped[url].form.find("input.money:even").eq(i).val(price);
@@ -619,7 +663,7 @@ function salePrice(type, subid, choice){
 								
 				var favPQR = Infinity;
 				for(var j = 0; j < mapped[urlReport[i]].maxed.length; j++){
-					if(!mapped[urlReport[i]].maxed[j]){
+					if(!mapped[urlReport[i]].maxed[j] && subid !== mapped[urlReport[i]].subid[j]){
 						var PQR = mapped[urlReport[i]].price[j] / mapped[urlReport[i]].quality[j];
 						if(PQR < favPQR){
 							favPQR = PQR;
@@ -642,16 +686,16 @@ function salePrice(type, subid, choice){
 					
 				}
 								
-				var price = favPQR * mapped[url].quality[i];					
+				var price = Math.round(favPQR * mapped[url].quality[i]*100)/100;					
 								
-				if(highprice){
+				if(highprice < Infinity){
 					price = Math.min(Math.floor(highprice * 1.09 * 100)/100, price);
 					price = Math.max(Math.ceil(highprice * 0.91 * 100)/100, price);
-				}			
-				
+				}
+			
 				price = price < 30 * IP? price: mapped[url].primecost[i];
 				price = Math.max(price, mapped[url].primecost[i]);
-								
+												
 				if(mapped[url].price[i] !== price && mapped[url].primecost[i]){
 					change = true;
 					mapped[url].form.find("input.money:even").eq(i).val(price);
@@ -796,10 +840,37 @@ function prodSupply(type, subid, choice){
 function storeSupply(type, subid, choice){
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
 	var urlContract = "/"+realm+"/ajax/unit/supply/create";
+	var urlTrade = "/"+realm+"/main/unit/view/"+subid+"/trading_hall";	
+	
+	var getcount = 1;
+	xGet(url, "storesupply", false, function(){
+		!--getcount && phase();
+	});
+
+	if(choice >= 5){
+		getcount++;
+		xGet(urlTrade, "tradehall", false, function(){
+			!--getcount && phase();
+		});
+	}
+	
+	var reports = [];
 		
-	xGet(url, "storesupply", true, function(){
-		post();
-	});	
+	function phase(){
+		if(choice >= 5){
+			getcount += mapped[url].img.length;
+			for(var i = 0; i < mapped[url].img.length; i++){
+				var index = mapped[urlTrade].img.indexOf(mapped[url].img[i]);
+				reports.push(mapped[urlTrade].report[index]);				
+				xGet(reports[i], "retailreport", false, function(){
+					!--getcount && post();
+				});
+			}			
+		}
+		else{
+			post();
+		}
+	}
 	
 	function post(){
 		
@@ -820,10 +891,16 @@ function storeSupply(type, subid, choice){
 				newsupply = mapped[url].sold[i];
 			}
 			else if(choice === 3){
-				newsupply = mapped[url].sold[i] + mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2;
+				newsupply = mapped[url].sold[i] + Math.ceil(mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2);
 			}
 			else if(choice === 4){
 				newsupply =  Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
+			}
+			else if(choice === 5){
+				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.05);
+			}
+			else if(choice === 6){
+				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.10);
 			}
 			
 			if(mapped[url].parcel[i] !== newsupply || mapped[url].reprice[i]){
@@ -1035,14 +1112,17 @@ function training(type, subid, choice){
 	
 	function phase(){
 		
-		if(choice === 3){
+		if(choice === 3 && mapped[url].form.length){
 			xContract(urlValue, "employees="+mapped[url].employees+"&weeks=4", function(data){
 				expectedSkill = data.employees_level;
 				post();
 			});			
 		}
-		else{
+		else if(mapped[url].form.length){
 			post();
+		}
+		else{
+			xTypeDone(type);
 		}
 		
 	}
@@ -1051,20 +1131,21 @@ function training(type, subid, choice){
 		
 		var change = false;	
 	
-		if(choice === 1 && mapped[url].form.length){
+		if(choice === 1){
 			change = true;
 			mapped[url].form.find("#unitEmployeesData_timeCount").val(4);			
 		}		
-		else if(choice === 2 && mapped[url].form.length && mapped[url].salaryNow > mapped[url].salaryCity){
+		else if(choice === 2 && mapped[url].salaryNow > mapped[url].salaryCity){
 			change = true;
 			mapped[url].form.find("#unitEmployeesData_timeCount").val(4);	
 		}
 		else if(choice === 3){
 			
 			var salaryNew = calcSalary(mapped[url].salaryNow, mapped[url].salaryCity, expectedSkill, mapped[url].skillCity, mapped[url].skillNow);
+			salaryNew = Math.max(salaryNew, 0.8*mapped[url].salaryCity);
 			var savings = (mapped[url].salaryNow - salaryNew) * 365;
 			var costs = mapped[url].weekcost * 4 / mapped[url].employees;
-			
+						
 			if(savings > costs){
 				change = true;
 				mapped[url].form.find("#unitEmployeesData_timeCount").val(4);
@@ -1087,7 +1168,8 @@ function training(type, subid, choice){
 var subType = {
 	mine: [8, 8, 8],
 	power: [6, 6, 9],
-	workshop: [4, 4, 10],
+	workshop: [4, 4, 10],	
+	sawmill: [4, 4, 10],
 	farm: [1.6, 1.6, 1],
 	orchard: [1.2, 1.2, 1],				
 	medicine: [1, 1, 7],
@@ -1148,11 +1230,25 @@ function equipment(type, subid, choice){
 	function post(){
 		
 		var change = [];		
+		var urlC = "";
+		
+		if(equiplist[mapped[url].img]){
+			urlC = equiplist[mapped[url].img];
+		}
+		else{
+			urlC = url;
+		}
 		
 		var equipPerc = mapped[urlMain].img === "animalfarm"? 100 - mapped[url].equipPerc : mapped[url].equipPerc;
-		var equipWear = Math.floor(mapped[url].equipNum * equipPerc / 100);		
+		var equipWear = 0;
+		if(choice <= 2){
+			equipWear = Math.floor(mapped[url].equipNum * equipPerc / 100);	
+		}
+		else{
+			equipWear = Math.ceil(mapped[url].equipNum * equipPerc / 100);	
+		}
 		
-		if(choice === 1){
+		if(choice === 1 || choice === 4){
 								
 			var offer = {
 				low : [],
@@ -1162,13 +1258,14 @@ function equipment(type, subid, choice){
 			var qualReq = mapped[url].qualReq + 0.005;
 			var qualNow = mapped[url].qualNow - 0.005;
 			
-			for(var i = 0; i < mapped[url].offer.length; i++){
+			for(var i = 0; i < mapped[urlC].offer.length; i++){
 				var data = {
-					PQR : mapped[url].price[i] / mapped[url].qualOffer[i],
-					quality : mapped[url].qualOffer[i] - 0.005,
-					available : mapped[url].available[i],
+					PQR : mapped[urlC].price[i] / mapped[urlC].qualOffer[i],
+					quality : mapped[urlC].qualOffer[i] - 0.005,
+					available : mapped[urlC].available[i],
 					buy : 0,
-					offer : mapped[url].offer[i]
+					offer : mapped[urlC].offer[i],
+					index : i
 				}				
 				if(data.quality < qualReq){
 					offer.low.push(data);
@@ -1189,8 +1286,15 @@ function equipment(type, subid, choice){
 			var qualEst = 0;
 			var qualNew = qualNow;
 			
+			while(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
+				l++;
+			}
+			while(offer.high[h] && mapped[urlC].available[offer.high[h].index] === 0 && offer.high[h].length > h){
+				h++;
+			}			
+			
 			while(equipWear > 0 && h < offer.high.length){
-				
+								
 				qualEst = qualNew;
 				l < offer.low.length && offer.low[l].buy++;
 				for(var key in offer){
@@ -1204,15 +1308,15 @@ function equipment(type, subid, choice){
 				
 				if(l < offer.low.length && qualEst > qualReq && offer.low[l].PQR < offer.high[h].PQR){
 					offer.low[l].buy++;
-					offer.low[l].available--;
-					if(offer.low[l].available === 0){
+					mapped[urlC].available[offer.low[l].index]--;
+					if(mapped[urlC].available[offer.low[l].index] === 0){
 						l++;
 					}
 				}
 				else{
 					offer.high[h].buy++;
-					offer.high[h].available--;
-					if(offer.high[h].available === 0){
+					mapped[urlC].available[offer.high[h].index]--;
+					if(mapped[urlC].available[offer.high[h].index] === 0){
 						h++;
 					}
 				}
@@ -1237,13 +1341,14 @@ function equipment(type, subid, choice){
 				inc : []
 			};
 			
-			for(var i = 0; i < mapped[url].offer.length; i++){
+			for(var i = 0; i < mapped[urlC].offer.length; i++){
 				var data = {
-					PQR : mapped[url].price[i] / (mapped[url].qualOffer[i] - qualReq),
-					quality : mapped[url].qualOffer[i] - 0.005,
-					available : mapped[url].available[i],
+					PQR : mapped[urlC].price[i] / (mapped[urlC].qualOffer[i] - qualReq),
+					quality : mapped[urlC].qualOffer[i] - 0.005,
+					available : mapped[urlC].available[i],
 					buy : 0,
-					offer : mapped[url].offer[i]
+					offer : mapped[urlC].offer[i],
+					index : i
 				}				
 				if(data.quality > qualReq){
 					offer.inc.push(data);
@@ -1264,12 +1369,16 @@ function equipment(type, subid, choice){
 				}						
 			}
 			qualEst = (qualEst + (mapped[url].equipNum - torepair) * qualNow) / mapped[url].equipNum;
-						
+			
+			while(offer.inc[n] && offer.inc[n].length > n && mapped[urlC].available[offer.inc[n].index] === 0){
+				n++;
+			}
+			
 			while(qualEst < qualReq && n < offer.inc.length){
 				
 				offer.inc[n].buy++;
-				offer.inc[n].available--;
-				if(offer.inc[n].available === 0){
+				mapped[urlC].available[offer.inc[n].index]--;
+				if(mapped[urlC].available[offer.inc[n].index] === 0){
 					n++;
 				}
 				
@@ -1320,13 +1429,14 @@ function equipment(type, subid, choice){
 			
 			var qualNow = mapped[url].qualNow + 0.005;
 			
-			for(var i = 0; i < mapped[url].offer.length; i++){
+			for(var i = 0; i < mapped[urlC].offer.length; i++){
 				var data = {
-					PQR : mapped[url].price[i] / mapped[url].qualOffer[i],
-					quality : mapped[url].qualOffer[i] + 0.005,
-					available : mapped[url].available[i],
+					PQR : mapped[urlC].price[i] / mapped[urlC].qualOffer[i],
+					quality : mapped[urlC].qualOffer[i] + 0.005,
+					available : mapped[urlC].available[i],
 					buy : 0,
-					offer : mapped[url].offer[i]
+					offer : mapped[urlC].offer[i],
+					index : i
 				}				
 				if(data.quality < qualNow){
 					offer.low.push(data);
@@ -1351,6 +1461,16 @@ function equipment(type, subid, choice){
 			var qualEst = 0;
 			var qualNew = qualNow;
 			
+			while(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
+				l++;
+			}
+			while(offer.mid[m] && offer.mid[m].length > mmapped[urlC].available[offer.mid[m].index] === 0){
+				m++;
+			}
+			while(offer.high[h] && offer.high[h].length > hmapped[urlC].available[offer.high[h].index] === 0){
+				h++;
+			}
+			
 			while(equipWear > 0 && l + m < offer.low.length + offer.mid.length && m + h < offer.mid.length + offer.high.length){
 				
 				qualEst = qualNew;
@@ -1366,22 +1486,22 @@ function equipment(type, subid, choice){
 				
 				if(h < offer.high.length && qualEst < equipMax && (m === offer.mid.length || offer.high[h].PQR < offer.mid[m].PQR)){
 					offer.high[h].buy++;
-					offer.high[h].available--;
-					if(offer.high[h].available === 0){
+					mapped[urlC].available[offer.high[h].index]--;
+					if(mapped[urlC].available[offer.high[h].index] === 0){
 						h++;
-					}
+					}					
 				}
 				else if(l < offer.low.length && qualEst > equipMax && (m === offer.mid.length || offer.low[l].PQR < offer.mid[m].PQR)){
 					offer.low[l].buy++;
-					offer.low[l].available--;
-					if(offer.low[l].available === 0){
+					mapped[urlC].available[offer.low[l].index]--;
+					if(mapped[urlC].available[offer.low[l].index] === 0){
 						l++;
 					}
 				}
 				else{
 					offer.mid[m].buy++;
-					offer.mid[m].available--;
-					if(offer.mid[m].available === 0){
+					mapped[urlC].available[offer.mid[m].index]--;
+					if(mapped[urlC].available[offer.mid[m].index] === 0){
 						m++;
 					}
 				}
@@ -1408,20 +1528,19 @@ function equipment(type, subid, choice){
 			else if(equipWear > 0 && m + h < offer.mid.length + offer.high.length){
 				postMessage("No equipment on the market with a quality higher than the current quality. Could not repair subdivision <a href="+url+">"+subid+"</a>");
 			}			
-
-			change.length && console.log(change);
 			
 		}	
 		else if(choice === 3 && equipWear !== 0){
 			
 			var offer = [];
 			
-			for(var i = 0; i < mapped[url].offer.length; i++){
+			for(var i = 0; i < mapped[urlC].offer.length; i++){
 				offer.push({
-					price : mapped[url].price[i],
-					quality : mapped[url].qualOffer[i],
-					available : mapped[url].available[i],
-					offer : mapped[url].offer[i]
+					price : mapped[urlC].price[i],
+					quality : mapped[urlC].qualOffer[i],
+					available : mapped[urlC].available[i],
+					offer : mapped[urlC].offer[i],
+					index : i
 				});
 			}
 			
@@ -1436,6 +1555,7 @@ function equipment(type, subid, choice){
 				if(offer[i].quality === 2.00){
 					
 					tobuy = Math.min(equipWear, offer[i].available);
+					mapped[urlC].available[offer[i].index] -= tobuy;
 					equipWear -= tobuy;			
 					change.push({
 						op : "repair",
@@ -1454,6 +1574,7 @@ function equipment(type, subid, choice){
 		}
 		
 		var equipcount = change.length;
+		equipcount && console.log(subid, change);
 		for(var i = 0; i < change.length; i++){
 			xequip.push(
 				(function(i){
@@ -1464,7 +1585,7 @@ function equipment(type, subid, choice){
 						'supplier'		  : change[i].offer,
 						'amount'		  : change[i].amount							
 					}, 
-					function(){
+					function(data){
 						if(xequip.length){
 							xequip.shift()();
 						}
@@ -1509,20 +1630,20 @@ function technology(type, subid, choice){
 			var managerIndex = subType[mapped[url].img][2];
 			var managerQual = mapped[urlManager].base[managerIndex] + mapped[urlManager].bonus[managerIndex];
 			var techLevel = calcTechLevel(managerQual);
+			var newTech = 0;
 			
 			for(var i = mapped[url].price.length - 1; i >= 0; i--){
-				if(mapped[url].price[i] === "$0.00" && (i+1) <= techLevel) break;
-			}
-			
-			if((i+1) !== mapped[url].tech){
-				change = true;	
-				mapped[url].tech = i+1;
+				if(mapped[url].price[i] === "$0.00" && (i+1) <= techLevel && (i+1) > mapped[url].tech){
+					newTech = i+1;
+					change = true;
+					break;
+				} 
 			}
 			
 		}	
 
 		if(change){
-			xPost(url, "level="+mapped[url].tech+"&impelentit=Buy+a+technology", function(){
+			xPost(url, "level="+newTech+"&impelentit=Buy+a+technology", function(){				
 				xTypeDone(type);
 			});
 		}
@@ -1537,26 +1658,65 @@ function technology(type, subid, choice){
 function prodBooster(type, subid, choice){
 	
 	var url = "/"+realm+"/main/unit/view/"+subid;
+	var urlFinance = "/"+realm+"/main/unit/view/"+subid+"/finans_report/by_item";
+	var urlAjax = "/"+realm+"/ajax/unit/artefact/list/?unit_id="+subid+"&slot_id=300139";
 	
 	xGet(url, "main", false, function(){
-		post();
+		phase();
 	});
 	
-	function post(){
-		var change = false;
-			
-		if(choice === 1 && !mapped[url].hasService){
-			change = true;				
-		}	
-
-		if(change){
-			xPost("/"+realm+"/ajax/unit/artefact/attach/", "?unit_id="+subid+"&artefact_id=300804&slot_id=300139", function(){
-				xTypeDone(type);
+	function phase(){				
+		
+		var getcount = 0;
+		
+		if(!mapped[url].hasBooster && choice === 1){
+			getcount += 1;
+			xGet(urlAjax, "ajax", false, function(){
+				!--getcount && post();
 			});
 		}
-		else{
-			xTypeDone(type);			
+		else if(!mapped[url].hasBooster && choice === 2){
+			getcount += 2;
+			xGet(urlAjax, "ajax", false, function(){
+				!--getcount && post();
+			});
+			xGet(urlFinance, "financeitem", false, function(){
+				!--getcount && post();
+			});			
+			
 		}
+		else{
+			xTypeDone(type);
+		}	
+
+	}
+	
+	
+	function post(){
+		
+		for(var artid in mapped[urlAjax]){
+			if(mapped[urlAjax][artid].symbol === "20225555.gif" && numberfy(mapped[urlAjax][artid].size) === mapped[url].size){
+				break;
+			}
+		}
+				
+		if(choice === 2){
+			
+			var costs = numberfy(mapped[urlAjax][artid].initial_cost) / numberfy(mapped[urlAjax][artid].ttl) + numberfy(mapped[urlAjax][artid].cost_per_turn);
+			var savings = mapped[urlFinance].energy / 2;
+			
+			if(costs >= savings){
+				xTypeDone(type);
+				return false;
+			}			
+			
+		}	
+		
+		xGet("/"+realm+"/ajax/unit/artefact/attach/?unit_id="+subid+"&artefact_id="+artid+"&slot_id=300139", "none", false, function(){
+			console.log("ax")
+			xTypeDone(type);
+		});
+		
 	}
 	
 	
@@ -1572,9 +1732,9 @@ function research(type, subid, choice){
 	xGet(url, "research", false, function(){
 		
 		if(choice === 1 && mapped[url].isFree){
-			console.log(mapped[url].isFree);
-			xGet(urlProject, "projectcreate", false, function(){
-				if(mapped[urlProject].isContinue){
+			xPost(urlProject, "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype, function(data){
+				var isContinue = !!$(data).find(":submit").length;
+				if(isContinue){
 					var data = "industry="+mapped[url].industry+"&unit_type="+mapped[url].unittype+"&level="+(mapped[url].level+1)+"&create=Invent";
 					xPost("/"+realm+"/window/unit/view/"+subid+"/project_create", data, function(){
 						xTypeDone(type);
@@ -1582,6 +1742,7 @@ function research(type, subid, choice){
 				}
 				else{
 					postMessage("Laboratory <a href="+url+">"+subid+"</a> reached the maximum technology level for its size. Could not research the next level.");
+					xTypeDone(type);
 				}				
 			});
 		}
@@ -1601,8 +1762,8 @@ function research(type, subid, choice){
 				//k is reference time between 0 and +infinite    
 				var value = 0;
 
-				for(var n = 1; n <= 100*(1-p); n++){
-					value += k*n*(1/100*(n-1)+p)*calcProduct(p, n);
+				for(var n = 0; n <= 100*(1-p); n++){
+					value += k*(n+1)*(1/100*n+p)*calcProduct(p, n+1);					
 				}
 
 				return value;
@@ -1928,130 +2089,265 @@ function wareSupply(type, subid, choice){
 
 function advertisement(type, subid, choice){
 	
+	var url = "/"+realm+"/main/unit/view/"+subid+"/virtasement";
+	var urlFame = "/"+realm+"/ajax/unit/virtasement/"+subid+"/fame";
+	var urlManager = "/"+realm+"/main/user/privat/persondata/knowledge";
+	
+	var pccost = 0;
+	var getcount = 0;
+	if(choice >= 3){
+		getcount++;
+		xGet(urlManager, "manager", false, function(){
+			!--getcount && post();
+		});
+	}	
+	if(choice >= 4){
+		getcount += 2;
+		xGet(url, "ads", false, function(){		
+			!--getcount && post();
+		});
+		xPost(urlFame, "moneyCost=0&type%5B0%5D=2264", function(data){
+			pccost = numberfy(JSON.parse(data).contactCost);
+			!--getcount && post();
+		});
+	}
+	else{
+		post();
+	}
+	
+	function post(){	
+
+		var data = "";
+		var budget = 0;
+		if(choice === 1){
+			data = "cancel=Stop+advertising";
+		}
+		else if(choice === 2){
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D=0";
+		}
+		else if(choice === 3){
+			var manager = mapped[urlManager].base[6] + mapped[urlManager].bonus[6];
+			budget = 200010 * Math.pow(manager, 1.4);
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D="+budget;
+		}		
+		else if(choice >= 4){
+			var manager = mapped[urlManager].base[6] + mapped[urlManager].bonus[6];
+			var multiplier = [1, 2, 5, 10, 20, 50];
+			budget = Math.round(mapped[url].pop * pccost * multiplier[choice-4]);
+			maxbudget = Math.floor(200010 * Math.pow(manager, 1.4));
+			budget = Math.min(budget, maxbudget);
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D="+budget;
+		}
+		
+				
+		if(choice <= 3 || budget !== mapped[url].budget){
+			xPost(url, data, function(){
+				xTypeDone(type);
+			});
+		}
+		else{
+			xTypeDone(type);
+		}
+		
+		
+	}
+	
+		
+}
+
+function wareSize(type, subid, choice){
+	
+	var url = "/"+realm+"/main/unit/view/"+subid;
+	var urlSize = "/"+realm+"/window/unit/upgrade/"+subid;
+	
+	xGet(url, "waremain", false, function(){
+		phase();
+	});
+	
+	function phase(){
+				
+		if(mapped[url].full < 20 || mapped[url].full > 200){
+			
+			xGet(urlSize, "size", false, function(){
+				post();
+			});
+			
+		}
+		else{
+			xTypeDone(type);
+		}
+
+	}	
+	
+	function post(){
+		
+		if(mapped[url].size < 10){
+			mapped[url].size = mapped[url].size * 1000;
+		}
+						
+		for(var i = 0; i < mapped[urlSize].rent.length; i++){
+			if(mapped[urlSize].size[i] < 10){
+				mapped[urlSize].size[i] = mapped[urlSize].size[i] * 1000;
+			}
+			
+			var coef = mapped[urlSize].size[i] / mapped[url].size;
+			var normal = mapped[url].full / coef > 20 && mapped[url].full / coef < 200;
+			var low = i === 0 && mapped[urlSize].size[i] < mapped[url].size && mapped[url].full / coef < 20;
+			var high = i === mapped[urlSize].rent.length && mapped[urlSize].size[i] > mapped[url].size && mapped[url].full / coef > 200;
+			
+			if( normal || low || high ){
+				xPost("/"+realm+"/window/unit/upgrade/"+subid, "upgrade%5Bbound%5D="+mapped[urlSize].id[i], function(){
+					xTypeDone(type);
+				});
+				return false;
+			}
+		}
+		
+		xTypeDone(type);
+		
+	}
 }
 
 var policyJSON = {
 	pc: {
 		func: salePrice, 
-		save: ["don't change price", "zero price", "prime cost", "1x IP", "30x IP", "CTIE", "Profit Tax", "Market PQR"], 
-		order: ["don't change price", "zero price", "prime cost", "CTIE", "Profit Tax", "1x IP", "30x IP", "Market PQR"],
+		save: ["-", "Zero", "Prime Cost", "1x IP", "30x IP", "CTIE", "Profit", "PQR"], 
+		order: ["-", "Zero", "Prime Cost", "CTIE", "Profit Tax", "1x IP", "30x IP", "PQR"],
 		name: "priceProd",
 		group: "Price",
 		wait: []
 	},
 	pl: {
 		func: salePolicy, 
-		save: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"], 
-		order: ["don't change policy", "not for sale", "any customer", "my company", "my corporation"],
+		save: ["-", "No sale", "Any", "Company", "Corp."], 
+		order: ["-", "No sale", "Any", "Company", "Corp."],
 		name: "policy",
 		group: "Policy",
 		wait: []
 	},
 	sp: {
 		func: prodSupply, 
-		save: ["don't change supply", "zero supply", "required", "3x stock"], 
-		order: ["don't change supply", "zero supply", "required", "3x stock"],
+		save: ["-", "Zero", "Required", "3x Stock"], 
+		order: ["-", "Zero", "Required", "3x Stock"],
 		name: "supplyProd",
 		group: "Supply",
 		wait: ["priceProd", "policy", "tech", "equip"]
 	},
 	ss: {
 		func: storeSupply, 
-		save: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"], 
-		order: ["don't change supply", "zero supply", "sold", "sold++", "3x stock"],
+		save: ["-", "Zero", "Sold", "Sold++", "3x Stock", "Market 5%", "Market 10%"],
+		order: ["-", "Zero", "Sold", "Sold++", "3x Stock", "Market 5%", "Market 10%"],
 		name: "supplyRetail",
 		group: "Supply",
 		wait: ["priceProd", "policy"]
 	},	
 	sw: {
 		func: wareSupply,
-		save: ["don't change supply", "zero supply", "required", "2x stock", "maximum supply", "required (world)", "2x stock (world)"], 
-		order: ["don't change supply", "zero supply", "required", "required (world)", "2x stock", "2x stock (world)", "maximum supply"],
+		save: ["-", "Zero", "Required", "2x Stock", "Maximum", "Required (W)", "2x Stock (W)"], 
+		order: ["-", "Zero", "Required", "Required (W)", "2x Stock", "2x Stock (W)", "Maximum"], 
 		name: "supplyWare",
 		group: "Supply",
 		wait: ["supplyProd", "supplyRetail"]
 	},
 	ad: {
 		func: advertisement,
-		save: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"], 
-		order: ["don't change ads", "zero ads", "minimum TV ads", "maximum ads"],
+		save: ["-", "Zero", "Min TV", "Max", "Pop1", "Pop2", "Pop5", "Pop10", "Pop20", "Pop50"], 
+		order: ["-", "Zero", "Min TV", "Pop1", "Pop2", "Pop5", "Pop10", "Pop20", "Pop50", "Max"],
 		name: "ads",
-		group: "Advertisement",
+		group: "Ads",
 		wait: []
 	},
 	es: {
 		func: salary, 
-		save: ["don't change salary", "required salary", "target salary", "maximum salary"], 
-		order: ["don't change salary", "required salary", "target salary", "maximum salary"],
+		save: ["-", "Required", "Target", "Maximum"], 
+		order: ["-", "Required", "Target", "Maximum"], 
 		name: "salaryOldInterface",
 		group: "Salary",
 		wait: ["equip"]
 	},	
 	en: {
 		func: salary, 
-		save: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"], 
-		order: ["don't change salary", "required salary", "target salary", "maximum salary", "overflow salary"],
+		save: ["-", "Required", "Target", "Maximum", "Overflow"], 
+		order: ["-", "Required", "Target", "Maximum", "Overflow"], 
 		name: "salaryNewInterface",
 		group: "Salary",
 		wait: ["equip"]
 	},
 	eh: {
 		func: holiday, 
-		save: ["don't change holiday", "holiday", "working"], 
-		order: ["don't change holiday", "holiday", "working"], 
+		save: ["-", "Holiday", "Working"], 
+		order: ["-", "Holiday", "Working"], 
 		name: "holidayElse",
 		group: "Holiday",
 		wait: []
 	},	
 	ep: {
 		func: holiday, 
-		save: ["don't change holiday", "holiday", "working", "has stock"], 
-		order: ["don't change holiday", "holiday", "working", "has stock"], 
+		save: ["-", "Holiday", "Working", "Stock"], 
+		order: ["-", "Holiday", "Working", "Stock"], 
 		name: "holidayProd",
 		group: "Holiday",
 		wait: ["priceProd"]
 	},
 	et: {
 		func: training, 
-		save: ["don't train", "always train", "train city salary", "1 year training"], 
-		order: ["don't train", "always train", "train city salary", "1 year training"],
+		save: ["-", "Always", "City Salary", "1 Year"], 
+		order: ["-", "Always", "City Salary", "1 Year"], 
 		name: "training",
 		group: "Training",
 		wait: ["salaryNewInterface", "salaryOldInterface"]
 	},
 	qp: {
 		func: equipment, 
-		save: ["don't change equipment", "required equipment", "maximal equipment", "Q2.00 equipment"], 
-		order: ["don't change equipment", "Q2.00 equipment", "required equipment", "maximal equipment"],
+		save: ["-", "Required", "Maximal", "Q2.00", "Required+", "Maximal+"], 
+		order: ["-", "Required", "Required+", "Maximal", "Maximal+", "Q2.00"], 
 		name: "equip",
 		group: "Equipment",
 		wait: ["tech", "research"]
 	},
 	tc: {
 		func: technology,
-		save: ["don't change technology", "introduce researched"],
-		order: ["don't change technology", "introduce researched"],
+		save: ["-", "Research"],
+		order: ["-", "Research"],
 		name: "tech",
 		group: "Technology",
-		wait: []
-	},	
-	pb: {
-		func: prodBooster,
-		save: ["don't buy solar panels", "always buy solar panels"],
-		order: ["don't buy solar panels", "always buy solar panels"],
-		name: "booster",
-		group: "Booster",
 		wait: []
 	},
 	rs: {
 		func: research,
-		save: ["don't start new project", "continue research"],
-		order: ["don't start new project", "continue research"],
+		save: ["-", "Continue"],
+		order: ["-", "Continue"],
 		name: "research",
 		group: "Research",
 		wait: []
+	},	
+	pb: {
+		func: prodBooster,
+		save: ["-", "Always", "Profitable"],
+		order: ["-", "Always", "Profitable"],
+		name: "solars",
+		group: "Solars",
+		wait: []
+	},	
+	wz: {
+		func: wareSize,
+		save: ["-", "Full%"],
+		order: ["-", "Full%"],
+		name: "size",
+		group: "Size",
+		wait: []
 	}
 };
+
+if(typeof XJSON === "undefined"){
+	XJSON = {};
+	xPrefPages = function(){return []};
+}
+else{	
+	for(var key in XJSON){
+		policyJSON[key] = XJSON[key];
+	}
+}
 
 function preference(policies){
 	//manage preference options
@@ -2071,6 +2367,8 @@ function preference(policies){
 		savedPolicyChoices[i] = numberfy(savedPolicyStrings[i].substring(2));		
 	}	
 	
+	var policyNames = [];
+	$topblock.append("<table id=XMoptions style='font-size: 14px; color:gold;'><tr id=XMHead></tr><tr id=XMOpt></tr></table>");	
 	for(var i = 0; i < policies.length; i++){
 		var policyChoice = 0;
 		if(savedPolicies.indexOf(policies[i]) >= 0){
@@ -2078,14 +2376,28 @@ function preference(policies){
 			policyChoice = policyJSON[policies[i]].order.indexOf(policyJSON[policies[i]].save[policyChoice]);
 		}
 		
-		var htmlstring = "<select class=XioPolicy id="+policies[i]+">";
+		$("#XMHead").append("<td>"+policyJSON[policies[i]].group+"</td>");
+		var htmlstring = "<td><select class=XioPolicy id="+policies[i]+">";
 		for(var j = 0; j < policyJSON[policies[i]].order.length; j++){
 			htmlstring += "<option>"+policyJSON[policies[i]].order[j]+"</option>";
 		}		
-		$topblock.append(htmlstring + "</select>");
+		$("#XMOpt").append(htmlstring + "</select></td>");
 		$("#"+policies[i]+" option").eq(policyChoice).attr("selected", true);
 		
-	} 
+		policyNames.push(policyJSON[policies[i]].group);
+	}
+
+	if(policies.length){
+		$selects = $("#XMOptions td");
+		var width = $selects.map( (i, e) => $(e).width() ).get().concat([$selects.width()]).reduce( (p, c) => Math.max(p, c) );
+		$selects.width(width);			
+		$("#XMoptions").before("<input type=button id=XioFire value=FIRE!>");
+	}
+	
+	$("#XioFire").click(function(){		
+		XioMaintenance([subid], policyNames);
+	});
+	
 	$(".XioPolicy").change(function(){	
 		
 		var thisid = $(this).attr("id");
@@ -2125,7 +2437,7 @@ function preferencePages(html, url){
 	
 	//Production and Warehouse Price/Sale page
     if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/sale$").test(url) && $html.find(".list_sublink").length === 0){
-		return ["pc", "pl"]
+		return ["pc", "pl"];
 	}
 	
 	//Production and Service Supply page
@@ -2142,8 +2454,7 @@ function preferencePages(html, url){
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(url)){
 		return ["sw"];
 	}
-	
-	
+		
 	//Main unit page excluding warehouses
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && !$html.find("[href$=delivery]").length){
 		
@@ -2172,8 +2483,23 @@ function preferencePages(html, url){
 			policyArray.push("qp");
 		}
 		
+		//Has Solar Panels
+		if(/workshop/.test($html.find("#unitImage img").attr("src"))){
+			policyArray.push("pb");
+		}
+		
 		return policyArray;
 		
+	}
+	
+	//Warehouse main page
+	else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+$").test(url) && $html.find("[href$=delivery]").length){
+		return ["wz"];		
+	}
+	
+	//Advertisment Page excluding offices
+	else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/virtasement$").test(url) && !$html.find("#productAdvert").length){
+		return ["ad"];
 	}
 	
 	//Technology page
@@ -2222,6 +2548,8 @@ function XioMaintenance(subids, allowedPolicies){
 	servergetcount = 0;
 	serverpostcount = 0;
 	suppliercount = 0;
+	
+	console.log(mapped);
 	
 	if(!subids){
 		subids = [];
@@ -2277,11 +2605,11 @@ function XioMaintenance(subids, allowedPolicies){
 	$("#topblock").append(tablestring);	
 	
 	var companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
-	var urlUnitlist = "/"+realm+"/main/company/view/"+companyid+"/unit_list";
+	urlUnitlist = "/"+realm+"/main/company/view/"+companyid+"/unit_list"
 	var filtersetting = $(".u-s").attr("href") || "/"+realm+"/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/size=0/type=" + $(".unittype").val();
 	xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000", "none", false, function(){
 		xGet("/"+realm+"/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/type=0", "none", false, function(){
-			xGet("/"+realm+"/main/company/view/"+companyid+"/unit_list", "unitlist", false, function(){		
+			xGet(urlUnitlist, "unitlist", false, function(){		
 				xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400", "none", false, function(){
 					xGet(filtersetting, "none", false, function(){
 						further(mapped[urlUnitlist].subids);
@@ -2298,7 +2626,7 @@ function XioMaintenance(subids, allowedPolicies){
 		for(var i = 0; i < subids.length; i++){
 			if(realsubids.indexOf(subids[i]) === -1){
 				var urlSubid = "/"+realm+"/main/unit/view/"+subids[i];
-				postMessage("Subdivision <a href="+urlSubid+">"+subids[i]+"</a> is missing from the company. Options have been erased from the Local Storage");
+				postMessage("Subdivision <a href="+urlSubid+">"+subids[i]+"</a> is missing from the company. Options have been erased from the Local Storage.");
 				ls.removeItem("x"+realm+subids[i]);
 				continue;
 			}
@@ -2442,7 +2770,8 @@ function XioGenerator(subids){
 			var policies = [];
 			for(var i = 0; i < data[subid].length; i++){
 				var prePages = preferencePages(data[subid][i].html, data[subid][i].url);
-				policies.push.apply(policies, prePages);				
+				var xPages = xPrefPages(data[subid][i].html, data[subid][i].url);
+				policies.push.apply(policies, prePages.concat(xPages));				
 			}			
 			savedPolicyStrings = ls["x"+realm+subid]? ls["x"+realm+subid].split(";") : [];	
 			savedPolicies = [];
@@ -2507,13 +2836,13 @@ function XioOverview(){
 		
 	var policyString = [];
 	var groupString = [];
-	var thstring = "<th class=XOhtml><input type=button id=XioGeneratorPRO class='XioGo' value='Generate ALL'></th>";
+	var thstring = "<th class=XOhtml style='padding-right:5px'><input type=button id=XioGeneratorPRO class='XioGo' value='Generate ALL' style='width:100%'></th>";
 	var tdstring = "";
 	for(var key in policyJSON){			
 		if(groupString.indexOf(policyJSON[key].group) === -1){
 			groupString.push(policyJSON[key].group);
 			policyString.push([policyJSON[key].name]);				
-			thstring += "<th class=XOhtml>"+policyJSON[key].group+"  <input type=button data-group="+policyJSON[key].group+" class='XioGo XioGroup' value=FIRE!></th>";
+			thstring += "<th class=XOhtml style='padding-right:5px'><input type=button class='XioGo XioGroup' value="+policyJSON[key].group+" style='width:100%'></th>";
 			tdstring += "<td class=XOhtml></td>";
 		}
 		else{
@@ -2524,11 +2853,11 @@ function XioOverview(){
 	$(".unit-list-2014 th:nth-child(7)").after(thstring);
 	$td = $(".unit-list-2014 td:nth-child(8)");
 	
-	var subids = $(".unit-list-2014 td:nth-child(1)").map(function(){ return numberfy($(this).text()); }).get();
+	var subids = $(".unit-list-2014 td:nth-child(1)").map( (i, e) => numberfy($(e).text()) ).get();
 	for(var i = 0; i < subids.length; i++){
 		$td.eq(i).after("<td class=XOhtml>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioGenerator' value=Generate>"
-						   +"<input type=button data-id="+subids[i]+" class='XioGo XioSub' value=FIRE!>"
+						   +"<input type=button class='XioGo XioSub' value="+subids[i]+">"
 					  +"</td>"
 					  +tdstring
 		);
@@ -2565,6 +2894,15 @@ function XioOverview(){
 			$(".unit-list-2014 th:nth-child("+(9+i-j)+"), .unit-list-2014 td:nth-child("+(10+i-j)+")").remove();
 			j++;
 		}
+	}
+	
+	var ths = $("th.XOhtml[style]");
+	for(var i = 0; i < ths.length; i++){
+		$selects = $("td.XOhtml:nth-child("+(10+i)+") select");
+		$inputs = $("th.XOhtml:nth-child("+(9+i)+") input");
+		var width = $selects.map( (i, e) => $(e).width() ).get().concat([$inputs.width()+16]).reduce( (p, c) => Math.max(p, c) );
+		$selects.width(width);		
+		$inputs.width(width-16);
 	}
 	
 	$("#wrapper").width($(".unit-list-2014").width() + 80);
@@ -2605,18 +2943,27 @@ function XioOverview(){
 			optionclick = false;
 		}
 	});	
-	$(document).on('click.XO', ".XioChoice", function(){	
 	
+	$(document).on('click.XO', ".XioChoice", function(){	
+		
 		if(!optionclick){
+			
+			if(!$(this).parents("tr").hasClass("trXIO")){
+				$(".trXIO").css("backgroundColor", "").filter(".odd").css("backgroundColor", "lightgoldenrodyellow");
+				$(".trXIO").removeClass("trXIO");
+				$(this).parents("tr").addClass("trXIO").css("backgroundColor", "#CAE1FF");
+			}
+			
 			optionclick = true;
 			return false;
 		}	
 				
 		var thisid = $(this).attr("data-name");
 		var choice = policyJSON[thisid].order[$(this).val()];
-		var column = $(this).parent().index();	
+		var column = $(this).parent().index();			
 		
-		var arr = $(".trXIO td:nth-child("+(column+1)+") .XioChoice");		
+		var arr = $(".trXIO td:nth-child("+(column+1)+") .XioChoice");
+
 		for(var i = 0; i < arr.length; i++){
 			
 						
@@ -2662,12 +3009,12 @@ function XioOverview(){
 	});
 	
 	$(document).on('click.XO', ".XioGroup", function(){
-		var allowedPolicies = $(this).attr("data-group");	
-		XioMaintenance(undefined, allowedPolicies);
+		var allowedPolicies = $(this).val();
+		XioMaintenance(undefined, [allowedPolicies]);
 	});	
 	
 	$(document).on('click.XO', ".XioSub", function(){
-		var subid = numberfy($(this).attr("data-id"));
+		var subid = numberfy($(this).val());		
 		XioMaintenance([subid], undefined);
 	});		
 }
@@ -2873,7 +3220,7 @@ function topManagerStats(){
 				placeText($techRow.find("td:eq(1)")," (target)", Math.floor(calcTechLevel(managerBase)), "darkgreen");
 				placeText($techRow.find("td:eq(1)")," (maximum)", Math.floor(calcTechLevel(managerTotal)), "indigo");
 				placeText($techRow.find("td:eq(1)")," (overflow)", Math.floor(calcTechLevel(managerTotal*ov1)), "crimson");
-				placeText($effiRow.find("td:eq(1)"), " (Expected top Manager efficiency)", calcEfficiency(amount, totalEmp, managerTotal, factor1, factor3, qual, tech), "blue");
+				placeText($effiRow.find("td:eq(1)"), " (Expected top manager efficiency)", calcEfficiency(amount, totalEmp, managerTotal, factor1, factor3, qual, tech), "blue");
 				
 			}			
 		}		
@@ -2893,6 +3240,11 @@ function XioScript(){
 								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "10000") 
 								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "20000") 
 		);
+	}
+	
+	//Not user company
+	if($(".officePlace a").attr("href") + "/dashboard" !== $(".dashboard a").attr("href") && !!$(".officePlace > a").length || !!$(".officePlace tr:eq(1) a").length){
+		return false;
 	}
 	
 	//Unit list	
@@ -2932,7 +3284,7 @@ function XioScript(){
 	}
 	
 	//Preferences
-	preference(preferencePages($(document), document.URL));
+	preference(preferencePages($(document), document.URL).concat(xPrefPages($(document), document.URL)));
 }
 
 document.onreadystatechange = function () {
