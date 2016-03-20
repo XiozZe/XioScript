@@ -2,17 +2,21 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.0.17
+// @version        12.0.18
+// @author		   XiozZe
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.17";
-
-//Warehouse TM goods
+var version = "12.0.18";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
+
+//Under Construction Options
+//PQR: contracts with a lot of products
+//Equipment disappearance
+
 
 function xpCookie(name){
 	var nameEQ = name + "=";
@@ -51,7 +55,8 @@ var XMreload = false;
 var equiplist = {};
 var urlUnitlist = "";
 
-function numberfy(variable){
+
+numberfy = function (variable){
 	return parseFloat(String(variable).replace(/[\s\$\%]/g, "")) || 0;
 }
 
@@ -104,7 +109,7 @@ function map(html, url, page){
 	}
 	else if(page === "consume"){
 		mapped[url] = {
-			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map( (i, e) => numberfy($(e).text().match(/\d+/)) ).get()
+			consump : $html.find(".list td:nth-last-child(1) div:nth-child(1)").map( (i, e) => numberfy($(e).text().split(":")[1]) ).get()
 		}
 	}
 	else if(page === "storesupply"){
@@ -121,13 +126,25 @@ function map(html, url, page){
 	else if(page === "tradehall"){
 		mapped[url] = {
 			stock : $html.find(".nowrap:nth-child(6)").map( (i, e) => numberfy($(e).text()) ).get(),
-			report : $html.find(".grid a:has(img)").map( (i, e) => $(e).attr("href") ).get(),
-			img : $html.find(".grid a img").map( (i, e) => $(e).attr("src") ).get()
+			deliver : $html.find(".nowrap:nth-child(5)").map( (i, e) => numberfy($(e).text().split("[")[1]) ).get(),
+			report : $html.find(".grid a:has(img):not(:has(img[alt]))").map( (i, e) => $(e).attr("href") ).get(),
+			img : $html.find(".grid a img:not([alt])").map( (i, e) => $(e).attr("src") ).get(),
+			purch : $html.find("td:nth-child(9)").map( (i, e) => numberfy($(e).text()) ).get(),
+			price : $html.find(":text").map( (i, e) => numberfy($(e).val()) ).get(),
+			name : $html.find(":text").map( (i, e) => $(e).attr("name") ).get(),
+			share : $html.find(".nowrap:nth-child(11)").map( (i, e) => numberfy($(e).text()) ).get(),
+			history : $html.find("a.popup").map( (i, e) => $(e).attr("href") ).get()
 		}
 	}
 	else if(page === "retailreport"){
 		mapped[url] = {
 			marketsize : numberfy($html.find("b:eq(1)").text())
+		}
+	}
+	else if(page === "pricehistory"){
+		mapped[url] = {
+			quantity : $html.find(".list td:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			price : $html.find(".list td:nth-child(4)").map( (i, e) => numberfy($(e).text()) ).get()
 		}
 	}
 	else if(page === "TM"){
@@ -181,6 +198,8 @@ function map(html, url, page){
 			hasBooster : !$html.find("[src='/img/artefact/icons/color/production.gif']").length,
 			onHoliday : !!$html.find("[href$=unset]").length,
 			isStore : !!$html.find("[href$=trading_hall]").length,
+			departments : numberfy($html.find("tr:contains('Number of departments') td:eq(1)").text()),
+			visitors: numberfy($html.find("tr:contains('Number of visitors') td:eq(1)").text()),
 		}
 	}
 	else if(page === "salary"){
@@ -262,6 +281,7 @@ function map(html, url, page){
 			price : $html.find(".price_w_tooltip:nth-child(6)").map( (i, e) => numberfy($(e).text()) ).get(),
 			quality : $html.find("td:nth-child(7)").map( (i, e) => numberfy($(e).text()) ).get(),
 			tm : $html.find(".unit-list-2014 td:nth-child(1)").map( (i, e) => $(e).find("img").length ? $(e).find("img").attr("title") : "" ).get(),
+			company : $html.find("b").map( (i, e) => $(e).text() ),
 			product : $html.find("img:eq(0)").attr("title")
 		}
 	}
@@ -288,7 +308,9 @@ function map(html, url, page){
 	}	
 	else if(page === "productreport"){
 		mapped[url] = {
-			maxed : $html.find(".grid td.nowrap:nth-child(2)").map( (i, e) => !!$(e).find("span").length ).get(),
+			max : $html.find(".grid td.nowrap:nth-child(2)").map( (i, e) => numberfy($(e).text().split(":")[1]) ).get(),
+			total : $html.find(".grid td.nowrap:nth-child(2)").map( (i, e) => numberfy($(e).text()) ).get(),
+			available : $html.find(".grid td.nowrap:nth-child(3)").map( (i, e) => numberfy($(e).text()) ).get(),
 			quality : $html.find(".grid td.nowrap:nth-child(4)").map( (i, e) => numberfy($(e).text()) ).get(),
 			price : $html.find(".grid td.nowrap:nth-child(5)").map( (i, e) => numberfy($(e).text()) ).get(),
 			subid : $html.find(".grid td:nth-child(1) td:nth-child(1) a").map( (i, e) => numberfy($(e).attr("href").match(/\d+/)[0]) ).get()
@@ -315,7 +337,8 @@ function map(html, url, page){
 	else if(page === "ads"){
 		mapped[url] = {
 			pop : numberfy($html.find("script").text().match(/params\['population'\] = \d+/)[0].substring(23)),
-			budget : numberfy($html.find(":text:not([readonly])").val())
+			budget : numberfy($html.find(":text:not([readonly])").val()),
+			requiredBudget : numberfy($html.find(".infoblock tr:eq(1) td:eq(1)").text().split("$")[1])
 		}
 	}
 	
@@ -422,7 +445,7 @@ function xContract(url, data, callback){
 }
 
 function xTypeDone(type){	
-	
+		
 	var group;
 	for(var key in policyJSON){
 		if(policyJSON[key].name === type){
@@ -478,6 +501,7 @@ function xTypeDone(type){
 		$(".XioGo").attr("disabled", false);
 		clearInterval(timeinterval);		
 	}	
+
 }
 
 function xUrlDone(url){
@@ -664,8 +688,9 @@ function salePrice(type, subid, choice){
 				var IP = mapped[urlIP].IP[indexIP];
 								
 				var favPQR = Infinity;
-				for(var j = 0; j < mapped[urlReport[i]].maxed.length; j++){
-					if(!mapped[urlReport[i]].maxed[j] && subid !== mapped[urlReport[i]].subid[j]){
+				for(var j = 0; j < mapped[urlReport[i]].price.length; j++){
+					var allowed = mapped[urlReport[i]].max[j] === 0 || mapped[urlReport[i]].max[j] * 3 > mapped[urlReport[i]].total[j] - mapped[urlReport[i]].available[j];
+					if(allowed && subid !== mapped[urlReport[i]].subid[j]){
 						var PQR = mapped[urlReport[i]].price[j] / mapped[urlReport[i]].quality[j];
 						if(PQR < favPQR){
 							favPQR = PQR;
@@ -716,6 +741,143 @@ function salePrice(type, subid, choice){
 			xTypeDone(type);
 		}
 	}
+}
+
+function retailPrice(type, subid, choice){
+	
+	var url = "/"+realm+"/main/unit/view/"+subid+"/trading_hall";
+	
+	xGet(url, "tradehall", false, function(){
+		phase();
+	});
+	
+	function phase(){
+		
+		if(choice >= 6){
+			
+			var getcount = mapped[url].report.length;
+						
+			for(var i = 0; i < mapped[url].history.length; i++){
+				xGet(mapped[url].history[i], "pricehistory", false, function(){
+					!--getcount && post();
+				});
+			}		
+			
+		}
+		else{
+			post();
+		}
+		
+	}
+	
+	function post(){
+				
+		var change = false;
+		var data = "action=setprice";
+		
+		for(var i = 0; i < mapped[url].price.length; i++){
+			
+			if(choice === 1 && mapped[url].price[i] !== 0){
+				change = true;
+				data += "&" + encodeURI(mapped[url].name[i] + "=0.00");				
+			}
+			else if(choice >= 2 && choice <= 5){
+				
+				var multiplier = [1, 1.1, 1.4, 2];
+				var price = Math.round(mapped[url].purch[i] * multiplier[choice - 2]);
+				
+				if(mapped[url].price[i] !== price){
+					change = true;
+					data += "&" + encodeURI(mapped[url].name[i] + "=" + price);
+				}
+								
+			}
+			else if(choice === 6 || choice == 7){
+				
+				var priceOld = mapped[mapped[url].history[i]].price[0];
+				var price = priceOld;
+				var share = mapped[url].share[i];
+				
+				if(!price){
+					price = mapped[url].purch[i] * 1.5;
+				}
+				else if(choice === 6){
+					price = price * (1 - 0.03 * (share < 4) + 0.03 * (share > 6) );
+				}
+				else{
+					price = price * (1 - 0.03 * (share < 8) + 0.03 * (share > 12) );
+				}
+				
+				price = Math.max(mapped[url].purch[i] * 1.1, Math.round(price*100)/100);
+				
+				if(mapped[url].price[i] !== price){
+					change = true;
+					data += "&" + encodeURI(mapped[url].name[i] + "=" + price);
+				}
+				
+			}
+			else if(choice === 8){
+				
+				var priceOld = mapped[mapped[url].history[i]].price[0];
+				var priceOlder = mapped[mapped[url].history[i]].price[1];
+				var turnOld = mapped[mapped[url].history[i]].quantity[0] * priceOld;
+				var turnOlder = mapped[mapped[url].history[i]].quantity[1] * priceOlder;
+				
+				var price = priceOld;
+				
+				if(!priceOld){
+					price = mapped[url].purch[i] * 1.5;
+				}
+				else if(!priceOlder){
+					price = priceOld * 1.03;
+				}
+				else{
+					price = priceOld * (0.97 + 0.06 * ((turnOld > turnOlder) === (priceOld > priceOlder)) );
+				}
+				
+				price = Math.max(mapped[url].purch[i] * 1.1, Math.round(price*100)/100);
+				
+				if(mapped[url].price[i] !== price){
+					change = true;
+					data += "&" + encodeURI(mapped[url].name[i] + "=" + price);
+				}
+				
+			}
+			else if(choice === 9){
+				
+				var priceOld = mapped[mapped[url].history[i]].price[0];
+				var price = priceOld;
+				var emptystock = mapped[url].deliver[i] === mapped[url].stock[i];
+				
+				if(!price){
+					price = mapped[url].purch[i] * 1.5;
+				}
+				else{
+					price = price * (0.97 + 0.06 * emptystock);
+				}
+				
+				price = Math.max(mapped[url].purch[i] * 1.1, Math.round(price*100)/100);
+				
+				if(mapped[url].price[i] !== price){
+					change = true;
+					data += "&" + encodeURI(mapped[url].name[i] + "=" + price);
+				}
+				
+			}
+			
+		}
+			
+		if(change){
+			xPost(url, data, function(){
+				xTypeDone(type);
+			});
+		}
+		else{
+			xTypeDone(type);
+		}	
+		
+	}
+	
 }
 
 function salePolicy(type, subid, choice){
@@ -893,10 +1055,10 @@ function storeSupply(type, subid, choice){
 				newsupply = mapped[url].sold[i];
 			}
 			else if(choice === 3){
-				newsupply = mapped[url].sold[i] + Math.ceil(mapped[url].sold[i] * mapped[url].quantity[i] === mapped[url].purchase[i] * 0.2);
+				newsupply = mapped[url].sold[i] + Math.ceil(mapped[url].sold[i] * (mapped[url].quantity[i] === mapped[url].purchase[i]) * 0.2);
 			}
 			else if(choice === 4){
-				newsupply =  Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
+				newsupply = Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0));
 			}
 			else if(choice === 5){
 				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.05);
@@ -904,6 +1066,22 @@ function storeSupply(type, subid, choice){
 			else if(choice === 6){
 				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.10);
 			}
+			else if(choice === 7){
+				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.10 - mapped[url].quantity[i]);
+			}
+			else if(choice === 8){
+				newsupply = Math.ceil(mapped[reports[i]].marketsize * 0.20 - mapped[url].quantity[i]);
+			}
+			else if(choice === 9){
+				newsupply = Math.max(Math.ceil(mapped[reports[i]].marketsize * 0.01 - mapped[url].quantity[i]), mapped[url].sold[i]);
+			}
+			else if(choice === 10){
+				newsupply = Math.max(Math.ceil(mapped[reports[i]].marketsize * 0.01 - mapped[url].quantity[i]), mapped[url].sold[i] + Math.ceil(mapped[url].sold[i] * (mapped[url].quantity[i] === mapped[url].purchase[i]) * 0.2));
+			}			
+			else if(choice === 11){
+				newsupply = Math.max(Math.ceil(mapped[reports[i]].marketsize * 0.01 - mapped[url].quantity[i]), Math.min(2 * mapped[url].sold[i], Math.max(3 * mapped[url].sold[i] - mapped[url].quantity[i], 0)));
+			}
+			
 			
 			if(mapped[url].parcel[i] !== newsupply || mapped[url].reprice[i]){
 				change.push({
@@ -1188,6 +1366,7 @@ var subType = {
 }
 
 function equipment(type, subid, choice){
+		
 	var url = "/"+realm+"/window/unit/equipment/"+subid;	
 	var urlMain = "/"+realm+"/main/unit/view/"+subid;
 	var urlSalary = "/"+realm+"/window/unit/employees/engage/"+subid;
@@ -1195,6 +1374,7 @@ function equipment(type, subid, choice){
 	
 	var getcount = 0;
 	var equipcount = 0;
+	
 	
 	getcount++;
 	xGet(urlMain, "main", false, function(){
@@ -1228,9 +1408,9 @@ function equipment(type, subid, choice){
 			post();
 		});
 	}
-	
-	function post(){
 		
+	function post(){
+				
 		var change = [];		
 		var urlC = "";
 		
@@ -1288,15 +1468,17 @@ function equipment(type, subid, choice){
 			var qualEst = 0;
 			var qualNew = qualNow;
 			
-			while(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
-				l++;
-			}
-			while(offer.high[h] && mapped[urlC].available[offer.high[h].index] === 0 && offer.high[h].length > h){
-				h++;
-			}			
-			
 			while(equipWear > 0 && h < offer.high.length){
-								
+
+				if(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
+					l++;
+					continue;
+				}				
+				if(offer.high[h] && offer.high[h].length > h && mapped[urlC].available[offer.high[h].index] === 0){
+					h++;
+					continue;
+				}
+				
 				qualEst = qualNew;
 				l < offer.low.length && offer.low[l].buy++;
 				for(var key in offer){
@@ -1308,19 +1490,13 @@ function equipment(type, subid, choice){
 				}
 				l < offer.low.length && offer.low[l].buy--;				
 				
-				if(l < offer.low.length && qualEst > qualReq && offer.low[l].PQR < offer.high[h].PQR){
+				if(l < offer.low.length && qualEst > qualReq && offer.low[l].PQR < offer.high[h].PQR){				
 					offer.low[l].buy++;
-					mapped[urlC].available[offer.low[l].index]--;
-					if(mapped[urlC].available[offer.low[l].index] === 0){
-						l++;
-					}
+					mapped[urlC].available[offer.low[l].index]--;					
 				}
 				else{
 					offer.high[h].buy++;
 					mapped[urlC].available[offer.high[h].index]--;
-					if(mapped[urlC].available[offer.high[h].index] === 0){
-						h++;
-					}
 				}
 				
 				equipWear--;				
@@ -1371,18 +1547,16 @@ function equipment(type, subid, choice){
 				}						
 			}
 			qualEst = (qualEst + (mapped[url].equipNum - torepair) * qualNow) / mapped[url].equipNum;
-			
-			while(offer.inc[n] && offer.inc[n].length > n && mapped[urlC].available[offer.inc[n].index] === 0){
-				n++;
-			}
-			
+						
 			while(qualEst < qualReq && n < offer.inc.length){
+				
+				if(offer.inc[n] && offer.inc[n].length > n && mapped[urlC].available[offer.inc[n].index] === 0){
+					n++;
+					continue;
+				}
 				
 				offer.inc[n].buy++;
 				mapped[urlC].available[offer.inc[n].index]--;
-				if(mapped[urlC].available[offer.inc[n].index] === 0){
-					n++;
-				}
 				
 				qualEst = 0;	
 				torepair = 0;
@@ -1462,18 +1636,21 @@ function equipment(type, subid, choice){
 			var h = 0;
 			var qualEst = 0;
 			var qualNew = qualNow;
-			
-			while(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
-				l++;
-			}
-			while(offer.mid[m] && offer.mid[m].length > mmapped[urlC].available[offer.mid[m].index] === 0){
-				m++;
-			}
-			while(offer.high[h] && offer.high[h].length > hmapped[urlC].available[offer.high[h].index] === 0){
-				h++;
-			}
-			
+						
 			while(equipWear > 0 && l + m < offer.low.length + offer.mid.length && m + h < offer.mid.length + offer.high.length){
+				
+				if(offer.low[l] && offer.low[l].length > l && mapped[urlC].available[offer.low[l].index] === 0){
+					l++;
+					continue;
+				}
+				if(offer.mid[m] && offer.mid[m].length > m && mapped[urlC].available[offer.mid[m].index] === 0){
+					m++;
+					continue;
+				}
+				if(offer.high[h] && offer.high[h].length > h && mapped[urlC].available[offer.high[h].index] === 0){
+					h++;
+					continue;
+				}			
 				
 				qualEst = qualNew;
 				h < offer.high.length && offer.high[h].buy++;
@@ -1532,6 +1709,7 @@ function equipment(type, subid, choice){
 			}			
 			
 		}	
+		
 		else if(choice === 3 && equipWear !== 0){
 			
 			var offer = [];
@@ -1576,7 +1754,7 @@ function equipment(type, subid, choice){
 		}
 		
 		var equipcount = change.length;
-		equipcount && console.log(subid, change);
+		change.length && console.log(change);
 		for(var i = 0; i < change.length; i++){
 			xequip.push(
 				(function(i){
@@ -1610,6 +1788,7 @@ function equipment(type, subid, choice){
 		
 		
 	}
+
 }
 
 function technology(type, subid, choice){
@@ -1850,7 +2029,8 @@ function research(type, subid, choice){
 	});
 }
 
-function wareSupply(type, subid, choice){
+function wareSupply(type, subid, choice, blackmail){
+	blackmail = blackmail || [];
 	var url = "/"+realm+"/main/unit/view/"+subid+"/supply";	
 	var getcount = 0;
 	
@@ -1996,11 +2176,12 @@ function wareSupply(type, subid, choice){
 							});
 							
 							for(var k = 0; k < mapped[urlContract].offer.length; k++){
-								if(offers.indexOf(mapped[urlContract].offer[k]) === -1 && (mapped[urlContract].tm[k] === product || mapped[urlContract].product === product)){
+								if(offers.indexOf(mapped[urlContract].offer[k]) === -1 && (mapped[urlContract].tm[k] === product || mapped[urlContract].product === product) && blackmail.indexOf(mapped[urlContract].company[k]) === -1){
 									supplier.push({
 										available : mapped[urlContract].available[k],
 										PQR : mapped[urlContract].price[k] / mapped[urlContract].quality[k],
 										offer : mapped[urlContract].offer[k],
+										company : mapped[urlContract].company[k],
 										row : k
 									});									
 								}
@@ -2017,7 +2198,8 @@ function wareSupply(type, subid, choice){
 									change.push({
 										'newsup' : supplier[k].row >= 0,
 										'offer'  : supplier[k].offer,
-										'amount' : toset					
+										'amount' : toset,
+										'company' : supplier[k].company,
 									});																	
 								}
 								else if(supplier[k].index >= 0 && toset === 0){
@@ -2066,12 +2248,23 @@ function wareSupply(type, subid, choice){
 				'offer'  		  : change[i].offer,
 				'unit'  		  : subid,
 				'amount'		  : change[i].amount			
-				}, function(){
-					if(change[i].newsup){
+				}, function(data){	
+
+					if(data.result === "-5"){
+						postMessage("You are blackmailed by the company 「"+change[i].company+"」!");
+						blackmail.push(change[i].company);
+						wareSupply(type, subid, choice, blackmail);
+					}
+					
+					if(data.result !== "-5" && change[i].newsup){
 						suppliercount++;
 						$("#XioSuppliers").text(suppliercount);												
 					}
-					!--contractcount && xTypeDone(type);
+					
+					if(data.result !== "-5"){
+						!--contractcount && xTypeDone(type);
+					}
+					
 				});
 			})(i);
 		}
@@ -2227,6 +2420,14 @@ var policyJSON = {
 		group: "Policy",
 		wait: []
 	},
+	pr: {
+		func: retailPrice, 
+		save: ["-", "Zero", "Purch x1.0", "Purch x1.1", "Purch x1.4", "Purch x2.0", "Market 5%", "Market 10%", "Turnover", "Stock"], 
+		order: ["-", "Zero", "Purch x1.0", "Purch x1.1", "Purch x1.4", "Purch x2.0", "Market 5%", "Market 10%", "Turnover", "Stock"], 
+		name: "priceRetail",
+		group: "Price",
+		wait: []
+	},
 	sp: {
 		func: prodSupply, 
 		save: ["-", "Zero", "Required", "3x Stock"], 
@@ -2237,8 +2438,8 @@ var policyJSON = {
 	},
 	ss: {
 		func: storeSupply, 
-		save: ["-", "Zero", "Sold", "Sold++", "3x Stock", "Market 5%", "Market 10%"],
-		order: ["-", "Zero", "Sold", "Sold++", "3x Stock", "Market 5%", "Market 10%"],
+		save: ["-", "Zero", "Sold", "Sold++", "3x Stock", "Market 5%", "Market 10%", "Fill 10%", "Fill 20%", "Sold 1%", "Sold++ 1%", "3x Stock 1%"],
+		order: ["-", "Zero", "Sold", "Sold 1%", "Sold++", "Sold++ 1%", "3x Stock", "3x Stock 1%", "Market 5%", "Market 10%", "Fill 10%", "Fill 20%"],
 		name: "supplyRetail",
 		group: "Supply",
 		wait: ["priceProd", "policy"]
@@ -2452,6 +2653,11 @@ function preferencePages(html, url){
 		return ["ss"];
 	}
 	
+	//Store Trading Hall
+    else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/trading_hall$").test(url)){
+		return ["pr"];
+	}	
+	
 	//Warehouse Supply page
     else if(new RegExp("\/.*\/main\/unit\/view\/[0-9]+\/supply$").test(url)){
 		return ["sw"];
@@ -2649,15 +2855,15 @@ function XioMaintenance(subids, allowedPolicies){
 				xgroup[policy.group] = ++xgroup[policy.group] || 1;
 				
 				if(policy.wait.length === 0){
-					policy.func(policy.name, subids[i], choice);
+					policy.func(policy.name, subids[i], choice);					
 				}
 				else{
 					xwait.push(
 						[						
 							policy.wait.slice(), 
-							function(i, j, policy, savedPolicyStrings){							
-								policy.func(policy.name, subids[i], parseFloat(savedPolicyStrings[j].substring(2)));
-							}.bind(this, i, j, policy, savedPolicyStrings)
+							function(i, j, policy, choice){	
+								policy.func(policy.name, subids[i], choice);								
+							}.bind(this, i, j, policy, choice)
 						]
 					);
 				}						
@@ -2831,10 +3037,17 @@ function XioGenerator(subids){
 
 function XioOverview(){	
 		
-	$(".unit-list-2014").find("td, th").filter(":not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();
+	$(".unit-list-2014").find("td, th").filter(":not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(8))").addClass("XioHide").hide();	
 	$(".unit-list-2014 tr.odd").css("backgroundColor", "lightgoldenrodyellow");
 	$(".unit-list-2014 td:nth-child(3) span").remove(); 
 	$(".unit-list-2014").css("white-space", "nowrap").css("user-select", "none");
+	
+	var $comments = $(".unit-list-2014 tr.unit_comment");
+	for(var i = 0; i < $comments.length; i++){
+		var notetext = $comments.eq(i).find("span").text();
+		$comments.eq(i).prev().addClass("wborder").find("td:nth-child(3)").append("<div class=st><span style='max-width:300px;'>"+notetext+"</span></div>");
+	}
+	$comments.remove();
 		
 	var policyString = [];
 	var groupString = [];
@@ -2853,9 +3066,9 @@ function XioOverview(){
 	}			
 	
 	$(".unit-list-2014 th:nth-child(7)").after(thstring);
-	$td = $(".unit-list-2014 td:nth-child(8)");
+	$td = $(".unit-list-2014 tr:not(.unit_comment) td:nth-child(8)");
 	
-	var subids = $(".unit-list-2014 td:nth-child(1)").map( (i, e) => numberfy($(e).text()) ).get();
+	var subids = $(".unit-list-2014 tr:not(.unit_comment) td:nth-child(1)").map( (i, e) => numberfy($(e).text()) ).get();
 	for(var i = 0; i < subids.length; i++){
 		$td.eq(i).after("<td class=XOhtml>"
 						   +"<input type=button data-id="+subids[i]+" class='XioGo XioGenerator' value=Generate>"
@@ -2883,7 +3096,7 @@ function XioOverview(){
 				htmlstring += "<option value="+k+">"+policy.order[k]+"</option>";
 			}
 			
-			$(".unit-list-2014 tr").eq(i+1)
+			$(".unit-list-2014 tr:not(.unit_comment)").eq(i+1)
 								   .find("td").eq(groupString.indexOf(policy.group)+9)
 								   .html(htmlstring + "</select>")
 								   .find("select").val(policyChoice);					   
@@ -2893,7 +3106,7 @@ function XioOverview(){
 	var j = 0;
 	for(var i = 0; i < policyString.length; i++){
 		if($(".unit-list-2014 td:nth-child("+(10+i-j)+")").find("select").length === 0){
-			$(".unit-list-2014 th:nth-child("+(9+i-j)+"), .unit-list-2014 td:nth-child("+(10+i-j)+")").remove();
+			$(".unit-list-2014 th:nth-child("+(9+i-j)+"), .unit-list-2014  td:nth-child("+(10+i-j)+")").remove();
 			j++;
 		}
 	}
@@ -2927,6 +3140,7 @@ function XioOverview(){
 	
 	$(document).on("mouseover.XO", ".wborder", function(){
 		if(mousedown){
+			console.log("MOUSY");
 			$(".trXIO").css("backgroundColor", "").filter(".odd").css("backgroundColor", "lightgoldenrodyellow");
 			$(".trXIO").removeClass("trXIO");
 			$this = $(this);	
