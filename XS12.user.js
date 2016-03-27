@@ -2,36 +2,16 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.0.19
+// @version        12.0.20
 // @author		   XiozZe
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.19";
+var version = "12.0.20";
 
-//Note: a lot of options are reset.
-
-//Fixed a bug where sometimes a subdivision was counted double in the XM log.
-//Fixed a bug where the warehouse supply could cancel all suppliers due to being blacklisted.
-//The Research function will now not continue with the research anymore if the tech level exceeds maximum given by the top manager.
-//Top manager stats for factories now supported for the Russian realm.
-//Top manager functions now supported for the Russian realm.
-//Changed some core functions: options now allow multiple selection boxes (called secondary options).
-//Options do not show anymore on subdivisions under construction.
-//Fixed a bug where the PQR price function did not work properly on subdivisions that had so many contracts that the contract page was split into multiple instances.
-//Added secondary options on Price functions.
-//Added secondary options on Policy functions.
-//Added secondary options to Retail Supply functions.
-//Fixed a bug where the Warehouse Supply (World) function would purchase additional TM's.
-//Changed selection color from blue to pink.
-//Fixed selection for Firefox.
-//Rewritten code that was not supported in Safari.
-//Added Warehouse Size option "Packed".
-//Added Production/Warehouse Price option "$0.01".
-//Sharply reduced the number of server calls needed for the holiday functions.
-//Added Efficiency/Holiday indicators on XioOverview
+//Fixed a bug where the remaining holiday texts could stack up at the bottom of the page.
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -79,6 +59,7 @@ var mousedown = false;
 var $tron;
 var XMreload = false;
 var equiplist = {};
+var checklist = {};
 var urlUnitlist = "";
 var blackmail = [];
 var companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
@@ -554,10 +535,13 @@ function xTypeDone(type){
 		$(".XioGo").attr("disabled", false);
 		clearInterval(timeinterval);
 		var a = {};
+		var b = {};
 		for (var key in equiplist) 
-			if(equiplist[key] > 0) 
+			if(equiplist[key] > 0) {
 				a[key] = equiplist[key];
-		console.log(a);
+				b[key] = checklist[key];
+			}			
+		console.log(a, b);
 	}	
 
 }
@@ -1515,6 +1499,7 @@ function equipment(type, subid, choice){
 		
 		for(var i = 0; i < mapped[url].offer.length; i++){
 			equiplist[mapped[url].offer[i]] = equiplist[mapped[url].offer[i]] || 0;
+			checklist[mapped[url].offer[i]] = checklist[mapped[url].offer[i]] || mapped[url].available[i];
 		}
 				
 		if(choice[0] === 1 || choice[0] === 4){
@@ -3472,7 +3457,7 @@ function XioOverview(){
 	});		
 }
 
-function XioHoliday(callback){
+function XioHoliday(){
 	
 	var url = "/"+realm+"/main/company/view/"+companyid+"/unit_list/employee/salary";
 	
@@ -3495,6 +3480,11 @@ function XioHoliday(callback){
 			for(var i = 0; i < mapped[url].id.length; i++){
 				
 				var index = subids.indexOf(mapped[url].id[i]);
+				
+				if(index === -1){
+					continue;
+				}
+				
 				var eff = mapped[url].efficiency[i];
 				
 				var text = eff === ""? "Holiday" : eff;
@@ -3595,6 +3585,7 @@ function calcEfficiency(employees, allEmployees, manager, factor1, factor3, qual
 	
 	console.log(effi);
 	return (Math.round(Math.min.apply(null, effi)*10)/10).toFixed(2) + "%";
+	
 }
 
 function calcOverflowTop1(allEmployees, factor3, manager){
