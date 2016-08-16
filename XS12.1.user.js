@@ -13,12 +13,14 @@ let version = "12.1.0";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
+//Notes: (TODO-list)
 //Holiday laboratory
 //Builder moves to close screen?
 //Equipment maximal goes over maximal bug
 //XSPE supply: what does it do with a very large stock to the threshold formula?
 //Dredlyn Russian Translation
 //XioOverview smoother with selecting outside box area
+
 
 let numberfy = function (letiable){
 	if(String(letiable) === 'Не огр.' || String(letiable) === 'Unlim.' || String(letiable) === 'Не обм.' || String(letiable) === 'N’est pas limité' || String(letiable) === 'No limitado' || String(letiable) === '无限' || String(letiable) === 'Nicht beschr.') {
@@ -27,6 +29,8 @@ let numberfy = function (letiable){
   		return parseFloat(String(letiable).replace(/[\s\$\%]/g, "")) || 0;
 	}
 }
+
+//the waiter acts as a barrier: till all the ajax calls related to the variables are not returned, the code will not continue
 let waiter = function* (go, ...a){
 	let arr = [];
 	for(let i = 0; i < a.length; i++){
@@ -53,6 +57,8 @@ let waiter = function* (go, ...a){
 	}).then(go);
 	return newarr;	
 }
+
+//
 Array.prototype.hasChoice = function(index, func){
 	for(let i = 0; i < this.length; i++){
 		if(func(this[i].choice[index]))
@@ -69,16 +75,17 @@ const companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
 const Infinity = Number.POSITIVE_INFINITY;
 let sccount = {};
 
-
+//save the current realm (mary/lien/etc.) in a variable
 let ca = document.cookie.split(';'), rlm;
 for(let i = 0; i < ca.length; i++){
 	let c = ca[i];
 	while (c.charAt(0) == ' ') c = c.substring(1, c.length);
 	if (c.indexOf("last_realm=") === 0) rlm = c.substring(11, c.length);
 }
-
 const realm = rlm;
 
+//all data related to the extraction of DOM elements from the virtonomics page are listed here
+//the map function returns an object with useful data extracted from the page
 function map(html, url, page){
 	
 	if(page === "none" || !page){
@@ -533,6 +540,7 @@ function map(html, url, page){
 	}
 }
 
+
 function xGet(url, page){	
 	
 	return new Promise( function(resolve, reject){
@@ -594,6 +602,7 @@ function xPost(url, data, count, datatype="text"){
 	
 }
 
+//the TOP1 modifier, TOP3 modifier and the img for the top manager page
 let subType = {
 	mine: [8, 8, "/img/qualification/mining.png"],	
 	power: [6, 6, "/img/qualification/power.png"],
@@ -733,7 +742,7 @@ let choiceJSON = {
 }
 
 //change the saved options in the localstorage to a readable object
-//while simultaneously add and remove new subdivisions if needed
+//while simultaneously add and remove new subdivisions to the data if needed
 function Update(list){
 	//list is an array with subids and type extracted from the unit list
 	
@@ -821,6 +830,9 @@ function Update(list){
 	
 }
 
+//some function I got from the internet
+//don't ask me how it works, but it works
+//it's needed for running generator functions (functions with a *)
 function runG(gen){
 	let gen2 = gen(resume);
 	function resume(cbadd, cbVal){
@@ -829,6 +841,7 @@ function runG(gen){
 	gen2.next();
 }
 
+//keep track of all the great things the script has done
 function servercalls(){
 	
 	if(sccount.sale === undefined){
@@ -871,6 +884,8 @@ function servercalls(){
 	$("#XioPhase").text(sccount.phase);
 }
 
+//this is where all the magic happens~
+//it's GLORIOUS
 function* XioMaintenance(go){
 	
 	console.log("XM!");
@@ -1870,6 +1885,7 @@ function* XioMaintenance(go){
 	console.log("done!");	
 }
 
+//for the purpose of loading the XioOverview
 function* XioOverview(go){	
 	
 	let processingtime = new Date().getTime();
@@ -2111,13 +2127,18 @@ function* XioOverview(go){
 	
 }
 
+//the XioExport and Import functions are basically:
+//Export: put the saved data from the localstorage in a textbox
+//Import: put the data from the textbox in the localstorage
 function XioExport(){
+	//note that it only exports the current realm
 	$(".XioProperty").remove();
 	$("#topblock").append("<br class=XioProperty><textarea id=XEarea class=XioProperty style='width: 900px'></textarea>");	
 	$("#XEarea").text(ls["XS"+realm]).height($("#XEarea")[0].scrollHeight);
 }
 
 function XioImport(){
+	//note that it only imports to this realm
 	$(".XioProperty").remove();
 	$("#topblock").append("<br class=XioProperty><textarea id=XIarea class=XioProperty style='width: 900px'></textarea><br class=XioProperty><input type=button id=XioSave class=XioProperty value=Save!>");
 	
@@ -2133,6 +2154,8 @@ function XioImport(){
 	
 }
 
+//the calc functions are function relating to the formula's used inside virtonomics
+//these functions are used throughout all other functions
 function calcSalary(sn, sc, kn, kc, kr){
 	// s = salary, k = skill, n = now, c = city, r = required
 	let calc = sn > sc? kn - kc * Math.log( 1 + sn / sc ) / Math.log(2)	: Math.pow( sc / sn , 2) * kn - kc;	
@@ -2195,6 +2218,8 @@ function calcOverflowTop3(employees, qualification, techLevel, factor1, manager)
 	return Math.max(Math.min(6/5, manager / calcTopTech(techLevel), manager / calcTop1(employees, qualification, factor1)), 5/6);
 }
 
+//show the top manager stats 
+//but no Russian support yet!
 function topManagerStats(){
 	let url = "/"+realm+"/main/user/privat/persondata/knowledge";
 	
@@ -2315,6 +2340,8 @@ function topManagerStats(){
 	});
 }
 
+//this function should reduce the time you have to wait during the subdivision building
+//seems a bit buggy though
 function buildingShortener(){
 	$( document ).ajaxSuccess(function( event, xhr, settings ) {
 		
@@ -2350,12 +2377,12 @@ function buildingShortener(){
 	});	
 }
 
+//determines which functions to run based on which page where at
 function XioScript(){
-	//determines which functions to run;
 	
 	console.log("XioScript 12 is running!");	
 	
-	//Add XO2
+	//Add XioOverview to the top bar
 	if(new RegExp(".*\/main\/.*").test(document.URL)){
 		let $tag = $("#menutop ul:eq(0) li:not([class]):eq(0)").clone();
 		$tag.find("a").text("XioOverview").attr("href", "/"+realm+"/main/company/view/"+companyid+"/");
@@ -2382,7 +2409,7 @@ function XioScript(){
 		runG(XioOverview);	
     }
 	
-	//page options
+	//page options (for the extra number of subdivisions per page)
 	if($(".pager_options").length){
 		$(".pager_options").append( $(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "1000") 
 								   +$(".pager_options :eq(1)")[0].outerHTML.replace(/10/g, "2000") 
@@ -2392,7 +2419,7 @@ function XioScript(){
 		);
 	}
 	
-	//Not user company
+	//Not user company: we should use any building or top manager function here
 	if($(".officePlace a").attr("href") + "/dashboard" !== $(".dashboard a").attr("href") && !!$(".officePlace > a").length || !!$(".officePlace tr:eq(1) a").length){
 		return false;
 	}
@@ -2408,6 +2435,7 @@ function XioScript(){
 	}	
 }
 
+//let's roll
 document.onreadystatechange = function () {
     if (document.readyState == "complete") {
         XioScript();
