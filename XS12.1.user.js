@@ -72,8 +72,10 @@ let processingtime, timeinterval;
 let mousedown = false;
 let $tron;
 const companyid = numberfy($(".dashboard a").attr("href").match(/\d+/)[0]);
-const Infinity = Number.POSITIVE_INFINITY;
 let sccount = {};
+
+//doesn't work in FF: script breaks on this
+//const Infinity = Number.POSITIVE_INFINITY;
 
 //save the current realm (mary/lien/etc.) in a variable
 let ca = document.cookie.split(';'), rlm;
@@ -755,14 +757,13 @@ function Update(list){
 	let data = ls["XS"+realm].split(";");
 	let subs = {};
 	
-	//no data
-	if(data.length === 1)
-		return {};
-		
 	//make it able to read the data by subids
 	for(let i = 0; i < data.length; i++){
 		subs[numberfy(data[i].split("-")[0])] = data[i].split("-")[1];			
 	}
+	
+	//if data is empty
+	delete subs[0];
 	
 	//does the data has to be updated?
 	let change = false;
@@ -772,6 +773,11 @@ function Update(list){
 		change = true;	
 	
 	let opt = {};
+	//fill opt with all possible options
+	for(let key in optionJSON){
+		opt[key] = [];
+	}	
+	
 	for(let i = 0; i < list.subids.length; i++){
 		
 		let s = list.subids[i];
@@ -796,12 +802,11 @@ function Update(list){
 		
 		//the 'x' is the current position in the data-saved option string
 		let x = 0;
-		
+				
 		//organise the choices by option, instead of by subid		
 		if(choiceJSON[t]){
 			for(let j = 0; j < choiceJSON[t].length; j++){				
-				let plc = choiceJSON[t][j];				
-				opt[plc] = opt[plc] || [];
+				let plc = choiceJSON[t][j];	
 				let charr = [];
 				for(let k = 0; k < optionJSON[plc].opt.length; k++){
 					charr.push(numberfy(subs[s].slice(x, x+1)));
