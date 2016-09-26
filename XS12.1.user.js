@@ -2,14 +2,14 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.1.1
+// @version        12.1.2
 // @author		   XiozZe
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-let version = "12.1.1";
+let version = "12.1.2";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -188,8 +188,7 @@ function map(html, url, page){
 			mainrow : $html.find(".list tr[id]").map( (i, e) => !/sub/.test($(e).attr("id")) ).get(),
 			nosupplier : $html.find(".list tr[id]").map( (i, e) => !$(e).find("[src='/img/smallX.gif']").length ).get(),
 			img : $html.find("#unitImage img").attr("src").split("/")[4].split("_")[0]
-		}
-		
+		}		
 	}
 	else if(page === "manufacture"){
 		return $html.find(".unit_box:has('.fa-certificate')").length ? { //new interface
@@ -333,13 +332,13 @@ function map(html, url, page){
 			offer : $html.find(".choose span").map( (i, e) => numberfy($(e).attr("id")) ).get(),
 			img : $html.find(".rightImg").attr("src"),
 			filtername : $html.find("[name=doFilterForm]").attr("action").match(/db.*?\//)[0].slice(2, -1)
-		}		
+		}
 	}
 	else if(page === "manager"){
 		return {
-			base : $html.find("input:text[readonly]").map( (i, e) => numberfy($(e).val()) ).get(),
-			bonus : $html.find(".grid:eq(1) td:nth-child(5)").map( (i, e) => numberfy($(e).text()) ).get(),
-			pic : $html.find(".grid img").map( (i, e) => $(e).attr("src") ).get()
+			base : $html.find(".qual_item .mainValue").map( (i, e) => numberfy($(e).text()) ).get(),
+			bonus : $html.find(".qual_item .bonusValue").map( (i, e) => numberfy($(e).text()) ).get(),
+			pic : $html.find(".qual_item img").map( (i, e) => $(e).attr("src") ).get()
 		}
 	}
 	else if(page === "tech"){ 
@@ -670,7 +669,7 @@ let optionJSON = {
 		tag: "Supply",
 	},
 	ad : {
-		opt: [["Zero", "Min", "Max", "Pop", "Req"]], 
+		opt: [["Zero", "Min", "Req", "Pop1", "Pop2", "Pop5", "Pop10", "Pop20", "Max"]], 
 		tag: "Ads",
 	},
 	es : {
@@ -866,7 +865,8 @@ function servercalls(){
 			holiday : 0,
 			hypothesis : 0,
 			research : 0,
-			attach : 0
+			attach : 0,
+			ads : 0
 		});
 	}
 	
@@ -883,6 +883,7 @@ function servercalls(){
 	$("#XioResearch").text(sccount.research);
 	$("#XioHypothesis").text(sccount.hypothesis);
 	$("#XioAttach").text(sccount.attach);
+	$("#XioAds").text(sccount.ads);
 	$("#XioGetCalls").text(sccount.get);
 	$("#XioPostCalls").text(sccount.post);
 	$("#XioServerCalls").text(sccount.get + sccount.post);	
@@ -926,44 +927,48 @@ function* XioMaintenance(go){
 				<td id=XioQRepair>0</td>
 			</tr>
 			<tr>
-				<td></td>
-				<td></td>
+				<td>Revisited Ads:</td>
+				<td id=XioAds>0</td>
 				<td>Equipment Replaced: </td>
 				<td id=XioQReplace>0</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td>Equipment Budget: </td>
+				<td id=XioQPrice>0</td>
 			</tr>			
 			<tr>
 				<td>Holiday Mutations: </td>
 				<td id=XioHoliday>0</td>
-				<td>Equipment Budget: </td>
-				<td id=XioQPrice>0</td>
 			</tr>
 			<tr>
 				<td>Salary Evaluations: </td>
-				<td id=XioSalary>0</td>
-			</tr>
-			<tr>
-				<td>Forced Trainings: </td>
-				<td id=XioTraining>0</td>				
+				<td id=XioSalary>0</td>			
 				<td>Techs Introduced: </td>
 				<td id=XioTechs>0</td>
 			</tr>
 			<tr>
-				<td></td>
-				<td></td>			
+				<td>Forced Trainings: </td>
+				<td id=XioTraining>0</td>
 				<td>Researches Started: </td>
-				<td id=XioResearch>0</td>
+				<td id=XioResearch>0</td>	
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>				
+				<td>Hypotheses Selected: </td>
+				<td id=XioHypothesis>0</td>		
 			</tr>
 			<tr>
 				<td>Get Calls: </td>
-				<td id=XioGetCalls>0</td>					
-				<td>Hypotheses Selected: </td>
-				<td id=XioHypothesis>0</td>
+				<td id=XioGetCalls>0</td>				
+				<td>Buildings Attached: </td>
+				<td id=XioAttach>0</td>	
 			</tr>
 			<tr>
 				<td>Post Calls: </td>
-				<td id=XioPostCalls>0</td>				
-				<td>Buildings Attached: </td>
-				<td id=XioAttach>0</td>
+				<td id=XioPostCalls>0</td>	
 			</tr>
 			<tr>
 				<td>Total Calls: </td>
@@ -1030,7 +1035,11 @@ function* XioMaintenance(go){
 		
 	//Top Manager Page
 	let qual; 
-	if(opt.q1.hasChoice(0, a => a === 2) || opt.tc.hasChoice(0, a => a) || opt.es.hasChoice(0, a => a >= 2) || opt.rs.hasChoice(0, a => a === 1 || a === 2)){
+	if(opt.q1.hasChoice(0, a => a === 2) 
+	|| opt.tc.hasChoice(0, a => a) 
+	|| opt.es.hasChoice(0, a => a >= 2) 
+	|| opt.rs.hasChoice(0, a => a === 1 || a === 2)
+	|| opt.ad.hasChoice(0, a => a >= 3)){
 		qual = xGet(`/${realm}/main/user/privat/persondata/knowledge`, "manager");
 	}
 	
@@ -1088,7 +1097,7 @@ function* XioMaintenance(go){
 		tp = xGet(`/${realm}/main/common/main_page/game_info/transport`, "transport");		
 	}
 	
-	//Region list (for profit tax) PREP
+	//Region list (for profit tax) PREP (PREP = preparation)
 	let ptaxprp;
 	if(pc.hasChoice(0, a => a === 5)){
 		ptaxprp = xGet(`/${realm}/main/common/util/setpaging/report/regionBonus/20000`);
@@ -1140,7 +1149,24 @@ function* XioMaintenance(go){
 		lab.push(xGet(`/${realm}/main/unit/view/${opt.rs[i].subid}/investigation`, "research"));
 	}
 	
-	[qual, tm, ip, CTIE, tp,,, sales,, lab] = yield* waiter(go, qual, tm, ip, CTIE, tp, ptaxprp, prp, sales, techprep, lab);
+	//Advertisement
+	strip(opt.ad);
+	let ad = [];
+	for(let i = 0; i < opt.ad.length; i++){
+		ad.push(xGet(`/${realm}/main/unit/view/${opt.ad[i].subid}/virtasement`, "ads"));
+	}
+	
+	//Advertisement: get the population of the city of the store, and the minimum cost
+	let adpop = [];
+	for(let i = 0; i < opt.ad.length; i++){
+		if( opt.ad[i].choice[0] >= 2 && opt.ad[i].choice[0] !== 3 && opt.ad[i].choice[0] !== 9){
+			adpop.push(xPost(`/${realm}/ajax/unit/virtasement/${opt.ad[i].subid}/fame`, "moneyCost=0&type%5B0%5D=2264"));
+		} else {
+			adpop.push(false);
+		}		
+	}
+	
+	[qual, tm, ip, CTIE, tp,,, sales,, lab, ad, adpop] = yield* waiter(go, qual, tm, ip, CTIE, tp, ptaxprp, prp, sales, techprep, lab, ad, adpop);
 	sccount.phase++;
 	
 	//Region List (Profit Tax)
@@ -1163,6 +1189,7 @@ function* XioMaintenance(go){
 	
 	//Research Pages Process
 	let labpost = [];
+	let labendposts = [];
 	for(let i = 0; i < opt.rs.length; i++){
 				
 		if(lab[i].isFree){		
@@ -1240,7 +1267,7 @@ function* XioMaintenance(go){
 			
 			if(lab[i].curIndex !== favindex){
 				let data = `selectedHypotesis=${favid}&selectIt=Select+a+hypothesis`;
-				labpost.push(xPost(`/${realm}/main/unit/view/${opt.rs[i].subid}/investigation`, data, "hypothesis"));	
+				labendposts.push(xPost(`/${realm}/main/unit/view/${opt.rs[i].subid}/investigation`, data, "hypothesis"));	
 			}
 			
 		}	
@@ -1285,10 +1312,47 @@ function* XioMaintenance(go){
 				continue;
 			} else{
 				let data = "unit="+effi[index].id+"&next=Select";				
-				xPost(`/${realm}/window/unit/view/${opt.rs[i].subid}/set_experemental_unit`, data, "attach");							
+				labendposts.push(xPost(`/${realm}/window/unit/view/${opt.rs[i].subid}/set_experemental_unit`, data, "attach"));							
 			}					
 						
 		}		
+	}
+		
+	//Advertisement
+	let adposts = [];
+	for(let i = 0; i < opt.ad.length; i++){
+		
+		let data = "";
+		let budget = 0;
+		let post = JSON.parse(adpop[i]);
+		
+		if(opt.ad[i].choice[0] === 1){
+			data = "cancel=Stop+advertising";			
+		} else if(opt.ad[i].choice[0] === 2){
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D=0";
+			budget = numberfy(post.minCost);
+		} else if(opt.ad[i].choice[0] === 3){
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D="+ad[i].requiredBudget;
+			budget = ad[i].requiredBudget;
+		} else if(opt.ad[i].choice[0] >= 4 && opt.ad[i].choice[0] <= 8){
+			let managerIndex = qual.pic.indexOf("/img/qualification/advert.png");
+			let manager = qual.base[managerIndex] + qual.bonus[managerIndex];
+			let multiplier = [1, 2, 5, 10, 20];
+			budget = Math.round(ad[i].pop * numberfy(post.contactCost) * multiplier[opt.ad[i].choice[0]-4]);
+			let maxbudget = Math.floor(200010 * Math.pow(manager, 1.4));
+			budget = Math.min(budget, maxbudget);	
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D="+budget;
+		} else if(opt.ad[i].choice[0] === 9){
+			let managerIndex = qual.pic.indexOf("/img/qualification/advert.png");
+			let manager = qual.base[managerIndex] + qual.bonus[managerIndex];
+			budget = Math.floor(200010 * Math.pow(manager, 1.4));
+			data = "advertData%5Btype%5D%5B%5D=2264&advertData%5BtotalCost%5D="+budget;
+		}		
+				
+		if(budget !== ad[i].budget){
+			adposts.push(xPost(`/${realm}/main/unit/view/${opt.ad[i].subid}/virtasement`, data, "ads"));	
+		}	
+		
 	}
 	
 	[rL, tech, s] = yield* waiter(go, rL, tech, s);
@@ -1412,7 +1476,7 @@ function* XioMaintenance(go){
 		}
 		
 	}
-	
+		
 	[, tcp,, ] = yield* waiter(go, posts, tcp, qprp, eprp);
 	sccount.phase++;
 	
@@ -1712,7 +1776,12 @@ function* XioMaintenance(go){
 				newsalary = s.salaryCity[index];
 			}
 			
+			if(!s.salaryWrk[index])
+				newsalary = s.salaryCity[index];
+			
 			newsalary = Math.round(newsalary*100)/100;
+			
+			
 			
 			if(newsalary !== s.salaryWrk[index]){	
 				let setstring = `unitEmployeesData%5Bquantity%5D=${s.emplWrk[index]}&unitEmployeesData%5Bsalary%5D=${newsalary}`;
@@ -1875,7 +1944,7 @@ function* XioMaintenance(go){
 		
 	}
 	
-	yield* waiter(go, trainposts, supplypost);
+	yield* waiter(go, trainposts, supplypost, adposts, labendposts);
 	sccount.phase++;
 
 	if(typeof XSPE !== "undefined"){
