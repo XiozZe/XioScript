@@ -18,7 +18,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 //Builder moves to close screen?
 //Equipment maximal goes over maximal bug
 //XSPE supply: what does it do with a very large stock to the threshold formula?
-//Dredlyn Russian Translation
+//Dredlyn Russian Translation + contact dmz for code support
 //XioOverview smoother with selecting outside box area
 
 
@@ -337,7 +337,7 @@ function map(html, url, page){
 	else if(page === "manager"){
 		return {
 			base : $html.find(".qual_item .mainValue").map( (i, e) => numberfy($(e).text()) ).get(),
-			bonus : $html.find(".qual_item .bonusValue").map( (i, e) => numberfy($(e).text()) ).get(),
+			bonus : $html.find(".qual_item").map( (i, e) => numberfy($(e).find(".bonusValue").text()) ).get(),
 			pic : $html.find(".qual_item img").map( (i, e) => $(e).attr("src") ).get()
 		}
 	}

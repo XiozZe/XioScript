@@ -297,7 +297,7 @@ function map(html, url, page){
 	else if(page === "manager"){
 		mapped[url] = {
 			base : $html.find(".qual_item .mainValue").map( function(i, e){ return numberfy($(e).text()); }).get(),
-			bonus : $html.find(".qual_item .bonusValue").map( function(i, e){ return numberfy($(e).text()); }).get(),
+			bonus : $html.find(".qual_item").map( function(i, e){ return numberfy($(e).find(".bonusValue").text()); }).get(),
 			pic : $html.find(".qual_item img").map( function(i, e){ return $(e).attr("src"); }).get()
 		}
 	}
