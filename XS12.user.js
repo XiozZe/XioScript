@@ -2,14 +2,14 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.0.23
+// @version        12.0.24
 // @author		   XiozZe
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
-// @include        http://*virtonomic*.*/*/*
+// @include        http*://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-var version = "12.0.22";
+var version = "12.0.24";
 
 /*
 

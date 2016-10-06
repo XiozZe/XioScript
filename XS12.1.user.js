@@ -2,14 +2,14 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.1.3
+// @version        12.1.4
 // @author		   XiozZe
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
-// @include        http://*virtonomic*.*/*/*
+// @include        http*://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-let version = "12.1.2";
+let version = "12.1.4";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -850,7 +850,7 @@ function servercalls(){
 	
 	if(sccount.sale === undefined){
 		$.extend(sccount, {
-			phase : 0,
+			phase : "start",
 			post : 0,
 			get : 0,
 			qdeals : 0,
@@ -1013,7 +1013,7 @@ function* XioMaintenance(go){
 	]).then(go);
 				
 	opt = Update(unit);	
-	sccount.phase++;
+	sccount.phase = "intro";
 	
 	for(let opti in optionJSON){
 		opt[opti] = opt[opti] || [];
@@ -1167,7 +1167,7 @@ function* XioMaintenance(go){
 	}
 	
 	[qual, tm, ip, CTIE, tp,,, sales,, lab, ad, adpop] = yield* waiter(go, qual, tm, ip, CTIE, tp, ptaxprp, prp, sales, techprep, lab, ad, adpop);
-	sccount.phase++;
+	sccount.phase = "ads";
 	
 	//Region List (Profit Tax)
 	let rL;
@@ -1356,7 +1356,7 @@ function* XioMaintenance(go){
 	}
 	
 	[rL, tech, s] = yield* waiter(go, rL, tech, s);
-	sccount.phase++;
+	sccount.phase = "sales";
 		
 	//Sales page updates
 	let posts = [];	
@@ -1422,7 +1422,7 @@ function* XioMaintenance(go){
 				policy = 5;
 			}
 			
-			if(pc[i].choice[4] === 2 && !primecost){
+			if(pc[i].choice[4] === 2 && !sales[i].outprime[j]){
 				policy = 0;
 			}
 			
@@ -1463,6 +1463,12 @@ function* XioMaintenance(go){
 	//Holiday
 	let hols = [];
 	for(let i = 0; i < eh.length; i++){
+		
+		if(!s){
+			//no salary page loaded --> no holiday options set
+			break;
+		}
+		
 		let index = s.subid.indexOf(eh[i].subid);
 		
 		if(eh[i].choice[0] === 1 && !s.onHoliday[index]){
@@ -1478,7 +1484,7 @@ function* XioMaintenance(go){
 	}
 		
 	[, tcp,, ] = yield* waiter(go, posts, tcp, qprp, eprp);
-	sccount.phase++;
+	sccount.phase = "tech";
 	
 	//Technology purchases
 	let posts2 = [];
@@ -1498,13 +1504,13 @@ function* XioMaintenance(go){
 	}
 		
 	[, cSL,, ] = yield* waiter(go, posts2, cSL, hols, labpost);
-	sccount.phase++;
+	sccount.phase = "equip";
 	
 	//Equipment Deals
 	let dealsmade = 0;
 	let equipcounts = {};
 	do{
-	
+		
 		console.log("DO LOOP");
 		dealsmade = 0;
 		let qE, qA, qS;
@@ -1520,6 +1526,11 @@ function* XioMaintenance(go){
 		}
 			
 		[qE, qA, qS] = yield* waiter(go, qE, qA, qS);
+		
+		if(qE === undefined && qA === undefined){
+			//no equipment options set
+			break;
+		}
 		
 		for(let i = 0; i < qE.subid.length; i++){
 			equipcounts[qE.subid[i]] = equipcounts[qE.subid[i]] || qE.num[i];
@@ -1709,7 +1720,7 @@ function* XioMaintenance(go){
 		}
 	} while(dealsmade);
 	
-	sccount.phase++;
+	sccount.phase = "salary";
 	//Supply Pages (Production)
 	let supply = [];
 	for(let i = 0; i < sp.length; i++){
@@ -1795,7 +1806,7 @@ function* XioMaintenance(go){
 	} while(sset);
 	
 	[supply] = yield* waiter(go, supply);
-	sccount.phase++;
+	sccount.phase = "supply";
 	
 	//Training remove unneeded
 	for(let i = 0; i < opt.et.length; i++){
@@ -1906,7 +1917,7 @@ function* XioMaintenance(go){
 	}
 		
 	[train] = yield* waiter(go, train);
-	sccount.phase++;
+	sccount.phase = "train";
 	
 	//Training Kickoffs
 	let trainposts = [];
@@ -1945,13 +1956,14 @@ function* XioMaintenance(go){
 	}
 	
 	yield* waiter(go, trainposts, supplypost, adposts, labendposts);
-	sccount.phase++;
+	sccount.phase = "special";
 
 	if(typeof XSPE !== "undefined"){
 		yield* XSPE(go, opt);
 	}
 	
-	sccount.phase++;
+	sccount.phase = "finish";
+	servercalls();
 	
 	$("#xDone").css("visibility", "");
 	$(".XioGo").attr("disabled", false);
