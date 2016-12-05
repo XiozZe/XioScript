@@ -2,14 +2,14 @@
 // @name           XioScript
 // @namespace      https://github.com/XiozZe/XioScript
 // @description    XioScript with XioMaintenance
-// @version        12.1.4
+// @version        12.1.5
 // @author		   XiozZe
-// @require        http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
+// @require        https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
 // @include        http*://*virtonomic*.*/*/*
 // @exclude        http://virtonomics.wikia.com*
 // ==/UserScript==
 
-let version = "12.1.4";
+let version = "12.1.5";
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
@@ -23,10 +23,11 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 
 
 let numberfy = function (letiable){
-	if(String(letiable) === 'Не огр.' || String(letiable) === 'Unlim.' || String(letiable) === 'Не обм.' || String(letiable) === 'N’est pas limité' || String(letiable) === 'No limitado' || String(letiable) === '无限' || String(letiable) === 'Nicht beschr.') {
+	letiable = String(letiable).trim();
+	if(letiable === 'Не огр.' || letiable === 'Unlim.' || letiable === 'Не обм.' || letiable === 'N’est pas limité' || letiable === 'No limitado' || letiable === '无限' || letiable === 'Nicht beschr.') {
   		return Number.POSITIVE_INFINITY;
   	} else {
-  		return parseFloat(String(letiable).replace(/[\s\$\%]/g, "")) || 0;
+  		return parseFloat(letiable.replace(/[\s\$\%]/g, "")) || 0;
 	}
 }
 
@@ -744,7 +745,7 @@ let choiceJSON = {
 
 //change the saved options in the localstorage to a readable object
 //while simultaneously add and remove new subdivisions to the data if needed
-function Update(list){
+function Update(list, constraint){
 	//list is an array with subids and type extracted from the unit list
 	
 	if(!ls["XS"+realm])
@@ -764,7 +765,7 @@ function Update(list){
 	//if data is empty
 	delete subs[0];
 	
-	//does the data has to be updated?
+	//does the data have to be updated?
 	let change = false;
 	
 	//if there has been a choiceJSON update: update
@@ -797,6 +798,12 @@ function Update(list){
 		else if(!choiceJSON[t] && subs[s]){
 			change = true;
 			delete subs[s];				
+		}
+		
+		//remove data entrance if the subid is not in the constraint
+		if(constraint && constraint.indexOf(s) === -1){
+			delete subs[s];
+			continue;
 		}
 		
 		//the 'x' is the current position in the data-saved option string
@@ -995,10 +1002,18 @@ function* XioMaintenance(go){
 	
 	//}
 	
-	$("#topblock").append(tablestring);
+	$('div.metro_header_content').append(tablestring);
 		
 	let filtersetting = $(".u-s").attr("href") || "/"+realm+"/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/size=0/type=" + $(".unittype").val();
-	let opt;
+		
+	//Only use the subdivisions with a link symbol in front of it (blue rectangle)
+	let sublist = [];
+	let $trdata = $("tr[data-id]");
+	for(let i = 0; i < $trdata.length; i++){
+		if($trdata.eq(i).find("[src='/img/link.gif']").length){
+			sublist.push($trdata.eq(i).data("id"));
+		}
+	}
 			
 	yield Promise.all([
 		xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/20000"),
@@ -1011,15 +1026,15 @@ function* XioMaintenance(go){
 		xGet("/"+realm+"/main/common/util/setpaging/dbunit/unitListWithProduction/400"),
 		xGet(filtersetting)
 	]).then(go);
-				
-	opt = Update(unit);	
+
+	let opt = Update(unit, sublist);	
 	sccount.phase = "intro";
 	
 	for(let opti in optionJSON){
 		opt[opti] = opt[opti] || [];
 	}
 	
-	console.log(opt);	
+	console.log(opt);
 	
 	//remove all with no choice (choice[0] === 0)
 	let strip = function(arr){
@@ -1711,9 +1726,7 @@ function* XioMaintenance(go){
 					}															
 				}	
 				
-				//buy
-				
-				
+				//buy			
 				
 				break;
 			} 	
@@ -1728,11 +1741,11 @@ function* XioMaintenance(go){
 	}
 	
 	//Salary Evaluations
-	let sset = 0;
+	let sset = [];
 	do{
 		
 		console.log("DO LOOP 2");
-		sset = 0;
+		sset = [];
 		
 		s = yield xGet(`/${realm}/main/company/view/${companyid}/unit_list/employee/salary`, "employees").then(go);
 		
@@ -1797,13 +1810,13 @@ function* XioMaintenance(go){
 			if(newsalary !== s.salaryWrk[index]){	
 				let setstring = `unitEmployeesData%5Bquantity%5D=${s.emplWrk[index]}&unitEmployeesData%5Bsalary%5D=${newsalary}`;
 				sets.push(xPost(`/${realm}/window/unit/employees/engage/${opt.es[i].subid}`, setstring, "salary"));
-				sset++;				
+				sset.push(opt.es[i].subid);				
 			}			
 		}
 	
 		yield Promise.all(sets).then(go);
 		
-	} while(sset);
+	} while(sset.length);
 	
 	[supply] = yield* waiter(go, supply);
 	sccount.phase = "supply";
@@ -2010,9 +2023,14 @@ function* XioOverview(go){
 			continue;
 		
 		if(!types[unit.type[i]]){
-			types[unit.type[i]] = "<table cellspacing=0 data-type="+unit.type[i]+" style='margin-top:20px'><tr><th></th><th>City</th><th>Subdivision</th>";	
+			types[unit.type[i]] = "<table cellspacing=0 data-type="+unit.type[i]+" style='margin-top:20px'><tr><th></th><th></th><th>City</th><th>Subdivision</th>";	
 
-			let text2 = "<tr><td></td><td><img class=Xall src='/img/unit_types/"+unit.type[i]+".gif'></td><td></td>";
+			let text2 = `<tr>
+							<td><img class='MarkAll' src='/img/link.gif'><img class='MarkNone' src='/img/cancel.gif'></td>
+							<td></td>
+							<td><img class=Xall src='/img/unit_types/${unit.type[i]}.gif'></td>
+							<td></td>`;
+							
 			for(let j = 0; j < choiceJSON[unit.type[i]].length; j++){
 				types[unit.type[i]] += "<th>"+optionJSON[choiceJSON[unit.type[i]][j]].tag+"</th>";					
 				text2 += "<td>";
@@ -2029,10 +2047,11 @@ function* XioOverview(go){
 			types[unit.type[i]] += text2 + "<td></td><td></td></tr>";
 		}
 
-		types[unit.type[i]] += "<tr data-id="+unit.subids[i]+">"
-						+"<td><img src='/img/flag/"+unit.country[i]+".png'></img></td>"
-						+"<td>"+unit.city[i]+"</td>"
-						+"<td><a href='/"+realm+"/main/unit/view/"+unit.subids[i]+"'>"+unit.name[i]+"</a></td>";		
+		types[unit.type[i]] += `<tr data-id=${unit.subids[i]}>
+									<td><img src='/img/link.gif'></td>
+									<td><img src='/img/flag/${unit.country[i]}.png'></img></td>
+									<td>${unit.city[i]}</td>
+									<td><a href='/${realm}/main/unit/view/${unit.subids[i]}'>${unit.name[i]}</a></td>`;		
 		
 		for(let j = 0; j < choiceJSON[unit.type[i]].length; j++){
 			types[unit.type[i]] += "<td>";		
@@ -2083,7 +2102,7 @@ function* XioOverview(go){
 		
 	}
 		
-	let totalstring = "<div id=XOtables style='white-space: nowrap; user-select: none;'>";
+	let totalstring = "<div id=XOtables style='white-space: nowrap; user-select: none;'><span>Mark All: <img id=MarkAll src='/img/link.gif'><img id=MarkNone src='/img/cancel.gif'></span>";
 	for(let key in types){
 		types[key] += "</table>";
 		totalstring += types[key];
@@ -2091,14 +2110,25 @@ function* XioOverview(go){
 			
 	$("#mainContent").append(totalstring+"</div>");
 	
-	let startWrap = $("#wrapper").width();
-	let startMain = $("#mainContent").width();
-	let tableWidth = Math.max.apply(null, $("#XOtables table").map( (i, e) => $(e).width() ).get());
-	$("#wrapper").width(Math.max(tableWidth + 80, startWrap));
-	$("#mainContent").width(Math.max(tableWidth, startMain));
+	//wait for the DOM to update and change the table widths accordingly
+	let tablewidthtimeout = function(){
+		let imagesloaded = $("#XOtables table img").map( (i, e) => e.complete && typeof e.naturalWidth !== "undefined" && e.naturalWidth !== 0 ).get().reduce((a, b) => a + b);
+		let totalimages = $("#XOtables table img").length;
+		if(imagesloaded === totalimages){
+			let startWrap = $("#wrapper").width();
+			let startMain = $("#mainContent").width();
+			let tableWidth = Math.max.apply(null, $("#XOtables table").map( (i, e) => $(e).width() ).get());
+			$("#wrapper").width(Math.max(tableWidth + 80, startWrap));
+			$("#mainContent").width(Math.max(tableWidth, startMain));
+		} else{
+			setTimeout(tablewidthtimeout, 10);
+		}
+	}
 	
+	tablewidthtimeout();
+		
 	$("#XOtables tr:nth-child(odd)").css("backgroundColor", "lightgoldenrodyellow");
-	$("#XOtables").css("user-select", "none");
+	$("#XOtables").css("user-select", "none");	
 	
 	$(document).on("mousedown.XO", "#XOtables tr[data-id]", function(e){
 		if(!$(e.target).is('.XioChoice') && !$(e.target).is('.XioChoice option')){
@@ -2183,7 +2213,7 @@ function* XioOverview(go){
 					if(addend){
 						html += ")";
 					}
-					$trXIO.eq(i).find("td").eq(j+3).html(html);
+					$trXIO.eq(i).find("td").eq(j+4).html(html);
 				}
 			}
 			
@@ -2200,17 +2230,35 @@ function* XioOverview(go){
 				subids.push($trXIO.eq(i).attr("data-id"));
 			}
 			let data = ls["XS"+realm].split(";");
-			for(let i = 1; i < data.length; i++){
+			for(let i = 0; i < data.length; i++){
 				let split = data[i].split("-");
 				if(subids.indexOf(split[0]) >= 0){
 					data[i] = split[0] + "-" + split[1].substring(0, index) + "0" +  split[1].substring(index + 1);
+					break;
 				}					
 			}
 			ls["XS"+realm] = data.join(";");
 			$trXIO.find("td:nth-child("+(index2+1)+")").html("");
 		}	
 	});
+	$(document).on("click.XO", "#XOtables .MarkAll", function(){
+		if($tron && $tron.parent().get(0) === $(this).parents("tbody").get(0)){	
+			$(".trXIO [src='/img/cancel.gif']").attr("src", "/img/link.gif");
+		}	
+	});
+	$(document).on("click.XO", "#XOtables .MarkNone", function(){
+		if($tron && $tron.parent().get(0) === $(this).parents("tbody").get(0)){			
+			$(".trXIO [src='/img/link.gif']").attr("src", "/img/cancel.gif");
+		}	
+	});
+	$(document).on("click.XO", "#MarkAll", function(){
+		$("tr[data-id] [src='/img/cancel.gif']").attr("src", "/img/link.gif");			
+	});
+	$(document).on("click.XO", "#MarkNone", function(){
+		$("tr[data-id] [src='/img/link.gif']").attr("src", "/img/cancel.gif");			
+	});
 	
+	$(".XioGo").attr("disabled", false);
 }
 
 //the XioExport and Import functions are basically:
@@ -2219,14 +2267,14 @@ function* XioOverview(go){
 function XioExport(){
 	//note that it only exports the current realm
 	$(".XioProperty").remove();
-	$("#topblock").append("<br class=XioProperty><textarea id=XEarea class=XioProperty style='width: 900px'></textarea>");	
+	$('div.metro_header_content').append("<br class=XioProperty><textarea id=XEarea class=XioProperty style='width: 900px'></textarea>");	
 	$("#XEarea").text(ls["XS"+realm]).height($("#XEarea")[0].scrollHeight);
 }
 
 function XioImport(){
 	//note that it only imports to this realm
 	$(".XioProperty").remove();
-	$("#topblock").append("<br class=XioProperty><textarea id=XIarea class=XioProperty style='width: 900px'></textarea><br class=XioProperty><input type=button id=XioSave class=XioProperty value=Save!>");
+	$('div.metro_header_content').append("<br class=XioProperty><textarea id=XIarea class=XioProperty style='width: 900px'></textarea><br class=XioProperty><input type=button id=XioSave class=XioProperty value=Save!>");
 	
 	$(document).on('input propertychange', "#XIarea", function(){
 		$("#XIarea").height($("#XIarea")[0].scrollHeight);
@@ -2470,14 +2518,14 @@ function XioScript(){
 	
 	//Add XioOverview to the top bar
 	if(new RegExp(".*\/main\/.*").test(document.URL)){
-		let $tag = $("#menutop ul:eq(0) li:not([class]):eq(0)").clone();
+		let $tag = $(".main_menu ul:eq(0) li:not([class]):eq(0)").clone();
 		$tag.find("a").text("XioOverview").attr("href", "/"+realm+"/main/company/view/"+companyid+"/");
-		$("#menutop ul:eq(0)").append($tag);
+		$(".main_menu ul:eq(0)").append($tag);
 	}
 	
 	//XioOverview
 	if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/$").test(document.URL)){
-        $("#topblock").append("<div style='font-size: 24px; color:gold; margin-bottom: 5px;'>XioScript "+version+"</div>"
+        $('div.metro_header_content').append("<div style='font-size: 24px; color:gold; margin-bottom: 5px; margin-top:10px'>XioScript "+version+"</div>"
 							 +"<input type=button id=XM class=XioGo value=XioMaintenance>"
 							 +"<input type=button id=XE class=XioGo value=Export>"
 							 +"<input type=button id=XI class=XioGo value=Import>");		
@@ -2492,6 +2540,7 @@ function XioScript(){
 			XioImport();
 		});		
 		
+		$(".XioGo").attr("disabled", true);
 		runG(XioOverview);	
     }
 	
