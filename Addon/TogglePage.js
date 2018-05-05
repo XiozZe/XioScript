@@ -113,7 +113,7 @@
         generateList("Modules", moduleIds, moduleNames) ;
         generateList("Choices", choices, choices);
         generateList("Types", typeIds, typeNames);
-        generateList("Subdivisions", subdivisions, subdivisions);        
+        //generateList("Subdivisions", subdivisions, subdivisions);        
     }
 
     document.getElementById("togglePageButton").addEventListener("click", makeListFromStorage);

@@ -34,7 +34,8 @@ Pack.createPackage = async (selections) => {
             for(const subdivision of selection.subdivisions){
 
                 const hasRealm = toggle["Realms"].includes(subdivision.realm);
-                const hasSubdivisionID = toggle["Subdivisions"].includes(subdivision.id);
+                //We disabled the Subdivision selection;
+                const hasSubdivisionID = toggle["Subdivisions"].includes(subdivision.id) || true;
                 const hasType = toggle["Types"].includes(subdivision.type);
 
                 if(hasRealm && hasSubdivisionID && hasType){
