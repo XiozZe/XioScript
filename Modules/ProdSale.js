@@ -25,6 +25,7 @@ Module.add( new Module({
             id: "input",
             name: "Input",
             type: "textbox",
+            format: "Float",
             start: 0
         }),
         new Option({
@@ -137,7 +138,7 @@ Module.add( new Module({
 
             switch(choice.price){
                 case "input": {
-                    price = parseFloat(choice.input);
+                    price = choice.input;
                     break;
                 }
                 case "primeCost": {

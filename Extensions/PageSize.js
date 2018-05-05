@@ -7,9 +7,9 @@ Extension.add( new Extension ({
 		return !!document.getElementsByClassName("pager_options").length;
 	},
 	options: [
-		new Option({id: "size1", name: "Size 1", type: "textbox", start: "1000"}),
-		new Option({id: "size2", name: "Size 2", type: "textbox", start: "2000"}),
-		new Option({id: "size3", name: "Size 3", type: "textbox", start: "4000"})
+		new Option({id: "size1", name: "Size 1", type: "textbox", format: "Integer", start: 1000}),
+		new Option({id: "size2", name: "Size 2", type: "textbox", format: "Integer", start: 2000}),
+		new Option({id: "size3", name: "Size 3", type: "textbox", format: "Integer", start: 4000})
 	],
 	execute: async (picks) => {
 
@@ -19,7 +19,7 @@ Extension.add( new Extension ({
 
 		for(const optionId in picks){
 			
-			const pageSize = parseInt(picks[optionId]);
+			const pageSize = picks[optionId];
 
 			if(pageSize <= 0)
 				continue;

@@ -1,4 +1,4 @@
-function Option({id, name, type, start, values}){
+function Option({id, name, type, start, values, format}){
     //Id of the value, is used to refer to it from the inside of the Module execute function, and to save it in the storage
     this.id = id;
     //Name of the value, is used to be shown to the user.
@@ -9,6 +9,8 @@ function Option({id, name, type, start, values}){
     this.start = start;
     //An array of Value Object. Is only necessary if the type is "select". Will be used to fill the selection box.
     this.values = values;
+    //Format of the input if type is "textbox". Must be "Integer" or "Float"
+    this.format = format
 
     this.checkValid();
 }
@@ -30,6 +32,28 @@ Option.prototype.checkValid = function(){
         const correctStartValue = this.values.find(value => value.id === this.start) !== undefined;
         console.assert(correctStartValue, "Option Object is not valid: starting value not part of values", this);
     }
+    else if(this.type === "textbox"){
+        console.assert(["Integer", "Float"].includes(this.format), "Option has a non-supported format:", this);
+    }
+    else{
+        console.error("The type of this option is not select or textbox!", this);
+    }
+}
+
+/**
+ * Applies the format of this option on the passed value
+ */
+Option.prototype.applyFormat = function(value){
+
+    if(this.type === "textbox"){
+        if(this.format === "Integer"){
+            return parseInt(value);
+        }
+        else if(this.format === "Float"){
+            return parseFloat(value.replace(",", "."));
+        }
+    }
+
 }
 
 /**
