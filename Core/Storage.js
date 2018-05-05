@@ -35,6 +35,12 @@ const Storage = (() => {
         const storageObject = await browser.storage.local.get(storageToggleName);
         const toggle = storageObject[storageToggleName] || {};
 
+        //Initialize. Sort of hardcoded but whatever.
+        const mustBeInToggle = ["Choices", "Modules", "Realms", "Subdivisions", "Types"];
+        for(const key of mustBeInToggle){
+            toggle[key] = toggle[key] || [];
+        }
+
         await saveToggle(toggle);
         return toggle;
 
