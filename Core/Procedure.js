@@ -25,7 +25,7 @@ Procedure.prototype.checkValidProcedure = function(){
     const allPresent = this.id && this.name && this.explanation && this.options && this.execute;
     console.assert(allPresent, "Somethings wrong in the script: Procedure is incomplete: ", this);
 
-    const correctOptions = this.options instanceof Array && this.options.reduce((acc, e) => acc && e instanceof Option);
+    const correctOptions = this.options instanceof Array && this.options.reduce((acc, e) => acc && e instanceof Option, true);
     console.assert(correctOptions, "Module object invalid: options are not an array of options");
     
     this.options.forEach(option => option.checkValid());

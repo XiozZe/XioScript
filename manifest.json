@@ -66,12 +66,14 @@
                 "/Core/Tools.js",  
                 "/Core/ListChoice.js",    
 
+                "/Extensions/ForumChecker.js",
                 "/Extensions/PageSize.js",
 
                 "/Modules/ProdSale.js",
 
                 "/Pages/CTIErates.js",
                 "/Pages/CustomDuties.js",
+                "/Pages/ForumMain.js",
                 "/Pages/Labor.js",
                 "/Pages/ProdSale.js",
                 "/Pages/Products.js",

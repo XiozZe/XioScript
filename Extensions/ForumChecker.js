@@ -1,116 +1,74 @@
-//Check if there are new forum messages
-let ForumChecker = (() => {
-	
-	let getForumUrl = () => `/${Vital.getRealm()}/forum/forumcategory/list`;
+Extension.add( new Extension({
 
-	let getForumValues = async () => {
-		
-		return await new Promise((resolve, reject) => {
-			$.get(getForumUrl()).done((html) => {
-				resolve(VirtoMap.ForumMain($(html)).values);
-			});
-		});
-	}
+	id: "ForumCheck",
+	name: "Forum Checker",
+	explanation: `How do we know if there is a new message on the forum? Now we know: an extra icon next to the 'you got mail' icon will appear if there is a new message. Every time you visit the main page of the forum it will register all last posts send, and on every other page it will secretly check if the last posts send are still the same.`,
+	test: () => {
+		return !!document.getElementsByClassName("fa-envelope").length || Page.get("ForumMain").test(document, document.URL);
+	},
+	options: [],
+	execute: async (picks) => {
 
-	let canAppendMessage = () => {
-		return $("li.right").length;
-	}
-
-	let addForumMessage = () => {
-		return $(`<a href='${getForumUrl()}' id=XSforum style='margin-right: 10px'>Forum!</a>`).prependTo("li.right");
-	}
-
-	let initLocalStorageForum = (propertyArray) => {
-
-		let XSforum = JSON.parse(localStorage.getItem("XSforum"));
-		
-		if(!XSforum)
-			XSforum = {};
-
-		for(let property of propertyArray){
-			if(!XSforum[property])
-				XSforum[property] = 0;
+		const createForumIcon = (forumUrl) => {
+			const envelope = document.getElementsByClassName("fa-envelope")[0];
+			const a = document.createElement("a");
+			envelope.parentElement.parentElement.insertBefore(a, envelope.parentElement);
+			a.href = forumUrl;
+			a.style.marginRight = "10px";
+			a.style.display = 'none';
+			a.innerText = "Forum!";
+			return a;
 		}
 
-		localStorage.setItem("XSforum", JSON.stringify(XSforum));
-	}
+		/**
+		 * Checks if the timeStamps passed is exactly the same as the timeStamps saved in the local Storage.
+		 */
+		const isSavedTimeStamps = async (newTimeStamps) => {
 
-	let getLocalStorageForum = (propertyName) => {
-		
-		let XSforum = JSON.parse(localStorage.getItem("XSforum"));
-		return XSforum[propertyName];
-	}
+			let oldTimeStamps = await Storage.getValue(this.id, "timeStamps");
+			oldTimeStamps = oldTimeStamps || [];
 
-	let updateLocalStorageForum = (propertyName, propertyValue) => {
-
-		let XSforum = JSON.parse(localStorage.getItem("XSforum"));		
-
-		XSforum[propertyName] = propertyValue;
-
-		localStorage.setItem("XSforum", JSON.stringify(XSforum));
-	}
-
-	let findMostRecentMessage = (forumValues) => {
-
-		//Forums have topics and posts, both could be the most recent
-		let topic = 0;
-		let post = 0;
-
-		for(let index in forumValues.id){
-
-			if(forumValues.isTopic[index] && forumValues.id[index] > topic)
-				topic = forumValues.id[index];
-			if(!forumValues.isTopic[index] && forumValues.id[index] > post)
-				post = forumValues.id[index];
+			return oldTimeStamps.toString() === newTimeStamps.toString();
 
 		}
 
-		return [topic, post];
-	}
+		const forumMain = Page.get("ForumMain");
+		const domain = Vital.getDomain();
+		const realm = Vital.getRealm();
 
-	let checkNewMessage = ($message) => {
+		if(forumMain.test(document, document.URL)){
 
-		getForumValues().then((values) => {
+			//We are on the forum page: save the time stamps;
+			const forumValues = forumMain.scrape(document);
+			const timeStamps = forumValues.values.timeStamps;
+			await Storage.saveValue(this.id, "timeStamps", timeStamps);
 
-			[topicBest, postBest] = findMostRecentMessage(values);
+		}
+		else{
 
-			if(topicBest > getLocalStorageForum("topic") || postBest > getLocalStorageForum("post"))
-				$message.show();
-			else
-				$message.hide();
+			//We are on any page: check if the time stamps saved is the same we fetch.
+			const forumUrl = forumMain.getUrl(domain, realm);	
+			const a = createForumIcon(forumUrl);			
 
-		});
+			const recursiveTimeout = async () => {
 
-	}
+				const forumValues = await forumMain.load(domain, realm);
+				const timeStamps = forumValues.timeStamps;
 
-	let updateRecentForumValues = () => {
+				if(await isSavedTimeStamps(timeStamps)){
+					a.style.display = 'none';
+				}
+				else{
+					a.style.display = '';
+				}
 
-		initLocalStorageForum(["topic", "post"]);
-
-		let values = VirtoMap.ForumMain($(document)).values;
-		[topic, post] = findMostRecentMessage(values);
-
-		updateLocalStorageForum("topic", topic);
-		updateLocalStorageForum("post", post);
-
-	}
-
-	let trackNewForumMessage = () => {
-
-		initLocalStorageForum(["topic", "post"]);
-
-		let $message = addForumMessage();
-		$message.hide();
-
-		let recursiveTimeout = () => {
-			checkNewMessage($message);
-			setTimeout(recursiveTimeout, 50000);
+				setTimeout(recursiveTimeout, 30000);
+			}	
+			
+			recursiveTimeout();
 		}
 
-		recursiveTimeout();
-
 	}
 
-	return {updateRecentForumValues, canAppendMessage, trackNewForumMessage};
 
-})();
+}));

@@ -4,6 +4,7 @@ const Storage = (() => {
     const storageSelectionName = "XSChoices";
     const storageToggleName = "XStogglePage";
     const storageExtensionName = "XSextensions";
+    const storageValueName = "XSextensionValue";
 
 	const getSelections = async () => {
     
@@ -86,9 +87,32 @@ const Storage = (() => {
 		});
     }
 
-
+    /**
+     * This will get a value from the storage meant for a certain extension.
+     */
+    const getValue = async (extensionId, keyName) => {
     
+        const storageObject = await browser.storage.local.get(storageValueName);
+        const extensionValues = storageObject[storageValueName] || {};
+        extensionValues[extensionId] = extensionValues[extensionId] || {};
+        return extensionValues[extensionId][keyName];        
+    }
+    
+    /**
+     * This will save a value from the storage meant for a certain extension.
+     */
+    const saveValue = async (extensionId, keyName, value) => {
+        
+        const storageObject = await browser.storage.local.get(storageValueName);
+        const extensionValues = storageObject[storageValueName] || {};
+        extensionValues[extensionId] = extensionValues[extensionId] || {};
+        extensionValues[extensionId][keyName] = value;
 
-	return {getSelections, saveSelections, getToggle, saveToggle, getExtensions, saveExtensions};
+		await browser.storage.local.set({
+			[storageValueName] : extensionValues
+		});
+    }   
+
+	return {getSelections, saveSelections, getToggle, saveToggle, getExtensions, saveExtensions, getValue, saveValue};
 
 })();

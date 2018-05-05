@@ -7,7 +7,7 @@ Page.add(new Page({
         return `${domain}/${realm}/main/company/view/${companyId}/unit_list`;
     },
 
-    test : (doc, url) => { //????
+    test : (doc, url) => {
         return new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(#del)?$").test(url);
     },
 

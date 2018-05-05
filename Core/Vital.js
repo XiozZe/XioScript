@@ -4,6 +4,7 @@ const Vital = (() => {
 	
 	let varRealm = "";
 	let companyId;
+	let domain;
 	
 	const findRealm = () => {
 		//save the current realm (mary/lien/etc.) in a variable
@@ -25,14 +26,22 @@ const Vital = (() => {
 
 	const getCompanyId = () => {
 		if(!companyId)
-			companyId = $("a.dashboard").attr("href").match(/\d+/)[0];
+			companyId = document.querySelector("a.dashboard").href.match(/\d+/)[0];
 
 		return companyId;
 	}
 
+	const getDomain = () => {
+		if(!domain)
+			domain = document.URL.split("/").slice(0, 3).join("/");
+
+		return domain;
+	}
+
 	return {		
 		getRealm,
-		getCompanyId	
+		getCompanyId,
+		getDomain
 	}	
 	
 })();

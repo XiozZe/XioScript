@@ -11,7 +11,7 @@ Extension.add( new Extension ({
 		new Option({id: "size2", name: "Size 2", type: "textbox", start: "2000"}),
 		new Option({id: "size3", name: "Size 3", type: "textbox", start: "4000"})
 	],
-	execute: (picks) => {
+	execute: async (picks) => {
 
 		const pagerOptions = document.getElementsByClassName("pager_options")[0];
 

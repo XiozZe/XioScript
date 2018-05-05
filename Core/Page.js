@@ -9,9 +9,9 @@ function Page(pageObject){
     this.type = pageObject.type;
     //Every page has it's own url with it's own parameters to make that url.
     this.getUrl = pageObject.getUrl;
-    //In order to check whether the page we are on is the same as the page corresponding with this object we can test the page. If you don't plan to use this, return undefined.
+    //In order to check whether the page we are on is the same as the page corresponding with this object we can test the page. The arguments must be the Document object and the url. If you don't plan to use this, return undefined.
     this.test = pageObject.test
-    //Scrape contains data that is needed to scrape the page. Values are the data retrieved from the page, settings are the required settings on a page so that everything's visible (for example that all subdivision types show up). Settings has to parameters: check returns true if the setting is correct and url gives the place to send data to (or get data from) to set the setting. Repetition will load pages with a maximum number of subdivision/goods per page, repetitively. The array shows which values to continue to scrape, all values not in this array will only be scraped on the first page visited. If you do not plan to use settings or repetition, pass an empty array.
+    //Scrape contains data that is needed to scrape the page. Values are the data retrieved from the page, settings are the required settings on a page so that everything's visible (for example that all subdivision types show up). Settings has to parameters: check returns true if the setting is correct and url gives the place to send data to (or get data from) to set the setting. Repetition will load pages with a maximum number of subdivision/goods per page, repetitively. The array shows which values to continue to scrape, all values not in this array will only be scraped on the first page visited. If you do not plan to use settings or repetition, pass an empty array. The arguments of scrape are "doc" + the arguments for getUrl.
     this.scrape = pageObject.scrape;
     //Object with loaded urls and their data, because we can use the same data twice if asked for it.
     this.loadedUrls = {};
@@ -67,6 +67,17 @@ Page.prototype.fetch = async function(url, fetchArguments){
     return page;
 }
 
+/**
+ * A function to check if the return values of scraped follow the pattern as should be used with scraped
+ */
+Page.checkCorrectScrapeReturns = (scrapedArguments) => {
+
+    const values = scrapedArguments.values;
+    const settings = scrapedArguments.settings;
+    const repetition = scrapedArguments.repetition;
+    console.assert(values && settings && repetition, `Error: incomplete scraped arguments: `, scrapedArguments);    
+}
+
 Page.prototype.send = async function(data, ...urlArguments){
     
     const url = this.getUrl(...urlArguments);
@@ -88,6 +99,7 @@ Page.prototype.scrapeHTML = async function(url, page, ...urlArguments){
     const parser = new DOMParser();
     const doc = parser.parseFromString(docText, "text/html");
     const scraped = Tools.try(() => this.scrape(doc, ...urlArguments));
+    Page.checkCorrectScrapeReturns(scraped);
         
     if(scraped === null){
         Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
@@ -142,6 +154,8 @@ Page.prototype.scrapeHTML = async function(url, page, ...urlArguments){
             const reScraped = Tools.try(() => this.scrape(reDoc, ...urlArguments));
             const reNextUrl = Tools.try(() => reDoc.querySelector(".pager_list li.selected").nextElementSibling.querySelector("a").href);
             const reFirstUrl = Tools.try(() => reDoc.querySelector(".pager_list li:nth-child(2) a").href);
+
+            Page.checkCorrectScrapeReturns(reScraped);
 
             if(reScraped === null){
                 Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
