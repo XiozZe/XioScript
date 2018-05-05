@@ -1,0 +1,88 @@
+{
+
+    "manifest_version": 2,
+    "name": "XioScript",
+    "version": "14.0.0",
+    
+    "description": "XioScript is an add-on for Firefox that enhances the user experience and takes over the day-to-day tasks for the game Virtonomics. It has a very broad range of tools you can use to prevent your Virtonomics adventure from becoming stale. It is based on the old XioScript but then fresh and made in an add-on.",
+    
+    "icons": {
+        "48": "Icons/virtobiggerplus48.png"
+    },
+
+    "browser_action": {
+        "browser_style": true,
+        "default_icon": {
+          "16": "Icons/virtobiggerplus16.ico",
+          "32": "Icons/virtobiggerplus32.ico"
+        }
+    },
+
+    "permissions": [
+        "*://virtonomics.com/*",
+        "storage",
+        "cookies"
+    ],
+
+    "web_accessible_resources": [
+        "Core/*.js",
+        "Extensions/*.js",
+        "Modules/*.js",
+        "Pages/*.js"    
+    ],
+
+    "background": {
+        "scripts": [
+            "Addon/Background.js"
+        ]
+    },
+    
+    "content_scripts": [
+        {
+            "matches": ["*://virtonomics.com/*"],
+            "run_at" : "document_end",
+            "js": [        
+                "/Core/SubTypes.js",
+                "/Core/Subdivision.js",
+                "/Core/Stat.js",
+                "/Core/Value.js",
+                "/Core/Option.js",
+                "/Core/Choice.js",
+                "/Core/Pack.js",
+                "/Core/Vital.js",
+        
+                "/Core/Collection.js",
+                "/Core/Procedure.js",
+                "/Core/Module.js",
+                "/Core/Extension.js",   
+                "/Core/Page.js",
+                "/Core/Selection.js",
+        
+                "/Core/Executor.js",     
+                "/Core/Formulas.js",
+                "/Core/HTMLtools.js",
+                "/Core/Results.js",
+                "/Core/Storage.js",
+                "/Core/Tools.js",  
+                "/Core/ListChoice.js",    
+
+                "/Extensions/PageSize.js",
+
+                "/Modules/ProdSale.js",
+
+                "/Pages/CTIErates.js",
+                "/Pages/CustomDuties.js",
+                "/Pages/Labor.js",
+                "/Pages/ProdSale.js",
+                "/Pages/Products.js",
+                "/Pages/RegionOverview.js",
+                "/Pages/Trademarks.js",
+                "/Pages/UnitList.js",
+                "/Pages/WorldMap.js",
+
+                "/Core/Initialise.js"
+            ]
+        }
+      ]
+  
+  }

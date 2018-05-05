@@ -1,0 +1,145 @@
+.startInvisible {
+    display: none;
+}
+
+#header {
+    margin: auto;
+    border-style: ridge;
+    border-width: 0px 0px 4px 0px;
+    padding-bottom: 2px;
+}
+
+#mainContent, #contentLoader {
+    margin: auto;
+    margin-top: 20px;
+    width: 50 ;
+    color: black; 
+}
+
+#title {
+    font-size: 25px;
+    margin-left: 10px;
+}
+
+.explanation {    
+    max-height: 200px;
+    overflow: auto;
+    margin-bottom: 20px;
+}
+
+#XSLastUrl {
+    text-overflow: ellipsis; 
+    overflow: hidden;
+    white-space: nowrap; 
+    max-width: 320px; 
+    direction: rtl;
+}
+
+.listHeader {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.procedureDiv {
+    margin-top: 15px;
+    border-style: solid;
+    border-width: 1px;
+    padding: 10px;
+}
+
+.subTitle {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.procedureSubTypes {
+    font-style: italic;
+}
+
+.procedureInput {
+    width: 80px;
+}
+
+#modulesActive {
+    list-style-type: none;
+}
+
+.ulToggler {
+    margin: 3px;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 10px;
+}
+
+.ulToggler li {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 3px 5px;
+    text-align: center;
+    margin: 2px 2px;
+    white-space: nowrap;
+    color: brown;
+    border-color: brown;
+}
+
+.ulToggler li.selected {
+    color: white;
+    background-color: brown;
+    border-color:brown;
+}
+
+#execProgress > div > div {
+    display: inline-block;
+}
+
+#execLog {
+    list-style-type: none;
+}
+
+.execTitle {
+    margin-top: 12px;
+}
+
+#execStatList {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    border-spacing: 10px 0px;
+    padding: 10px;
+    margin: 3px;
+}
+
+#execStatList > li {
+    margin: 5px 5px;
+}
+
+#execStatList > li > div {
+    display: table-row;
+}
+
+#execStatList > li > div > div {
+    display: table-cell;
+    white-space: nowrap;
+}
+
+.statTitle {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#execPageList {
+    display: table;
+    border-spacing: 24px 0px;
+    padding: 10px;
+    margin: 3px;
+}
+
+#execPageList > div {
+    display: table-row;
+}
+
+#execPageList > div > div {
+    display: table-cell;
+    white-space: nowrap;
+}
