@@ -93,8 +93,9 @@ Page.prototype.send = async function(data, ...urlArguments){
     });
 }
 
-Page.prototype.scrapeHTML = async function(url, page, ...urlArguments){
+Page.prototype.loadHTML = async function(url, ...urlArguments){
 
+    const page = await this.fetch(url);
     const docText = await page.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(docText, "text/html");
@@ -113,18 +114,21 @@ Page.prototype.scrapeHTML = async function(url, page, ...urlArguments){
     //The right settings have to be applied to the page, such as filters or sorting
     for(let setting of scraped.settings){
 
+        console.assert(setting.wrong !== undefined, setting.url !== undefined, `The settings of this Page are specified incorrectly: `, this);
+
         //If a setting has data it means we need to send that data to set the filter
-        if(!setting.check && setting.data){
+        if(setting.wrong && setting.data){
             await this.fetch(setting.url, {
                 method: "POST",
                 body: setting.data
             });
-            return this.load(...urlArguments);
+            return await this.loadHTML(url, ...urlArguments);
         }
         //If a setting does not have data we just need to let it know we visited it
-        else if(!setting.check){
+        else if(setting.wrong){
             await this.fetch(setting.url);
-            return this.load(...urlArguments);
+            console.log("data fetched: ", setting.url);
+            return await this.loadHTML(url, ...urlArguments);
         }
     }
 
@@ -192,14 +196,13 @@ Page.prototype.scrapeHTML = async function(url, page, ...urlArguments){
             await resolveRecursively(nextUrl);
     }	
 
-    this.loadedUrls[url] = data;
-    console.log(data);
     return data;
 
 }
 
-Page.prototype.scrapeJSON = async function(url, page){
+Page.prototype.loadJSON = async function(url){
 
+    const page = await this.fetch(url);
     const pageJson = await page.json();
     const scrapedJson = Tools.try(() => this.scrape(pageJson));
         
@@ -207,7 +210,7 @@ Page.prototype.scrapeJSON = async function(url, page){
         Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
         return {};
     }
-
+    
     this.loadedUrls[url] = scrapedJson;
     return scrapedJson;
 }
@@ -221,15 +224,13 @@ Page.prototype.load = async function(...urlArguments){
 
     //Don't duplicate already gotten material
     if(url in this.loadedUrls)
-        return this.loadedUrls[url];
+        return await this.loadedUrls[url];    
 
     const pageToLoad = async () => {
-        const page = await this.fetch(url);
-
         if(this.type === "HTML")
-            return await this.scrapeHTML(url, page, ...urlArguments);   
+            return await this.loadHTML(url, ...urlArguments);   
         else if(this.type === "JSON")
-            return await this.scrapeJSON(url, page);        
+            return await this.loadJSON(url);        
     }
 
     this.loadedUrls[url] = pageToLoad();

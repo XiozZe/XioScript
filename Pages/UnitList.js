@@ -27,7 +27,7 @@ Page.add(new Page({
         const settings = [
             {
                 //There are two types of subdivision selecting: the pictures and the dropdown
-                check: Tools.try(() => doc.querySelector("select.unittype").value === "0") || Tools.try(() => !!doc.querySelector(".u-t.u-s")),
+                wrong: Tools.try(() => doc.querySelector("select.unittype").value !== "0") || Tools.try(() => !doc.querySelector(".u-s").classList.contains("u-t")),
                 url: `${domain}/${realm}/main/common/util/setfiltering/dbunit/unitListWithProduction/class=0/type=0`
             }
         ]		
