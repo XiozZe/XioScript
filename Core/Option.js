@@ -53,6 +53,9 @@ Option.prototype.applyFormat = function(value){
             return parseFloat(value.replace(",", "."));
         }
     }
+    else{
+        return value;
+    }
 
 }
 

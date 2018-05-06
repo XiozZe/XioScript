@@ -40,21 +40,59 @@
     font-weight: bold;
 }
 
+.subTitle {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+
 .procedureDiv {
     margin-top: 15px;
     border-style: solid;
     border-width: 1px;
     padding: 10px;
+    background-color: ivory;
+    color: rgb(110, 55, 16);
 }
 
-.subTitle {
+.procedureTitle {
+    grid-area: title;
     font-size: 18px;
     font-weight: bold;
 }
 
 .procedureSubTypes {
     font-style: italic;
+    grid-area: subtypes;
 }
+
+.procedureOnOff {
+    grid-area: onoff;
+    font-size: 42px;
+    font-family: montserrat;
+    font-weight: bold;
+    margin-right: 20px;
+    margin-left: 10px;
+    float: right;
+}
+
+.procedureOff {
+    display: none;
+}
+
+.procedureDiv.procedureDisabled {
+    background-color: snow;
+    color: gainsboro;
+}
+
+.procedureDisabled .procedureOn {
+   display: none; 
+}
+
+.procedureDisabled .procedureOff {
+    display: initial; 
+    color: lightgrey;
+ }
 
 .procedureInput {
     width: 80px;
@@ -79,8 +117,8 @@
     text-align: center;
     margin: 2px 2px;
     white-space: nowrap;
-    color: brown;
-    border-color: brown;
+    color: lightgrey;
+    border-color: lightgrey;
 }
 
 .ulToggler li.selected {

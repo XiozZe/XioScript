@@ -26,21 +26,10 @@
 
     }
 
-    const clickTitle = async element => {
-        const moduleDiv = element.target.parentElement;
+    const clickOnOff = async element => {
 
-        //Change visibility on page
-        if(moduleDiv.isActiveProcedure){
-            moduleDiv.style.backgroundColor = "#DDDDDD";
-            moduleDiv.querySelector("p").style.fontStyle = "italic";
-            moduleDiv.querySelectorAll("select, input").forEach(selectElement => selectElement.disabled = true);
-        }
-        else{            
-            moduleDiv.style.backgroundColor = "#FFFFFF";
-            moduleDiv.querySelector("p").style.fontStyle = "";
-            moduleDiv.querySelectorAll("select, input").forEach(selectElement => selectElement.disabled = false);
-        }
-        moduleDiv.isActiveProcedure = !moduleDiv.isActiveProcedure;
+        const moduleDiv = element.target.closest(".procedureDiv");
+        moduleDiv.toggleProcedureActive();
 
         const selectionName = document.getElementById("selectionName").value;
         const moduleId = moduleDiv.getAttribute("data");
@@ -109,7 +98,7 @@
     const createModuleEditList = () => {
 
         for(const module of Module.getAll()){                        
-            const moduleDiv = Procedure.createEditChoice(module, clickTitle, changeSelect);
+            const moduleDiv = Procedure.createEditChoice(module, clickOnOff, changeSelect);
             editChoiceList.appendChild(moduleDiv);
         }
     }
@@ -132,7 +121,7 @@
             const moduleDiv = modulePage.querySelector(`[data='${choice.id}']`);
 
             if( moduleDiv.isActiveProcedure ? !choice.active : choice.active ){ 
-                moduleDiv.querySelector(".subTitle").click();
+                moduleDiv.toggleProcedureActive();
             }
 
             for(const optionId in choice.picks){

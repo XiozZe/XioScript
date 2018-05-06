@@ -64,15 +64,15 @@ Choice.prototype.cleanPicks = function(){
     for(const optionId in this.picks){
         
         //Check if all options are actual options
-        if(!procedure.hasOption(optionId)){         
+        if(!procedure.options.find(option => option.id === optionId)){         
             delete this.picks[optionId];
             continue;
         }
 
         //Check if the choice picked for the option is a possible value that can be picked
         const valueId = this.picks[optionId];
-        if( !procedure.getOption(optionId).hasValue(valueId) ){
-            this.picks[optionId] = procedure.options[optionId].start;
+        if( !procedure.options.find(option => option.id === optionId).hasValue(valueId) ){
+            this.picks[optionId] = procedure.options.find(option => option.id === optionId).start;
         }
     }
 

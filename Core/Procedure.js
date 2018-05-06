@@ -32,41 +32,41 @@ Procedure.prototype.checkValidProcedure = function(){
 }
 
 /**
- * Checks if the option ID given is part of one of the options of this module.
- */
-Procedure.prototype.hasOption = function(optionId){
-    return !!this.options.find(option => option.id === optionId);
-}
-
-/**
- * Get the option in this module with the given option ID
- */
-Procedure.prototype.getOption = function(optionId){
-    return this.options.find(option => option.id === optionId)
-}
-
-/**
  * Makes the HTML for the choices of one particular Procedure. Needs the procedure in question, and the event handlers for if the title is click or a select is changed.
  */
-Procedure.createEditChoice = (procedure, clickTitle, changeSelect) => {
+Procedure.createEditChoice = (procedure, clickOnOff, changeSelect) => {
 
     const procedureDiv = document.createElement("div");  
     procedureDiv.classList.add("procedureDiv");
     procedureDiv.setAttribute("data", procedure.id);
     procedureDiv.isActiveProcedure = true;
+
+    const procedureOnOff = procedureDiv.createChild("div");
+    procedureOnOff.classList.add("procedureOnOff");
+    procedureOnOff.addEventListener("click", clickOnOff);
+    procedureOnOff.addEventListener("mousedown", e => e.preventDefault());
+
+    const procedureOn = procedureOnOff.createChild("div");
+    procedureOn.classList.add("procedureOn");
+    procedureOn.innerText = "On";
+
+    const procedureOff = procedureOnOff.createChild("div");
+    procedureOff.classList.add("procedureOff");
+    procedureOff.innerText = "Off";
     
     const procedureTitle = procedureDiv.createChild("div");
+    procedureTitle.classList.add("procedureTitle");
     procedureTitle.innerText = procedure.name;
-    procedureTitle.classList.add("subTitle");
-    procedureTitle.addEventListener("click", clickTitle);
+    procedureTitle.addEventListener("click", clickOnOff);
 
     if(procedure instanceof Module){
-        const procedureSubTypes = procedureDiv.createChild("div")
-        procedureSubTypes.classList.add("procedureSubTypes");            
+        const procedureSubTypes = procedureDiv.createChild("div");
+        procedureSubTypes.classList.add("procedureSubTypes");               
         procedureSubTypes.innerText = SubTypes.getNames(procedure.subTypes).join(", ");
     }
 
     const procedureExplanation = procedureDiv.createChild("p");
+    procedureExplanation.classList.add("procedureExplanation");
     procedureExplanation.innerText = procedure.explanation;
 
     const optionTable = procedureDiv.createChild("table");

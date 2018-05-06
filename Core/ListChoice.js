@@ -188,7 +188,6 @@ ListChoice.prototype.manageChoices = async function(){
         const td = element.target;
         const selections = await Storage.getSelections();
 
-        console.log(td.innerText);
         if(selections.some(selection => selection.name === td.innerText) || td.innerText === ""){
             holdSelectionName = td.innerText;
         }

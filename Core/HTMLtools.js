@@ -28,21 +28,19 @@ HTMLUListElement.prototype.equalWidth = function(){
 
 }
 
-HTMLDivElement.prototype.toggleActive = function(){
-	//Change visibility on page
-	console.assert("isActiveProcedure" in this);
+HTMLDivElement.prototype.toggleProcedureActive = function(){
 
+	console.assert("isActiveProcedure" in this, "Tried to call toggleProcedureActive on a div that doesn't have inActiveProcedure");
+
+	this.isActiveProcedure = !this.isActiveProcedure;
 	if(this.isActiveProcedure){
-		this.style.backgroundColor = "#DDDDDD";
-		this.querySelector("p").style.fontStyle = "italic";
-		this.querySelectorAll("select, input").forEach(selectElement => selectElement.disabled = true);
-	}
-	else{            
-		this.style.backgroundColor = "#FFFFFF";
-		this.querySelector("p").style.fontStyle = "";
+		this.classList.remove("procedureDisabled");
 		this.querySelectorAll("select, input").forEach(selectElement => selectElement.disabled = false);
 	}
-	this.isActiveProcedure = !this.isActiveProcedure;
+	else{            
+		this.classList.add("procedureDisabled");
+		this.querySelectorAll("select, input").forEach(selectElement => selectElement.disabled = true);
+	}
 }
 
 HTMLDivElement.prototype.setMaxInputWidth = function(){

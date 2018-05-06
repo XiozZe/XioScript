@@ -56,7 +56,7 @@ Selection.changePick = async(selectionName, moduleId, optionId, newValue) => {
     const selection = selections.find(selection => selection.name === selectionName);    
     for(const choice of selection.choices){
         if(choice.id === moduleId){
-            const formattedValue = Module.get(moduleId).getOption(optionId).applyFormat(newValue);
+            const formattedValue = Module.get(moduleId).options.find(option => option.id === optionId).applyFormat(newValue);
             choice.picks[optionId] = formattedValue;
         }                
     }

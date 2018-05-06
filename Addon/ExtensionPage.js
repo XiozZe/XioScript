@@ -3,10 +3,13 @@
     const extensionPage = document.getElementById("extensionsPage");
     const editChoiceList = document.getElementById("extensionChoice");
 
-    const clickTitle = async element => {
-        const extensionDiv = element.target.parentElement;
-        console.log(extensionDiv);
-        extensionDiv.toggleActive();
+    const clickOnOff = async element => {
+
+        console.log(element.target);
+
+        const extensionDiv = element.target.closest(".procedureDiv");
+        extensionDiv.toggleProcedureActive();
+
         const selectionName = document.getElementById("selectionName").value;
         const extensionId = extensionDiv.getAttribute("data");
         const active = extensionDiv.isActiveProcedure;
@@ -41,7 +44,7 @@
     const createExtensionEditList = () => {
 
         for(const extension of Extension.getAll()){        
-            const extensionDiv = Procedure.createEditChoice(extension, clickTitle, changeSelect);
+            const extensionDiv = Procedure.createEditChoice(extension, clickOnOff, changeSelect);
             editChoiceList.appendChild(extensionDiv);
         }
     }
@@ -54,11 +57,11 @@
         const choices = await Storage.getExtensions();        
         for(const choice of choices){
 
-            const extensionDiv = extensionPage.querySelector(`[data='${choice.id}']`);
+            const extensionDiv = extensionPage.querySelector(`.procedureDiv[data='${choice.id}']`);
             
             //XOR operation
             if( extensionDiv.isActiveProcedure ? !choice.active : choice.active ){ 
-                extensionDiv.querySelector(".subTitle").click();
+                extensionDiv.toggleProcedureActive();
             }
 
             for(const optionId in choice.picks){

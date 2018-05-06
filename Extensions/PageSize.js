@@ -15,8 +15,6 @@ Extension.add( new Extension ({
 
 		const pagerOptions = document.getElementsByClassName("pager_options")[0];
 
-		console.log(pagerOptions);
-
 		for(const optionId in picks){
 			
 			const pageSize = picks[optionId];
@@ -25,18 +23,13 @@ Extension.add( new Extension ({
 				continue;
 
 			const copiedLi = pagerOptions.querySelector("a").parentElement.cloneNode(true);
-			console.log(copiedLi);
 			const a = copiedLi.children[0];
 			a.href = a.href.replace(/\d+/, pageSize);
 			a.innerText = pageSize;
 
 			pagerOptions.appendChild(copiedLi);
 		}
-
 		
-		console.log(Array.from(pagerOptions.children));
-		console.log(Array.from(pagerOptions.children).sort((lia, lib) => parseInt(lia.innerText) - parseInt(lib.innerText) ));
-
 		//Sort the page numbers
 		Array.from(pagerOptions.children)
 			 .sort((lia, lib) => parseInt(lia.innerText) - parseInt(lib.innerText) )
