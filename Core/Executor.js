@@ -10,7 +10,7 @@ const Executor = (function(){
     /**
      * Extract the company ID from the virtonomics page.
      */
-    const findCompanyId = async (domain, realm) => {
+    const findCompanyId = async (domain, realm) => {        
         try{
             const url = `${domain}/${realm}/main/user/privat/headquarters`;
             Results.startCall("HeadQuarters", url);
@@ -221,7 +221,7 @@ const Executor = (function(){
             companyIds = await getAllCompanyIds(domain, realms); 
         }
         catch(e) { 
-            Results.errorLog("Could not find your company ID. Check if you are logged in.");
+            Results.errorLog("Could not find your company ID. Check if you are logged in, and if the 'Accept third party cookies and site data'-setting in Firefox is set to 'Always' or 'From Visited'.");
             Results.stop();
             running = false;
             return; 

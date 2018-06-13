@@ -55,7 +55,7 @@
         //ids are language independent, thus the main way of saving.
         //texts are language dependent
 
-        if(!ids.length || !texts.length)
+        if(!ids.length || !texts.length || ids.length !== texts.length)
             return;
 
         const divLists = document.getElementById("generatedLists");
@@ -100,14 +100,17 @@
         const selections = await Storage.getSelections();
     
         const realms = Selection.getAllRealms(selections).sort();
+        
         const moduleIds = Selection.getAllModules(selections).sort();
-        const choices = Selection.getAllChoices(selections).sort();
-        const typeIds = Selection.getAllTypes(selections).sort();
-        const subdivisions = Selection.getAllSubdivisions(selections).sort();
+        moduleIds.sort( (a, b) => Module.get(a).name < Module.get(b).name );
+        const moduleNames = moduleIds.map( e => Module.get(e).name );
 
-        const typeNames = SubTypes.getNames(typeIds);
-        console.log();
-        const moduleNames = moduleIds.map(moduleId => Module.get(moduleId).name);
+        const choices = Selection.getAllChoices(selections).sort();
+        //const subdivisions = Selection.getAllSubdivisions(selections).sort();
+
+        const typeIds = Selection.getAllTypes(selections);
+        typeIds.sort( (a, b) => SubTypes.getName(a) < SubTypes.getName(b) );
+        const typeNames = typeIds.map( e => SubTypes.getName(e) );
     
         generateList("Realms", realms, realms);
         generateList("Modules", moduleIds, moduleNames) ;

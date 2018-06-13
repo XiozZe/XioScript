@@ -55,14 +55,6 @@ const SubTypes = (() => {
 			return types[type].name;
 	}
 
-	const getNames = (typeList) => {
-		const nameList = [];
-		for(const type of typeList){
-			nameList.push(getName(type));
-		}
-		return nameList.sort();
-	}
-
-	return {getTop1, getTop3, getManagerImg, getName, getNames, checkType};
+	return {getTop1, getTop3, getManagerImg, getName, checkType};
 
 })();

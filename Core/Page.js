@@ -5,14 +5,17 @@ function Page(pageObject){
     
     //With the ID we can find our page back in the collection.
     this.id = pageObject.id;
-    //Pages have two types: HTML and JSON, based on what we need.
-    this.type = pageObject.type;
     //Every page has it's own url with it's own parameters to make that url.
     this.getUrl = pageObject.getUrl;
     //In order to check whether the page we are on is the same as the page corresponding with this object we can test the page. The arguments must be the Document object and the url. If you don't plan to use this, return undefined.
     this.test = pageObject.test
-    //Scrape contains data that is needed to scrape the page. Values are the data retrieved from the page, settings are the required settings on a page so that everything's visible (for example that all subdivision types show up). Settings has to parameters: check returns true if the setting is correct and url gives the place to send data to (or get data from) to set the setting. Repetition will load pages with a maximum number of subdivision/goods per page, repetitively. The array shows which values to continue to scrape, all values not in this array will only be scraped on the first page visited. If you do not plan to use settings or repetition, pass an empty array. The arguments of scrape are "doc" + the arguments for getUrl.
+    //Scrape contains data that is needed to scrape the page. Values are the data retrieved from the page.
     this.scrape = pageObject.scrape;
+    //Settings are the required settings on a page so that everything's visible (for example that all subdivision types show up). Settings has at least two parameters: hasWrongSettings returns true if the settings are incorrect. To solve this problem we can send a server call: add url gives the place to send data to (or get data from) to set the setting. Or we can remove a cookie: 'removeCookie' is the name of the cookie to be removed. 
+    this.settings = pageObject.settings;
+    //Repetition will load pages with a maximum number of subdivision/goods per page, repetitively. The array shows which values to continue to scrape, all values not in this array will only be scraped on the first page visited. If you do not plan to use settings or repetition, pass an empty array.
+    this.repetition = pageObject.repetition;
+
     //Object with loaded urls and their data, because we can use the same data twice if asked for it.
     this.loadedUrls = {};
     
@@ -25,7 +28,7 @@ Object.assign(Page, Collection.prototype);
  * A very basic check to make sure I did not make a mistake in writing a module.
  */
 Page.prototype.checkComplete = function(){
-    console.assert(this.id && this.type && this.getUrl && this.test && this.scrape , "Somethings wrong in the script: tried to make a Page with incomplete object: ", this);
+    console.assert(this.id && this.getUrl, "Somethings wrong in the script: tried to make a Page with incomplete object: ", this);
 }
 
 /**
@@ -67,17 +70,6 @@ Page.prototype.fetch = async function(url, fetchArguments){
     return page;
 }
 
-/**
- * A function to check if the return values of scraped follow the pattern as should be used with scraped
- */
-Page.checkCorrectScrapeReturns = (scrapedArguments) => {
-
-    const values = scrapedArguments.values;
-    const settings = scrapedArguments.settings;
-    const repetition = scrapedArguments.repetition;
-    console.assert(values && settings && repetition, `Error: incomplete scraped arguments: `, scrapedArguments);    
-}
-
 Page.prototype.send = async function(data, ...urlArguments){
     
     const url = this.getUrl(...urlArguments);
@@ -93,126 +85,154 @@ Page.prototype.send = async function(data, ...urlArguments){
     });
 }
 
-Page.prototype.loadHTML = async function(url, ...urlArguments){
+Page.prototype.fetchDocument = async function(...urlArguments){
 
+    const url = this.getUrl(...urlArguments);
     const page = await this.fetch(url);
     const docText = await page.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(docText, "text/html");
-    const scraped = Tools.try(() => this.scrape(doc, ...urlArguments));
-    Page.checkCorrectScrapeReturns(scraped);
-        
+
+    return await this.applySettings(doc, ...urlArguments);
+
+}
+
+Page.prototype.scrapeHTMLdocument = function(doc, url){
+
+    const scraped = Tools.try(() => this.scrape(doc));
+
     if(scraped === null){
         Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
         return {};
     }
 
-    //Undefined would pass
-    if(this.test(doc, url) === false)
-        Results.errorLog(`Loaded the page ${this.id} that did not pass it's own test of whether we are on the correct page.`);
+    return scraped;
 
-    //The right settings have to be applied to the page, such as filters or sorting
-    for(let setting of scraped.settings){
+}
 
-        console.assert(setting.wrong !== undefined, setting.url !== undefined, `The settings of this Page are specified incorrectly: `, this);
-
-        //If a setting has data it means we need to send that data to set the filter
-        if(setting.wrong && setting.data){
-            await this.fetch(setting.url, {
-                method: "POST",
-                body: setting.data
-            });
-            return await this.loadHTML(url, ...urlArguments);
-        }
-        //If a setting does not have data we just need to let it know we visited it
-        else if(setting.wrong){
-            await this.fetch(setting.url);
-            console.log("data fetched: ", setting.url);
-            return await this.loadHTML(url, ...urlArguments);
-        }
+Page.prototype.applySettings = async function(doc, ...urlArguments){
+    
+    if(!this.settings){
+        //If the settings are undefined, it means that the page always has the right settings
+        return doc;
     }
 
-    //With repetition, virtonomics always uses the exact same "pager list" to browse different pages. We make use of that.
-    const nextUrl = Tools.try(() => doc.querySelector(".pager_list li.selected").nextElementSibling.querySelector("a").href);
-    const firstUrl = Tools.try(() => doc.querySelector(".pager_list li:nth-child(2) a").href);
+    const settings = this.settings(doc);
 
-    //If there is repetition, we need to start on the first page
-    if(scraped.repetition.length && firstUrl){
-        await this.fetch(firstUrl);
-        return this.load(...urlArguments);
-    }
+    for(const setting of settings){
 
-    const data = scraped.values;
+        const problemDefined = setting.hasWrongSettings !== undefined;
+        const solveDefined = setting.url !== undefined || setting.removeCookie !== undefined;
+        console.assert(problemDefined && solveDefined, `The settings of this Page are specified incorrectly: `, this);
 
-    //Needs repetition (information spread out over different pages)
-    //If nextUrl and firstUrl are both null, then it means that there is only one page
-    if(scraped.repetition.length && (nextUrl || firstUrl)){
+        if(setting.hasWrongSettings){
 
-        //For every page, check if there is a next page
-        resolveRecursively = async (currentUrl) => {
-          
-            await this.fetch(currentUrl);
-            const rePage = await this.fetch(url);
-            const reDocText = await rePage.text();
-            const reDoc = parser.parseFromString(reDocText, "text/html");
-            const reScraped = Tools.try(() => this.scrape(reDoc, ...urlArguments));
-            const reNextUrl = Tools.try(() => reDoc.querySelector(".pager_list li.selected").nextElementSibling.querySelector("a").href);
-            const reFirstUrl = Tools.try(() => reDoc.querySelector(".pager_list li:nth-child(2) a").href);
+            if(setting.removeCookie){
+                console.log("RemoveCookie");
 
-            Page.checkCorrectScrapeReturns(reScraped);
-
-            if(reScraped === null){
-                Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
-                return {};
+                const u = this.getUrl(...urlArguments);
+                await browser.cookies.remove({
+                    url: u,
+                    name: setting.removeCookie
+                })
+            }
+            //If a setting has data it means we need to send that data to set the filter
+            else if(setting.data){
+                await this.fetch(setting.url, {
+                    method: "POST",
+                    body: setting.data
+                });
+            }
+            //If a setting does not have data we just need to let it know we visited it
+            else{
+                await this.fetch(setting.url);
             }
 
-            //Connect the newly gotten information to the old
-            for(repVal of reScraped.repetition){
-                if(!(repVal in data)){
-                    Results.errorLog(`Error in page ${this.id}: Repetition values do not match standard values (${repVal})`);
-                    return {};
-                }						
-                data[repVal] = data[repVal].concat(reScraped.values[repVal]);
-            }							
+            return await this.fetchDocument(...urlArguments);
 
-            if(reNextUrl)
-                //There is still a new page left
-                return await resolveRecursively(reNextUrl);
-            else{
-                //We reached the end. Go back to the first page
-                return await this.fetch(reFirstUrl);
+        }
+
+        
+    }
+
+    return doc;
+}
+
+Page.prototype.getFirstAndNextUrl = function(doc){
+    
+    //With repetition, virtonomics always uses the exact same "pager list" to browse different pages. We make use of that.    
+    const nextUrl = Tools.try(() => doc.querySelector(".pager_list li.selected").nextElementSibling.querySelector("a").href);
+    const firstUrl = Tools.try(() => doc.querySelector(".pager_list li:nth-child(2) a").href);
+    return {nextUrl, firstUrl};
+
+}
+
+Page.prototype.scrapeWithRepetition = async function(...urlArguments){
+
+    const initialDoc = await this.fetchDocument(...urlArguments);
+    let {firstUrl, nextUrl} = this.getFirstAndNextUrl(initialDoc);
+
+    let firstDoc = initialDoc;
+
+    //If the firstUrl is present, it means we are not on the first page.
+    if(firstUrl){
+        await this.fetch(firstUrl);
+        firstDoc = await this.fetchDocument(...urlArguments);
+        ({firstUrl, nextUrl} = this.getFirstAndNextUrl(firstDoc));
+    }
+
+    //We scrape all the data from the first page and for all other pages only the 'repetition' data
+    const totalScraped = this.scrapeHTMLdocument(firstDoc);
+
+    while(nextUrl){
+        await this.fetch(nextUrl);
+        const doc = await this.fetchDocument(...urlArguments);
+        ({firstUrl, nextUrl} = this.getFirstAndNextUrl(doc));
+        const scraped = await this.scrapeHTMLdocument(doc);
+        
+        for(const repValue of this.repetition){
+
+            if(!(repValue in scraped)){
+                Results.errorLog(`Error in page ${this.id}: Repetition values do not match standard values (${repValue})`);
+                return totalScraped;
             }	
+
+            totalScraped[repValue].push(...scraped[repValue]);
         }
+    }
 
-        if(firstUrl){            
-            //We are not currently on the first page, remove all data and start on the first page.
-            for(repVal of reScraped.repetition){						
-                data[repVal] = [];
-            }	            
-            await resolveRecursively(firstUrl);				
-        }
-        else
-            //We are on the first page.
-            await resolveRecursively(nextUrl);
-    }	
+    await this.fetch(firstUrl);
 
-    return data;
+    return totalScraped;
+}
 
+Page.prototype.loadHTML = async function(...urlArguments){
+
+    let scraped;
+
+    if(this.repetition){
+        scraped = await this.scrapeWithRepetition(...urlArguments);
+    }
+    else{
+        const doc = await this.fetchDocument(...urlArguments);
+        scraped = await this.scrapeHTMLdocument(doc);
+    }
+
+    return scraped;
 }
 
 Page.prototype.loadJSON = async function(url){
 
     const page = await this.fetch(url);
     const pageJson = await page.json();
-    const scrapedJson = Tools.try(() => this.scrape(pageJson));
         
-    if(scrapedJson === null){
+    if(pageJson === null){
         Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
         return {};
     }
     
-    this.loadedUrls[url] = scrapedJson;
-    return scrapedJson;
+    this.loadedUrls[url] = pageJson;
+    return pageJson;
 }
 
 /**
@@ -226,14 +246,16 @@ Page.prototype.load = async function(...urlArguments){
     if(url in this.loadedUrls)
         return await this.loadedUrls[url];    
 
+    //This construction is needed because we do not want double requests
     const pageToLoad = async () => {
-        if(this.type === "HTML")
-            return await this.loadHTML(url, ...urlArguments);   
-        else if(this.type === "JSON")
-            return await this.loadJSON(url);        
+        if(this.scrape)
+            return await this.loadHTML(...urlArguments);   
+        else 
+            return await this.loadJSON(url);  
     }
 
     this.loadedUrls[url] = pageToLoad();
+    console.log(await this.loadedUrls[url])
     return await this.loadedUrls[url];    
 }
 

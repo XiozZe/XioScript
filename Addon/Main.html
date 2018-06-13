@@ -34,7 +34,7 @@
                 <br>
                 <div>Under the title you can see five buttons. The first one shows this page. The "Execution", "Toggle", and "Modules" are related to the Modules part and the "Extensions" are for the extensions. In "Execution" you can run the script. In "Toggle" you can determine which subdivisions to run with which modules. In "Modules" you can set the options of the execution and see the info on what different Modules do. In "Extensions" you can turn extensions on or off and set their settings.</div>            
                 <br>
-                <div>Here an example to get you working. We have a factory on the mary realm where the prices of the goods should be set to prime cost. For that we first go the page "Modules" and create a new Choice by pressing "Create". A new choice with name "yourChoice1" will be created. Find the Production Sale module in the list below and toggle it on by clicking "Off". Set the selection box of "Price" to primecost and of "Policy" to "My Company", and use the defaults for all others. Next go to a subdivision list in Virtonomics, for example the main page, and click in the newly appeared Choice-column of your subdivion, and the choice "yourChoice1" appears. Then go to the toggle page and toggle on the settings (Realms) "mary", (Modules) "Production sale", (Choices) "yourChoice1" and (Types) "Factory". The last step is to go to the Execution page and press run. After the execution finishes, check your subdivision. The price is set to prime cost and the policy to "My Company".
+                <div>Here an example to get you working. We have a factory on the mary realm where the prices of the goods should be set to prime cost. For that we first go the page "Modules" and create a new Choice by pressing "Create". A new choice with name "yourChoice1" will be created, click on it to select it. Find the Production Sale module in the list below and toggle it on by clicking "Off". Set the selection box of "Price" to primecost and of "Policy" to "My Company", and use the defaults for all others. Next go to a subdivision list in Virtonomics, for example the main page, and click in the newly appeared Choice-column of your subdivion, and the choice "yourChoice1" appears. Then go to the toggle page and toggle on the settings (Realms) "mary", (Modules) "Production sale", (Choices) "yourChoice1" and (Types) "Factory". The last step is to go to the Execution page and press run. After the execution finishes (Status: All Done!), check your subdivision. The price is set to prime cost and the policy to "My Company".
                 </div>
 
             </div>
@@ -165,6 +165,12 @@
             
         </div>
         
+
+        <script src="/Util/HTMLtools.js"></script>
+        <script src="/Util/Tools.js"></script>   
+        <script src="/Util/SupplyUtil.js"></script>   
+        <script src="/Util/ProductUtil.js"></script>   
+
         <script src="/Core/SubTypes.js"></script>
         <script src="/Core/Subdivision.js"></script>
         <script src="/Core/Stat.js"></script>
@@ -182,17 +188,15 @@
 
         <script src="/Core/Executor.js"></script>     
         <script src="/Core/Formulas.js"></script>
-        <script src="/Core/HTMLtools.js"></script>
         <script src="/Core/Results.js"></script>
         <script src="/Core/Storage.js"></script>
-        <script src="/Core/Tools.js"></script>   
 
         <script src="/Extensions/ForumChecker.js"></script>
         <script src="/Extensions/PageSize.js"></script>
         <!--<script src="/Extensions/TopManagerStats.js"></script>-->
 
         <script src="/Modules/ProdSale.js"></script>
-        <!--<script src="/Modules/ProdSupply.js"></script>-->
+        <script src="/Modules/ProdSupply.js"></script>
         <script src="/Modules/Technology.js"></script>
         <!--<script src="/Modules/Ads.js"></script>-->
         <script src="/Modules/Research.js"></script>
@@ -204,8 +208,10 @@
         <script src="/Pages/ForumMain.js"></script>
         <script src="/Pages/Labor.js"></script>
         <script src="/Pages/ProdSale.js"></script>
+        <script src="/Pages/ProdSupply.js"></script>
         <script src="/Pages/Products.js"></script>
         <script src="/Pages/RegionOverview.js"></script>
+        <script src="/Pages/Supplier.js"></script>
         <script src="/Pages/Trademarks.js"></script>
         <script src="/Pages/UnitList.js"></script>
         <script src="/Pages/WorldMap.js"></script>

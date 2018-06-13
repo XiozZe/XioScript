@@ -5,7 +5,7 @@ const Vital = (() => {
 	let varRealm = "";
 	let companyId;
 	let domain;
-	
+		
 	const findRealm = () => {
 		//save the current realm (mary/lien/etc.) in a variable
 		let ca = document.cookie.split(';'), rlm;
@@ -23,6 +23,7 @@ const Vital = (() => {
 		}
 		return varRealm;
 	}	
+
 
 	const getCompanyId = () => {
 		if(!companyId)

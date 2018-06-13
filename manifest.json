@@ -24,13 +24,6 @@
         "cookies"
     ],
 
-    "web_accessible_resources": [
-        "Core/*.js",
-        "Extensions/*.js",
-        "Modules/*.js",
-        "Pages/*.js"    
-    ],
-
     "background": {
         "scripts": [
             "Addon/Background.js"
@@ -42,6 +35,11 @@
             "matches": ["*://virtonomics.com/*"],
             "run_at" : "document_end",
             "js": [        
+                "/Util/Tools.js",  
+                "/Util/HTMLtools.js",
+                "/Util/SupplyUtil.js",
+                "/Util/ProductUtil.js",
+
                 "/Core/SubTypes.js",
                 "/Core/Subdivision.js",
                 "/Core/Stat.js",
@@ -60,16 +58,15 @@
         
                 "/Core/Executor.js",     
                 "/Core/Formulas.js",
-                "/Core/HTMLtools.js",
                 "/Core/Results.js",
                 "/Core/Storage.js",
-                "/Core/Tools.js",  
                 "/Core/ListChoice.js",    
 
                 "/Extensions/ForumChecker.js",
                 "/Extensions/PageSize.js",
 
                 "/Modules/ProdSale.js",
+                "/Modules/ProdSupply.js",
 
                 "/Pages/CTIErates.js",
                 "/Pages/CustomDuties.js",
@@ -78,6 +75,7 @@
                 "/Pages/ProdSale.js",
                 "/Pages/Products.js",
                 "/Pages/RegionOverview.js",
+                "/Pages/Supplier.js",
                 "/Pages/Trademarks.js",
                 "/Pages/UnitList.js",
                 "/Pages/WorldMap.js",

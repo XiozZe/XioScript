@@ -5,8 +5,6 @@
 
     const clickOnOff = async element => {
 
-        console.log(element.target);
-
         const extensionDiv = element.target.closest(".procedureDiv");
         extensionDiv.toggleProcedureActive();
 

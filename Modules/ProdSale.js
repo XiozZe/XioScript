@@ -118,13 +118,13 @@ Module.add( new Module({
             return parseInt(regionOverview[regionId].tax)/100;
         }
 
-        const getPrimeCost = (outprime, stockprime) => {
-            //Warehouses do not have an outprime
+        const getPrimeCost = (primecostOutput, primecostStock) => {
+            //Warehouses do not have an primecostOutput
             if(choice.origin === "output" && type !== "warehouse"){
-                return outprime;
+                return primecostOutput;
             }
             else{
-                return stockprime;
+                return primecostStock;
             }            
         }
 
@@ -195,8 +195,8 @@ Module.add( new Module({
         }
             
         //Set the policy to no sale if the goods aren't produced                  
-        const decideOnlyTarget = (newPolicy, hasOutPrimeColumn, outprime) => {
-            if(choice.targets === "outputOnly" && hasOutPrimeColumn && !outprime){
+        const decideOnlyTarget = (newPolicy, hasprimecostOutputColumn, primecostOutput) => {
+            if(choice.targets === "outputOnly" && hasprimecostOutputColumn && !primecostOutput){
                 return "0";
             }
             else{
@@ -239,18 +239,18 @@ Module.add( new Module({
             
             const oldPrice = saleData.price[j];
             const oldPolicy = saleData.policy[j]; 
-            const outprime = saleData.outprime[j];
-            const stockprime = saleData.stockprime[j];
-            const hasOutPrimeColumn =  !!saleData.outprime.length;
+            const primecostOutput = saleData.primecostOutput[j];
+            const primecostStock = saleData.primecostStock[j];
+            const hasprimecostOutputColumn =  !!saleData.primecostOutput.length;
             const productName = saleData.productName[j]
             const productData = saleData.productData[j];
             const volume = saleData.volume[j];
 
-            const primecost = getPrimeCost(outprime, stockprime);
+            const primecost = getPrimeCost(primecostOutput, primecostStock);
             let newPrice = await decidePrice(primecost, productName);
             newPrice = decideToZero(newPrice, oldPrice);
             let newPolicy = decidePolicy(); 
-            newPolicy = decideOnlyTarget(newPolicy, hasOutPrimeColumn, outprime);   
+            newPolicy = decideOnlyTarget(newPolicy, hasprimecostOutputColumn, primecostOutput);   
             
             updates.push(updateStats(oldPrice, oldPolicy, newPrice, newPolicy));
             Object.assign(data, addPostData(oldPrice, oldPolicy, newPrice, newPolicy, productData, volume));            

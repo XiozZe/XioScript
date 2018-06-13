@@ -118,14 +118,23 @@ const Results = (function(){
      * Displays the error on the Results page.
      * Also puts it in the console so it also works not during execution
      */
-    const errorLog = (message) => {
-        console.error(message);
+    const errorLog = (message, ...params) => {
+        console.error(message, ...params);
         if(!timeIsRunning)
             return;
 
         const li = logUl.createChild("li");
         li.innerText = message;
         li.style.color = "crimson";
+    }
+
+    const warningLog = (message) => {
+        if(!timeIsRunning)
+            return;
+
+        const li = logUl.createChild("li");
+        li.innerText = message;
+        li.style.color = "darkmagenta";
     }
 
     const normalLog = (message) => {
@@ -207,6 +216,6 @@ const Results = (function(){
         statList.equalWidth();
     }
 
-    return {start, stop, startCall, finishCall, errorLog, normalLog, updateStatus, createStats, addStats, addModuleCount}
+    return {start, stop, startCall, finishCall, errorLog, warningLog, normalLog, updateStatus, createStats, addStats, addModuleCount}
 
 })();

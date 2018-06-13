@@ -15,11 +15,12 @@ const Tools = {
 				"doc.querySelector(...) is null",
 				"doc.querySelector(...).nextElementSibling is null",
 				"reDoc.querySelector(...) is null",
-				"reDoc.querySelector(...).nextElementSibling is null"
+				"reDoc.querySelector(...).nextElementSibling is null",
+				"e.extract(...)[0] is undefined"
 			]
 
 			if(!allowedFailures.includes(e.message)){
-				console.error("Tools Try Error (could be intended): "+e.message);
+				console.error("Tools Try Error: "+e.message);
 			}
 			return null;
 		}

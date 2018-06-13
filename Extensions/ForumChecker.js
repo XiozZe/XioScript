@@ -40,7 +40,7 @@ Extension.add( new Extension({
 
 			//We are on the forum page: save the time stamps;
 			const forumValues = forumMain.scrape(document);
-			const timeStamps = forumValues.values.timeStamps;
+			const timeStamps = forumValues.timeStamps;
 			await Storage.saveValue(this.id, "timeStamps", timeStamps);
 
 		}
