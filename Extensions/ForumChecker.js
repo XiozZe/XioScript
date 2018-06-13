@@ -52,6 +52,7 @@ Extension.add( new Extension({
 
 			const recursiveTimeout = async () => {
 
+				forumMain.clean(domain, realm);
 				const forumValues = await forumMain.load(domain, realm);
 				const timeStamps = forumValues.timeStamps;
 
@@ -62,7 +63,7 @@ Extension.add( new Extension({
 					a.style.display = '';
 				}
 
-				setTimeout(recursiveTimeout, 30000);
+				setTimeout(recursiveTimeout, 5000);
 			}	
 			
 			recursiveTimeout();
