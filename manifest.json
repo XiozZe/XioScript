@@ -35,10 +35,11 @@
             "matches": ["*://virtonomics.com/*"],
             "run_at" : "document_end",
             "js": [        
-                "/Util/Tools.js",  
+                "/Util/GeoUtil.js",
                 "/Util/HTMLtools.js",
-                "/Util/SupplyUtil.js",
                 "/Util/ProductUtil.js",
+                "/Util/SupplyUtil.js",
+                "/Util/Tools.js",  
 
                 "/Core/SubTypes.js",
                 "/Core/Subdivision.js",

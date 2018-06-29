@@ -78,31 +78,7 @@ Module.add( new Module({
         new Stat({ id : "setPolicy", display : "Policies Set", format : "Plain"})
     ],
     execute: async function(domain, realm, companyid, subid, type, choice){
-        
-        const getGeoId = async () => {
-            const unitListPromise = Page.get("UnitList").load(domain, realm, companyid);
-            const laborPromise = Page.get("Labor").load(domain, realm);
-            const unitList = await unitListPromise;
-            const unitListIndex = unitList.subid.indexOf(subid);
-            const cityName = unitList.cityName[unitListIndex];
-            const labor = await laborPromise;
-            const laborCity = Object.keys(labor.data).map(key => labor.data[key]).find(obj => obj.name === cityName);
-            return {regionId: laborCity.region_id, countryId: laborCity.country_id}
-        }
-
-        const getProductId = async (productName) => {
-            //Important because we can have TradeMark goods
-            const tmPromise = Page.get("Trademarks").load(domain, realm);
-            const productsPromise = Page.get("Products").load(domain, realm);   
-            const tm = await tmPromise;
-            const indexFranchise = tm.franchise.indexOf( productName );
-            const possibleProductName = tm.productName[indexFranchise];
-            const realProductName = possibleProductName || productName;
-            const products = await productsPromise;
-            const realProductIndex = products.productName.indexOf(realProductName);
-            return products.productId[realProductIndex];       
-        }
-
+                
         const getIP = async (countryId, productId) => {            
             const ip = await Page.get("CustomDuties").load(domain, realm, countryId);				
             return ip.data[productId].min_cost;
@@ -130,8 +106,8 @@ Module.add( new Module({
 
         const decidePrice = async (primecost, productName) => {
                         
-            const productIdPromise = getProductId(productName);
-            const geoPromise = getGeoId();
+            const productIdPromise = ProductUtil.getProductId(domain, realm, productName);
+            const geoPromise = GeoUtil.getGeoId(domain, realm, companyid, subid);
             const productId = await productIdPromise;
             const {countryId, regionId} = await geoPromise;
             const IP = await getIP(countryId, productId);
@@ -261,5 +237,5 @@ Module.add( new Module({
         }
         updates.forEach(update => update());
 
-    } 
+    }
 }));
