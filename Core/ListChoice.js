@@ -87,10 +87,6 @@ ListChoice.prototype.createManagementList = function(){
         };
         positionTds[i].parentElement.insertBefore(td, positionTds[i]);
     }
-
-    console.log(this.th, this.subTds);
-
-
 }
 
 /**
