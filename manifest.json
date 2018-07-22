@@ -20,6 +20,7 @@
 
     "permissions": [
         "*://virtonomics.com/*",
+        "*://virtonomica.ru/*",
         "storage",
         "cookies"
     ],
@@ -32,7 +33,7 @@
     
     "content_scripts": [
         {
-            "matches": ["*://virtonomics.com/*"],
+            "matches": ["*://virtonomics.com/*", "*://virtonomica.ru/*"],
             "run_at" : "document_end",
             "js": [        
                 "/Util/GeoUtil.js",
