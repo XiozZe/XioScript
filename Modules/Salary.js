@@ -2,7 +2,7 @@ Module.add( new Module({
     
     id: "Salary",
     name: "Salary",
-    explanation: `Sets the salary`,
+    explanation: `Sets the salary of the employees. The first option is the value of the salary in dollars, with Minimum = 80% of the city average, City Average = 100% of the city average, and Required is the salary to match the required skill. The required salary cannot go below 80% of the city average. The next option is the maximum salary the script is allowed to set, in order to protect you from extremely high values. Default input is 5000 meaning the salary cannot go beyond 5000 dollars. Note that if you set the maximum to zero nothing happens, because you can't set the salary to zero.`,
     subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "shop"],
     parallel: false,
     predecessors: [],
