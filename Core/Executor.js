@@ -4,6 +4,18 @@ const Executor = (function(){
 
     const findDomain = async () => {
         //If you are logged in on the english domain, for some reason it can also get the values from the russian realms.
+        const domains = [
+            "https://virtonomics.com",
+            "https://virtonomica.ru"
+        ];
+
+        for(const d of domains){
+            const homePage = await Page.get("HomePage").load(d);
+            if(homePage.loggedIn){
+                return d;
+            }
+        }
+
         return "https://virtonomics.com";
     }
 
