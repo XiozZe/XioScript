@@ -18,7 +18,7 @@ function Page(pageObject){
 
     //Object with loaded urls and their data, because we can use the same data twice if asked for it.
     this.loadedUrls = {};
-    
+
     this.checkComplete();
 }
 Collection.call(Page);
@@ -79,10 +79,16 @@ Page.prototype.send = async function(data, ...urlArguments){
         urlSP.append(key, data[key]);
     }
     
-    await this.fetch(url, {
+    const page = await this.fetch(url, {
         method: "POST",
         body: urlSP
     });
+
+    //Try because it is very possible that this data that is send is not meant to give anything back
+    try{
+        return await page.json();
+    }
+    catch(e){}
 }
 
 Page.prototype.fetchDocument = async function(...urlArguments){
@@ -201,7 +207,9 @@ Page.prototype.scrapeWithRepetition = async function(...urlArguments){
         }
     }
 
-    await this.fetch(firstUrl);
+    //If there is no first url, every subdivision is on the page, so no need to go back to the first page
+    if(firstUrl)
+        await this.fetch(firstUrl);
 
     return totalScraped;
 }
@@ -255,8 +263,9 @@ Page.prototype.load = async function(...urlArguments){
     }
 
     this.loadedUrls[url] = pageToLoad();
-    console.log(await this.loadedUrls[url])
-    return await this.loadedUrls[url];    
+    const l = await this.loadedUrls[url];
+    console.log(l);
+    return l;    
 }
 
 /**

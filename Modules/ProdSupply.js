@@ -68,6 +68,7 @@ Module.add( new Module({
         new Stat({ id : "setFromZero", display : "Supply Set from Zero", format : "Plain"}),
         new Stat({ id : "reprice", display : "Updated Price", format : "Plain"}),
     ],
+    precleaner: [],
     execute: async function(domain, realm, companyid, subid, type, choice){
 
         const determineSupply = (required, stock, nSuppliers) => {

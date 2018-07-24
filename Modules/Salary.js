@@ -31,6 +31,7 @@ Module.add( new Module({
         new Stat({ id : "raise", display : "Loan Raises", format : "Plain"}),
         new Stat({ id : "cut", display : "Loan Cuts", format : "Plain"}),
     ],
+    precleaner: [],
     execute: async function(domain, realm, companyid, subid, type, choice){
 
         const determineSalaryValue = async (employeeList, subIndex) => {
@@ -76,6 +77,10 @@ Module.add( new Module({
         }
 
         const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid);
+
+        //For the training module
+        employeeList.salaryModule = true;
+
         const subIndex = employeeList.subid.indexOf(subid);
         const oldSalary = employeeList.salaryWorking[subIndex];
         const newSalary = await determineSalary(employeeList, subIndex);

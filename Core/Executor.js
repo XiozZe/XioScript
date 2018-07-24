@@ -98,6 +98,14 @@ const Executor = (function(){
         }
     }
 
+    /**
+     * Cleans all the urls from the pageId's given
+     */
+    const preclean = (arrayOfPageIds) => {
+        for(const pageId of arrayOfPageIds){
+            Page.get(pageId).cleanAll();
+        }
+    } 
 
     /**
      * Execute the module on the given pack (that is: subdivision + choices)
@@ -110,6 +118,8 @@ const Executor = (function(){
 
         const promises = [];
         const module = Module.get(moduleId);
+        preclean(module.precleaner);
+        
         for(const pack of packs){
             const realm = pack.subdivision.realm;
             const id = pack.subdivision.id;

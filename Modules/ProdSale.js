@@ -77,6 +77,7 @@ Module.add( new Module({
         new Stat({ id : "setFromZero", display : "Prices Set from Zero", format : "Plain"}),
         new Stat({ id : "setPolicy", display : "Policies Set", format : "Plain"})
     ],
+    precleaner: [],
     execute: async function(domain, realm, companyid, subid, type, choice){
                 
         const getIP = async (countryId, productId) => {            

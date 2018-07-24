@@ -70,6 +70,7 @@
                 "/Modules/ProdSale.js",
                 "/Modules/ProdSupply.js",
                 "/Modules/Salary.js",
+                "/Modules/Training.js",
 
                 "/Pages/CityOverview.js",
                 "/Pages/CTIErates.js",
@@ -84,6 +85,8 @@
                 "/Pages/SalaryWindow.js",
                 "/Pages/Supplier.js",
                 "/Pages/Trademarks.js",
+                "/Pages/TrainingLevel.js",
+                "/Pages/TrainingWindow.js",
                 "/Pages/UnitList.js",
                 "/Pages/WorldMap.js",
 
