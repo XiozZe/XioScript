@@ -123,7 +123,7 @@ Page.prototype.applySettings = async function(doc, ...urlArguments){
         return doc;
     }
 
-    const settings = this.settings(doc);
+    const settings = this.settings(doc, ...urlArguments);
 
     for(const setting of settings){
 
