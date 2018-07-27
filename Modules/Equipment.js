@@ -2,7 +2,7 @@ Module.add( new Module({
     
     id: "Equipment",
     name: "Equipment",
-    explanation: `This module can do two things: repair and manage equipment. For repairing the 'damage' option will give the minimum percentage of damage needed before the script will repair. With a value of 0.5 that means the wear and tear should be at least 0.5% before any repair will happen. Also there is an option 'Red Parts' that will determine if the +1 in red will be repaired or not. How repair happens will be determined by the 'Heuristic': with 'Low Price' the equipment with the lowest price will be bought. Same thing applies to 'High Quality' and 'Low P/Q' or 'Low P/Q2', where the last two mean Price/Quality ratio and Price/Quality^2 ratio. With the 'Required' option you can give a minimum quality (as addition to the required quality by technology), and with the 'Max Price' option you can give a maximum price. All suppliers that do not meet these criteria will be ignored. Also regarding the price: it ingores customs and transport costs. Then the managing part: if you set the 'Manage' option on 'On' it will start managing the number of pieces of equipment. The number of pieces is given by the 'Quantity' option, where 'Current' means don't change the number of pieces, 'Employee' means match the number of equipment with the number of employees, and 'Full' is change the number of pieces to maximum. To match these numbers, the script will add or remove equipment, also satisfying the required quality and the maximum price constraints. To calculate which suppliers to use, it uses Integer Programming minimizing for example the price if the Heuristic is set to lowest price. This managing part also replaces equipment if through technology changes the required equipment quality changes.`,
+    explanation: `This module can do two things: repair and manage equipment. For repairing the 'damage' option will give the minimum percentage of damage needed before the script will repair. With a value of 0.5 that means the wear and tear should be at least 0.5% before any repair will happen. Also there is an option 'Red Parts' that will determine if the +1 in red will be repaired or not. How repair happens will be determined by the 'Heuristic': with 'Low Price' the equipment with the lowest price will be bought. Same thing applies to 'High Quality' and 'Low P/Q' or 'Low P/Q2', where the last two mean Price/Quality ratio and Price/Quality^2 ratio. With the 'Required' option you can give a minimum quality (as addition to the required quality by technology), and with the 'Max Price' option you can give a maximum price. All suppliers that do not meet these criteria will be ignored. Also regarding the price: it ignores customs and transport costs. Then the managing part: if you set the 'Manage' option on 'On' it will start managing the number of pieces of equipment. The number of pieces is given by the 'Quantity' option, where 'Current' means don't change the number of pieces, 'Employee' means match the number of equipment with the number of employees, and 'Full' is change the number of pieces to maximum. To match these numbers, the script will add or remove equipment, also satisfying the required quality and the maximum price constraints. To calculate which suppliers to use, it uses Integer Programming to minimize the price. This managing part also replaces equipment if through technology changes the required equipment quality changes.`,
     subTypes: ["workshop", "mine", "mill", "orchard", "sawmill", "farm", "fishingbase", "lab"],
     predecessors: ["ProdSale"],
     options: [
@@ -210,7 +210,10 @@ Module.add( new Module({
             }
 
             await Promise.all(offerPromises);
-            await updateEmployeeList();
+            
+            if(offerPromises.length){
+                await updateEmployeeList();
+            }
         }
 
         const cleanRepairPriceList = (priceList) => {
@@ -233,16 +236,6 @@ Module.add( new Module({
                     const workerRatio = Math.ceil(w/m*equipmentData.quantityMaximum);
                     return workerRatio;               
                 default: console.error(`Equipment module has Quantity choice ${choice.quantity} that does not exist.`)
-            }
-        }
-
-        const getValueToOptimize = (offer) => {
-            switch(choice.heuristic){
-                case "lowprice": return offer.price;
-                case "lowPQR": return offer.price/offer.quality;
-                case "lowPQ2R": return offer.price/offer.quality**2;
-                case "highqual": return -offer.quality;
-                default: console.error(`Undefined equipment heuristic: ${choice.heuristic}`);
             }
         }
 
@@ -277,7 +270,7 @@ Module.add( new Module({
             for(const offer of priceList){
                 model.constraints["c"+offer.id] = {"max": offer.available};
                 model.variables[offer.id] = {
-                    "value": getValueToOptimize(offer),
+                    "value": offer.price,
                     "quality": offer.quality,
                     ["c"+offer.id]: 1,
                     "pieces": 1
@@ -362,8 +355,10 @@ Module.add( new Module({
             }
 
             await Promise.all(offerPromises);
-            await updateEmployeeList();
 
+            if(offerPromises.length){
+                await updateEmployeeList();
+            }
         }
 
 
