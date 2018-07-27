@@ -2,7 +2,7 @@ Extension.add( new Extension ({
 
 	id: "PageSize",
 	name: "Page Size Adder",
-	explanation: `Many Virtonomics lists can be presented with different numbers of elements on that list. This extension extends the maximum number of element beyond 400. As options there are three input fields that represent the page sizes you would like to add to the 'Show By'. If you leave the input empty or put in a negative number, no page size will be added. The page numbers will be automatically sorted.`,
+	explanation: `Many Virtonomics lists can be presented with different numbers of elements on that list. This extension extends the maximum number of elements beyond 400. As options there are three input fields that represent the page sizes you would like to add to the 'Show By'. If you leave the input empty or put in a negative number, no page size will be added. The page numbers will be automatically sorted.`,
 	test: () => {
 		return !!document.getElementsByClassName("pager_options").length;
 	},

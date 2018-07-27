@@ -25,7 +25,7 @@ Page.add(new Page({
         
     repetition: ["subid", "type", "cityName", "employeesWorking", "employeesMaximum", "salaryWorking", "salaryCity", "skillWorking", "skillRequired", "onHoliday", "onTraining", "efficiency"],
  
-    settings: (doc, domain, realm, companyId) => [
+    settings: (doc, domain, realm, companyid) => [
         {
             hasWrongSettings: Tools.try(() => !doc.querySelector(".u-s").classList.contains("u-t")),
             url: `${domain}/${realm}/main/common/util/setfiltering/dbunit/unitListWithHoliday/class=0/type=0/country=all/region=all/city=all`

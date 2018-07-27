@@ -74,7 +74,7 @@ Page.prototype.send = async function(data, ...urlArguments){
     
     const url = this.getUrl(...urlArguments);
     
-    urlSP = new URLSearchParams();
+    const urlSP = new URLSearchParams();
     for(const key in data){
         urlSP.append(key, data[key]);
     }
@@ -144,9 +144,15 @@ Page.prototype.applySettings = async function(doc, ...urlArguments){
             }
             //If a setting has data it means we need to send that data to set the filter
             else if(setting.data){
+
+                const urlSP = new URLSearchParams();
+                for(const key in setting.data){
+                    urlSP.append(key, setting.data[key]);
+                }               
+                
                 await this.fetch(setting.url, {
                     method: "POST",
-                    body: setting.data
+                    body: urlSP
                 });
             }
             //If a setting does not have data we just need to let it know we visited it
@@ -264,7 +270,7 @@ Page.prototype.load = async function(...urlArguments){
 
     this.loadedUrls[url] = pageToLoad();
     const l = await this.loadedUrls[url];
-    console.log(l);
+    console.log(url, l);
     return l;    
 }
 

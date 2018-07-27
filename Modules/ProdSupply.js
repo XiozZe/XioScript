@@ -4,7 +4,6 @@ Module.add( new Module({
     name: "Production Supply",
     explanation: `Set the supply on the Supply page of production facilities. Under amount you can set the number to supply. Zero is zero, required is the daily required. Economical is the same as required except when there is too much in stock, then it uses 2*required - stock. Excessive will aim for having two times required in stock all day: min{2*required, 3*required-stock}. "Minimum" will determine the minimum number of goods set for all suppliers: zero or one. Note that it overwrites the "Zero" set by amount. When having more than one supplier for a product, the script will pick the best supplier given by the 'Order'. With Quality the script will prefer the supplier with the highest quality, Price: lowest price, PQR: lowest Price/Quality-Ratio. In case the price of a supplier has changed, "Update" will determine whether the buy contract should be updated to the new price. If there are not enough suppliers to deliver enough goods, you will be informed if you set Warning on Insufficient, and if you set it on No Suppliers you will be warned only if a good has no suppliers.`,
     subTypes: ["workshop", "animalfarm"],
-    parallel: true,
     predecessors: ["ProdSale"],
     options: [
         new Option({
@@ -124,7 +123,6 @@ Module.add( new Module({
             else if(choice.warning === "insufficient" && supplyLeft > 0){
                 const productName = await ProductUtil.getProductName(domain, realm, productId);
                 const s = `${this.name}: Subdivision ${subid} (${realm}) does not have enough suppliers for ${productName}!`;
-                console.log(s);
                 Results.warningLog(s);
             }
 

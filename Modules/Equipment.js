@@ -1,562 +1,388 @@
-const Equipment = {
+Module.add( new Module({
     
+    id: "Equipment",
     name: "Equipment",
-    explanation: `Fix equipment`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "apiary", "oilpump", "fishingbase", "lab"],
-    options: {
-        "Repair": ["Black Parts", "All Parts", "One Percent"],
-        "Quantity": ["Current", "Employees", "Full"],
-        "Required": ["Fulfill", "Ignore"],
-        "Heuristic": ["Lowest Price", "Lowest PQR"],
-        "Manager": ["Target", "Maximum", "Overflow"],
-        "Price": ["$10,000", "$100,000", "$1,000,000", "$10,000,000", "Infinite"],
-        "Source": ["World Market", "Yourself"]
-    },
-    predecessor: ["Production Sale", "Technology", "Research"],
-    calls: {
+    explanation: `This module can do two things: repair and manage equipment. For repairing the 'damage' option will give the minimum percentage of damage needed before the script will repair. With a value of 0.5 that means the wear and tear should be at least 0.5% before any repair will happen. Also there is an option 'Red Parts' that will determine if the +1 in red will be repaired or not. How repair happens will be determined by the 'Heuristic': with 'Low Price' the equipment with the lowest price will be bought. Same thing applies to 'High Quality' and 'Low P/Q' or 'Low P/Q2', where the last two mean Price/Quality ratio and Price/Quality^2 ratio. With the 'Required' option you can give a minimum quality (as addition to the required quality by technology), and with the 'Max Price' option you can give a maximum price. All suppliers that do not meet these criteria will be ignored. Also regarding the price: it ingores customs and transport costs. Then the managing part: if you set the 'Manage' option on 'On' it will start managing the number of pieces of equipment. The number of pieces is given by the 'Quantity' option, where 'Current' means don't change the number of pieces, 'Employee' means match the number of equipment with the number of employees, and 'Full' is change the number of pieces to maximum. To match these numbers, the script will add or remove equipment, also satisfying the required quality and the maximum price constraints. To calculate which suppliers to use, it uses Integer Programming minimizing for example the price if the Heuristic is set to lowest price. This managing part also replaces equipment if through technology changes the required equipment quality changes.`,
+    subTypes: ["workshop", "mine", "mill", "orchard", "sawmill", "farm", "fishingbase", "lab"],
+    predecessors: ["ProdSale"],
+    options: [
+        new Option({
+            id: "damage",
+            name: "Damage",
+            type: "textbox",
+            format: "Float",
+            start: 0.5
+        }),
+        new Option({
+            id: "red",
+            name: "Red Parts",
+            type: "select",
+            start: "repair",
+            values: [
+                new Value({ id: "repair", name: "Repair" }),
+                new Value({ id: "ignore", name: "Ignore" }),
+            ]
+        }),
+        new Option({
+            id: "required",
+            name: "Required",
+            type: "textbox",
+            format: "Float",
+            start: 15
+        }),
+        new Option({
+            id: "manage",
+            name: "Manage",
+            type: "select",
+            start: "off",
+            values: [
+                new Value({ id: "on", name: "On" }),
+                new Value({ id: "off", name: "Off" })
+            ]
+        }),
+        new Option({
+            id: "quantity",
+            name: "Quantity",
+            type: "select",
+            start: "current",
+            values: [
+                new Value({ id: "current", name: "Current" }),
+                new Value({ id: "employees", name: "Employees" }),
+                new Value({ id: "full", name: "Full" }),
+            ]
+        }),
+        new Option({
+            id: "price",
+            name: "Max Price",
+            type: "textbox",
+            format: "Float",
+            start: 100000
+        }),
+        new Option({
+            id: "heuristic",
+            name: "Heuristic",
+            type: "select",
+            start: "lowprice",
+            values: [
+                new Value({ id: "lowprice", name: "Low Price" }),
+                new Value({ id: "lowPQR", name: "Low P/Q" }),
+                new Value({ id: "lowPQ2R", name: "Low P/Q2" }),
+                new Value({ id: "highqual", name: "High Quality" }),
+            ]
+        })/*,
+        new Option({
+            id: "source",
+            name: "Source",
+            type: "select",
+            start: "world",
+            values: [
+                new Value({ id: "world", name: "World Market"}),
+                new Value({ id: "yourself", name: "Yourself"})
+            ]
+        })*/
+    ],
+    stats: [
+        new Stat({ id: "bought", display: "Equipment Bought", format: "Plain"}),
+        new Stat({ id: "removed", display: "Equipment Removed", format: "Plain"}),
+        new Stat({ id: "repaired", display: "Equipment Repaired", format: "Plain"}),
+        //new Stat({ id: "spend", display: "Budget Spend", format: "Dollar"})
+    ],
+    precleaner: [],
+    execute: async function(domain, realm, companyid, subid, type, choice) {
 
-    },
-    oneByOne: true,
-    execute: async(subid, choice, type) => {
-
-        let makeEquipFromEquipList = (equipList) => {
-            //I don't want to copy the same functions for Equip and EquipList
-
-            let index = equipList.subid.indexOf(subid);
-
-            return {					
-                qualityCur: equipList.qualityCur[index],
-                qualityReq: equipList.qualityReq[index],
-                quantityCur: equipList.quantityCur[index],
-                quantityMax: equipList.quantityMax[index],
-                wearBlack: equipList.wearPercent[index],
-                wearRed: equipList.wearRed[index],
-                wearPercent: equipList.wearPercent[index]
-            }
-
+        //Finds the first subdivision on the equipment list that has the same type as this subdivision. We do this to make sure that a certain type is only been called once, because the page can only handle one at the time.
+        const getEquipmentWindow = async (equipmentList) => {
+            const index = equipmentList.type.findIndex(e => e === type);
+            const sid = equipmentList.subid[index];
+            return await Page.get("EquipmentWindow").load(domain, realm, sid);
         }
 
-        let addWearBlackRedToEquip = (equip) => {
-
-            equip.wearBlack = Math.floor(equip.wearPercent/100 * equip.quantityCur);
-            equip.wearRed = Math.ceil((equip.wearPercent/100 * equip.quantityCur) % 1);
-
-            return equip;
-
-        }
-
-        let getRepairQuantity = (equip) => {
-            
-            switch(choice["Repair"]){
-                case "Black Parts":
-                    return equip.wearBlack;
-                case "All Parts":
-                    return equip.wearBlack + equip.wearRed;
-                case "One Percent":
-                    if(equip.wearPercent[index] > 1)
-                        return Math.floor(equip.wearPercent/100 * equip.quantityCur);
-                    else
-                        return 0;
-            }
-
-        }
-
-        let getAimQuantity = async (equip) => {
-            
-            switch(choice["Quantity"]){
-                case "Current":
-                    return equip.quantityCur;
-                case "Employees":
-                    let salaryList = await Scrapper.get(`/${Vital.getRealm()}/main/company/view/${Vital.getCompanyId()}/unit_list/employee/salary`, VirtoMap.SalaryList);
-                    let salaryIndex = salaryList.subid.indexOf(subid);
-                    let employeeRatio = salaryList.emplWrk[salaryIndex] / salaryList.emplMax[salaryIndex];
-                    return employeeRatio * equip.quantityMax;
-                case "Full":
-                    return equip.quantityMax;
-            }
-
-        }
-
-        let needsToDoEquipment = async (equip) => {
-
-            let repairQuantity = getRepairQuantity(equip);
-            let qualityTooLow = equip.qualityCur <= equip.qualityReq;
-            let notEnoughEquipment = equip.quantityCur !== await getAimQuantity(equip);
-
-            return repairQuantity || qualityTooLow || notEnoughEquipment;
-
-        }		
-
-        let getMinQuality = (equip) => {
-
-            switch(choice["Required"]){
-            case "Fulfill":
-                return equip.qualityReq;
-            case "Ignore":
-                return 0;				
-            }
-
-        }
-
-        let getManager = async () => {
-
-            let qual = await Scrapper.get(`/${Vital.getRealm()}/main/user/privat/persondata/knowledge`, VirtoMap.Manager);
-            
-            let managerImg = HardData.getManagerImg(type);
-            let managerIndex = qual.pic.indexOf(managerImg);
-
-            switch(choice["Manager"]){
-            case "Target":
-                return qual.base[managerIndex];
-            case "Maximum":
-                return qual.base[managerIndex] + qual.bonus[managerIndex];
-            case "Overflow":
-                return (qual.base[managerIndex] + qual.bonus[managerIndex]) * (6/5);					
-            }
-
-        }
-
-        let getMaxQuality = async () => {
-            
-            let salaryList = await Scrapper.get(`/${Vital.getRealm()}/main/company/view/${Vital.getCompanyId()}/unit_list/employee/salary`, VirtoMap.SalaryList);
-
-            let manager = await getManager();
-            let top1 = HardData.getTop1(type);
-            let emplIndex = salaryList.subid.indexOf(subid);
-            let employees = salaryList.emplWrk[emplIndex] || salaryList.emplMax[emplIndex];
-
-            return Formulas.equip( Formulas.skill( employees, top1, manager) );
-            
-        }
-
-        let getMaxPrice = () => {
-
-            switch(choice["Price"]){
-                case "$10,000":
-                    return 10000;
-                case "$100,000":
-                    return 100000;
-                case "$1,000,000":
-                    return 100000;
-                case "Infinite":
-                    return Infinity;
-            }
-
-        }
-        
-        let extractSuppliersFromPage = (equip) => {
-
-            let suppliers = [];
-
-            for(let offerIndex in equip.offerId){
-
-                suppliers.push({
-                    id: equip.offerId[offerIndex],
-                    price: equip.offerPrice[offerIndex],
-                    quality: equip.offerQuality[offerIndex],
-                    available: equip.offerAvailable[offerIndex],
-                    PQR: equip.offerPrice[offerIndex] / equip.offerQuality[offerIndex],
-                    buy: 0
-                });
-
-            }
-
-            return suppliers;
-
-        }
-
-        let addCurrentAsSupplier = (equip, suppliers) => {
-            suppliers.push({
-                id: "CURRENT",
-                price: 0,
-                quality: equip.qualityCur,
-                available: equip.quantityCur,
-                PQR: 0,
-                buy: 0
+        const createPriceList = (equipmentWindow) => {
+            const offers = ListUtil.restructById("offerId", equipmentWindow);
+            const priceList = Object.values(offers);
+            priceList.forEach(o => {
+                o.price = o.offerPrice; 
+                delete o.offerPrice;
+                o.available = o.offerAvailable;
+                delete o.offerAvailable
+                o.quality = o.offerQuality;
+                delete o.offerQuality;
+                o.id = o.offerId;
+                delete o.offerId;
+                o.windowIndex = equipmentWindow.offerId.indexOf(o.id)
+                o.toRepair = 0;
+                o.toBuy = 0;
             });
-            return suppliers;
+            return priceList;
         }
 
-        let filterSuppliers = (suppliers) => {
+        const sortPriceList = (priceList) => {
+            switch(choice.heuristic){
+                case "lowprice": priceList.sort( (a, b) => a.price - b.price ); break;
+                case "lowPQR": priceList.sort( (a, b) => a.price/a.quality - b.price/b.quality ); break;
+                case "lowPQ2R": priceList.sort( (a, b) => a.price/a.quality**2 - b.price/b.quality**2 ); break;
+                case "highqual": priceList.sort( (a, b) => b.quality - a.quality ); break;
+                default: console.error(`Undefined equipment heuristic: ${choice.heuristic}`);
+            }
+        }
 
-            let filterMaxPrice = (supplier) => {
-                return supplier.price < getMaxPrice();
+        const filterPriceListMaxPrice = (priceList) => {
+            const maxPrice = choice.price;
+            priceList = priceList.filter(o => o.price <= maxPrice);
+            return priceList;
+        }
+
+        const getNumPartsToRepair = (equipmentData) => {
+            if(choice.damage > equipmentData.wearPercent)
+                return 0;
+
+            if(choice.red === "repair")
+                return equipmentData.wearBlack + equipmentData.wearRed;
+            else
+                return equipmentData.wearBlack;
+        }
+
+        const getQualityRequired = (equipmentData) => {
+            let qualityRequired = 0;
+            if(equipmentData.qualityRequired){
+                qualityRequired = equipmentData.qualityRequired;
+            }
+            return Math.max(qualityRequired, choice.required);
+        }
+
+        //Because the equipmentWindow page is shared between all subdivisions from the same type, we should decrease the number of pieces available if something is repaired or bought here.
+        const reduceAvailability = (equipmentWindow, windowIndex, nPieces) => {
+            equipmentWindow.offerAvailable[windowIndex] -= nPieces;
+        }
+
+        const determineRepair = (priceList, numPartsToRepair, qualityRequired, equipmentWindow) => {
+
+            if(!numPartsToRepair)
+                return priceList;
+
+            let toRepair = numPartsToRepair;
+
+            for(const offer of priceList){
+                if(offer.quality > qualityRequired){
+                    const repair = Math.min(toRepair, offer.available);
+                    offer.toRepair = repair;
+                    toRepair -= repair;
+                    if(toRepair === 0){
+                        break;
+                    }
+                }
             }
 
-            return suppliers.filter(filterMaxPrice);
-            
-        }
-
-        let applyPQRinsteadOfPrice = (suppliers) => {
-
-            if(choice["Heuristic"] === "Lowest PQR"){
-                for(let supplier of suppliers)
-                    supplier.price /= supplier.quality;
+            if(toRepair > 0){
+                Results.warningLog(`Could not repair ${type} ${subid}. Needs ${numPartsToRepair} pieces of equipment with quality ${qualityRequired} and a maximum price of $${choice.price}, but could not find enough of them on the market.`);
+                priceList.forEach( o => o.toRepair = 0 );
             }
 
-            return suppliers;
+            return priceList;
         }
 
-        let sortSuppliersOnPrice = (suppliers) => {
-
-            suppliers.sort((sup1, sup2) => {
-                return sup1.price - sup2.price;
-            });
-
-            return suppliers;
-        }
-        
-        let getSuppliers = (equip) => {
-            
-            let suppliers = extractSuppliersFromPage(equip);
-            suppliers2 = addCurrentAsSupplier(equip, suppliers);
-            suppliers3 = filterSuppliers(suppliers2);
-            suppliers4 = applyPQRinsteadOfPrice(suppliers3);
-            suppliers5 = sortSuppliersOnPrice(suppliers4);
-
-            return suppliers5;
-            
+        const repairStats = (offer) => {
+            console.log(this, this.id, offer);
+            Results.addStats(this.id, "repaired", offer.toRepair);
+            //Results.addStats(this.id, "spend", offer.toRepair*offer.price);
         }
 
-        let fillSuppliersWithLowestPrice = (suppliers, quantity) => {
-            
-            for(let supplier of suppliers){
+        const repairEquipment = async (priceList, equipmentWindow) => {
 
-                let toBuy = Math.min(supplier.available, quantity);
-                quantity -= toBuy;
-                supplier.buy += toBuy;
+            const offerPromises = [];
+            for(const offer of priceList){
+                if(offer.toRepair){
+                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toRepair);
+                    console.log(subid, offer);
 
-                if(quantity === 0)
-                    break;
-
-            }
-
-            if(!quantity)
-                return suppliers;
-            else{
-                StatTracker.addMessage(`Could not find enough suppliers for <a href=https://virtonomics.com/mary/main/unit/view/${subid}>${subid}</a> that meet the requirements.`);
-                return false;
-            }
-                
-        }
+                    const data = {
+                        operation: "repair",
+                        offer: offer.id,
+                        unit: subid,
+                        supplier: offer.id,
+                        amount: offer.toRepair
+                    }
     
-        let calcSuppliersAverageQuality = (suppliers) => {
-
-            let quality = 0;
-            let buy = 0;
-
-            for(let supplier of suppliers){
-                quality += supplier.quality * supplier.buy;
-                buy += supplier.buy;
+                    const r = () => repairStats(offer);
+                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(r);
+                    offerPromises.push(p);
+                }                
             }
 
-            return quality/buy;
-
+            await Promise.all(offerPromises);
+            await updateEmployeeList();
         }
 
-        let findMostQualityChange = (suppliers, averageQuality, qualityDirection) => {
-            
-            let bestSupplier;
-            let mostChange = 0;
-            for (let supplier of suppliers){
-
-                let qualityChange = (supplier.quality - averageQuality) / supplier.price;
-
-                let betterUp = qualityChange > mostChange && qualityDirection === "UP";
-                let betterDown = qualityChange < mostChange && qualityDirection === "DOWN";
-
-                if( supplier.available - supplier.buy > 0 && (betterUp || betterDown) ){
-                    bestSupplier = supplier;
-                    mostChange = qualityChange;
-                }
-
+        const cleanRepairPriceList = (priceList) => {
+            for (const offer of priceList){
+                offer.available -= offer.toRepair;
+                offer.toRepair = 0;
             }
-
-            return bestSupplier;
-
+            return priceList;
         }
 
-        let changeBuyOfSupplier = (composition, specificSupplier, changeInBuy) => {
-
-            for(let supplier of composition){
-
-                if(supplier.id === specificSupplier.id){
-                    supplier.buy += changeInBuy;
-                    break;
-                }
+        const getMachineQuantity = async (equipmentData) => {
+            switch(choice.quantity){
+                case "current": return equipmentData.quantityCurrent;
+                case "full": return equipmentData.quantityMaximum;
+                case "employees": 
+                    const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid);
+                    const index = employeeList.subid.indexOf(subid);
+                    const w = employeeList.employeesWorking[index];
+                    const m = employeeList.employeesMaximum[index];
+                    const workerRatio = Math.ceil(w/m*equipmentData.quantityMaximum);
+                    return workerRatio;               
+                default: console.error(`Equipment module has Quantity choice ${choice.quantity} that does not exist.`)
             }
-
-            return composition
-
         }
 
-        let findBestReplacement = (composition, bestSupplier, qualityDirection) => {
-
-            composition = changeBuyOfSupplier(composition, bestSupplier, 1);
-            
-            let worstSupplier;
-            let bestPQR = Infinity;
-
-            for(let supplier of composition){
-
-                let qualityUp = bestSupplier.quality > supplier.quality && qualityDirection === "UP";
-                let qualityDown = bestSupplier.quality < supplier.quality && qualityDirection === "DOWN";
-
-                if(supplier.buy && supplier.id !== bestSupplier.id && (qualityUp || qualityDown) ){
-                    
-                    let qualityChange = Math.abs(bestSupplier.quality - supplier.quality);
-                    let priceIncrease = bestSupplier.price - supplier.price;
-                    let PQR = priceIncrease / qualityChange;
-
-                    if(PQR < bestPQR){
-                        worstSupplier = supplier;
-                        bestPQR = PQR;
-                    }		
-
-                }
+        const getValueToOptimize = (offer) => {
+            switch(choice.heuristic){
+                case "lowprice": return offer.price;
+                case "lowPQR": return offer.price/offer.quality;
+                case "lowPQ2R": return offer.price/offer.quality**2;
+                case "highqual": return -offer.quality;
+                default: console.error(`Undefined equipment heuristic: ${choice.heuristic}`);
             }
-
-            composition = changeBuyOfSupplier(composition, worstSupplier, -1);
-
         }
 
-        let findBetterComposition = (composition, qualityDirection) => {
-
-            let averageQuality = calcSuppliersAverageQuality(composition);
-            let bestSupplier = findMostQualityChange(composition, averageQuality, qualityDirection);
-
-            if(!bestSupplier){
-                StatTracker.addMessage(`Could not find enough suppliers for <a href=https://virtonomics.com/mary/main/unit/view/${subid}>${subid}</a> that meet the requirements.`);
-                return false;
-            }
-
-            let betterComposition = findBestReplacement(composition, bestSupplier, qualityDirection);
-
-            return composition;
-
+        //Adds an extra offer to the priceList, namely a fake offer that represents the current equipment in use
+        const addHomeToPriceList = (priceList, equipmentData) => {
+            priceList.push({
+                price: 0,
+                available: equipmentData.quantityCurrent,
+                quality: equipmentData.qualityCurrent,                
+                id: "HOME",
+                windowIndex: "HOME",
+                toRepair: 0,
+                toBuy: 0
+            });
+            return priceList;
         }
 
-        let findBestComposition = async (equip) => {
+        const getBuyRemoveModel = (priceList, machineQuantity, qualityRequired) => {
 
-            let suppliers = getSuppliers(equip);
-            let quantity = getRepairQuantity(equip) + await getAimQuantity(equip);
-            let composition = fillSuppliersWithLowestPrice(suppliers, quantity);
-
-            if(!composition) 
-                return false;
-
-            let minQual = getMinQuality(equip);
-            let maxQual = await getMaxQuality();
-            let curQual = calcSuppliersAverageQuality(composition);
-            
-            let maxIterations = 100000;
-            let iteration = 0;
-
-            if( minQual >= maxQual ){
-                StatTracker.addMessage("Minimum Quality is higher than Maximum Quality for subdivision <a href=https://virtonomics.com/mary/main/unit/view/${subid}>${subid}</a>");
-                return false;
+            //We have to optimize 'value'. We can't call it price because we can also optimize different things
+            const model = {
+                "optimize": "value",
+                "opType": "min",
+                "constraints": {
+                    "quality": {"min": qualityRequired * machineQuantity },
+                    "pieces": {"equal": machineQuantity }
+                },
+                "variables": {},
+                "ints": {}
             }
 
-            while( (curQual < minQual || curQual > maxQual) && iteration++ < maxIterations){
-
-                let qualityDirection = curQual < minQual ? "UP" : "DOWN";
-                composition = findBetterComposition(composition, qualityDirection);
-
-                if(!composition){
-                    //Is false if something bad has happened
-                    break;
+            for(const offer of priceList){
+                model.constraints["c"+offer.id] = {"max": offer.available};
+                model.variables[offer.id] = {
+                    "value": getValueToOptimize(offer),
+                    "quality": offer.quality,
+                    ["c"+offer.id]: 1,
+                    "pieces": 1
                 }
-
-                curQual = calcSuppliersAverageQuality(composition);
-
-            }					
-
-            console.log("Iterations done: ", iteration);
-
-            return composition;
-
-        }		
-
-        let buyComposition = async (suppliers) => {
-            console.log(subid, suppliers);
-            return false;
-        }
-
-        let equipList = await Scrapper.get(`/${Vital.getRealm()}/main/company/view/${Vital.getCompanyId()}/unit_list/equipment`, VirtoMap.EquipmentList);
-        
-        //It's fake: it extracts enough data from the equipment list to do certain functions meant for equip (so I don't have to copy).
-        //FakeEquip already has Wear Black and Wear Red
-        let fakeEquip = makeEquipFromEquipList(equipList);
-
-        if( await needsToDoEquipment(fakeEquip) ){
-            
-            let equipUrl = `/${Vital.getRealm()}/window/unit/equipment/${subid}`;
-            let realEquip = await Scrapper.get(equipUrl, VirtoMap.Equipment);				
-            realEquip = addWearBlackRedToEquip(realEquip);
-
-            console.log("Change took place");
-
-
-            /*
-            let maxIterations = 1;
-            let iteration = 0;
-            while( await needsToDoEquipment(realEquip) && iteration++ < maxIterations){
-
-                let composition = await findBestComposition(realEquip);					 
-
-                if(composition){
-                    await buyComposition(composition);
-                    Scrapper.clean(equipUrl);
-                    realEquip = await Scrapper.get(equipUrl, VirtoMap.Equipment);
-                    realEquip = addWearBlackRedToEquip(realEquip);
-                }
-                else{
-                    //Something bad happened
-                    break;
-                }
-                
-            }
-            */
-        }
-
-
-
-
-        //if(!qE.num[j] || !torep && (qE.quality[j] >= qE.required[j] || opt.q1[i].choice[1] === 2)) return;
-                    
-        
-        
-        
-
-
-        return false;
-
-        let qualReq = (qE.required[j] || 0) + 0.005;
-        let qualNow = qE.quality[j] - 0.005;
-        let qualMax = Infinity;
-                    
-        //repair
-        for(let k = 0; k < torep; k++){
-                                    
-            let lowestPQR = Infinity;
-            let bestqual = 0;
-            let best;				
-                                
-            for(let l = 0; l < eq.offer.length; l++){
-                                        
-                //Some contracts are not good enough without even looking at them
-                let PQR = eq.price[l] / eq.qualOffer[l];
-                if(PQR > lowestPQR && (eq.qualOffer[l] < qualNow || bestqual > qualNow || opt.q1[i].choice[0] !== 2) || eq.available - repair[eq.offer[l]] === 0)
-                    continue;
-                        
-                //What happens to the total quality if we buy one of this contract more?
-                qualEst = qualNow;							
-                repair[eq.offer[l]]++;								
-                for(let m in repair){
-                    if(repair[m]){
-                        qualEst = ((qE.num[j] - repair[m]) * qualEst + repair[m] * eq.qualOffer[eq.offer.indexOf(Tools.parse(m))]) / qE.num[j];
-                    }															
-                }
-                repair[eq.offer[l]]--;			
-                
-                //Remember that this is the new best deal
-                if(opt.q1[i].choice[0] === 1 && (qualEst > qualReq || qualEst > qualNow && qualNow < qualReq)
-                || opt.q1[i].choice[0] === 2 && qualEst < qualMax ){
-                    best = eq.offer[l];
-                    lowestPQR = PQR;
-                    bestqual = eq.qualOffer[l];
-                }						
-            }
-
-            if(best >= 0){
-                repair[best]++;
-            } else{
-                postMessage(`Could not repair subdivision <a href="/${Vital.getRealm()}/main/unit/view/${qE.subid[j]}">${qE.subid[j]}</a>, no equipment met the required quality`);
-                break;
+                model.ints[offer.id] = 1;
             }
             
-        }			
-        
-        //replace
-        if(opt.q1[i].choice[0] === 1){				
+            return model;
+        }
 
-            qualEst = qualNow;									
-            for(let m in repair){
-                if(repair[m]){;
-                    qualEst = ((qE.num[j] - repair[m]) * qualEst + repair[m] * eq.qualOffer[eq.offer.indexOf(Tools.parse(m))]) / qE.num[j];
-                }															
-            }	
-            qualNow = qualEst;
-                            
-            while(qualEst < qualReq){
-                                        
-                let lowestPQR = Infinity;
-                let best;				
-                                    
-                for(let l = 0; l < eq.offer.length; l++){
-                                            
-                    let PQR = eq.price[l] / (eq.qualOffer[l] - qualNow);
-                    if(PQR < lowestPQR && eq.qualOffer[l] > qualReq && eq.available[l] - repair[eq.offer[l]] - replace[eq.offer[l]] > 0) {								
-                        best = eq.offer[l];
-                        lowestPQR = PQR;
-                    }						
-                }
-
-                if(best >= 0){
-                                                
-                    let bestqual = eq.qualOffer[eq.offer.indexOf(Tools.parse(best))];
-                    let numNeeded = Math.ceil((qualReq - qualEst) / (bestqual - qualNow) * qE.num[j]);
-                    let toreplace = Math.min(numNeeded, eq.available[eq.offer.indexOf(Tools.parse(best))] - repair[best]);
-                    replace[best] = toreplace;							
-                    qualEst += toreplace * (bestqual - qualNow) / qE.num[j];
-                    
-                } else{
-                    postMessage(`Could not increase the quality of subdivision <a href="/${Vital.getRealm()}/main/unit/view/${qE.subid[j]}">${qE.subid[j]}</a>, no equipment met the required quality`);
-                    break;
-                }				
-                
-            }	
+        const determineBuyRemove = (priceList, model, qualityRequired, machineQuantity) => {
             
-        }
-        
-        //buy
+            if(choice.manage !== "on")
+                return priceList;
 
-        //repair
-        for(let m in repair){
-            if(repair[m]){
-                dealsmade++;
-                sccount.qrepair += repair[m];
-                sccount.qprice += eq.price[eq.offer.indexOf(Tools.parse(m))] * repair[m];
-                await xPost(`/${Vital.getRealm()}/ajax/unit/supply/equipment`, {
-                    operation : "repair",
-                    offer : m,
-                    unit : qE.subid[j],
-                    supplier : m,
-                    amount : repair[m]
-                }, "qdeals", "JSON").then(go);
-            }															
+            const solution = Solver.solve(model);
+            if(!solution.feasible){
+                Results.warningLog(`Could not find equipment to make sure that ${type} ${subid} has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`);
+                return priceList;
+            }
+
+            delete solution.feasible;
+            delete solution.bounded;
+            delete solution.result;
+
+            for(const offerId in solution){
+                const index = priceList.findIndex(o => o.id === offerId);
+                priceList[index].toBuy = solution[offerId];
+            }
+
+            return priceList;
         }
-        
-        //replace				
-        for(let m in replace){
-            if(replace[m]){
-                dealsmade += 2;
-                sccount.qreplace += replace[m];
-                sccount.qprice += eq.price[eq.offer.indexOf(Tools.parse(m))] * replace[m];
-                await xPost(`/${Vital.getRealm()}/ajax/unit/supply/equipment`, {
-                    operation : "terminate",
-                    unit : qE.subid[j],
-                    amount : replace[m]
-                }, "qdeals", "JSON").then(go);
-                await xPost(`/${Vital.getRealm()}/ajax/unit/supply/equipment`, {
-                    operation : "buy",
-                    offer : m,
-                    unit : qE.subid[j],
-                    supplier : m,
-                    amount : replace[m]
-                }, "qdeals", "JSON").then(go);
-            }															
-        }			
+
+        //If equipment is being changed, naturally the required skill for employees also change. However, the employeeList only gets updated after something employee related happens. So we have to force an update.
+        const updateEmployeeList = async () => {
+            const eL = await Page.get("EmployeeList").load(domain, realm, companyid);
+            const data = {
+                "unitEmployeesData[quantity]": eL.employeesWorking[1],
+                "unitEmployeesData[salary]": eL.salaryWorking[1]
+            }
+            await Page.get("SalaryWindow").send(data, domain, realm, eL.subid[1]);
+        }
+
+        const buyRemoveEquipment = async (priceList, equipmentData, equipmentWindow) => {
+
+            const machinesKept = priceList.pop().toBuy; //Home offer is always last
+            const machinesToRemove = equipmentData.quantityCurrent - machinesKept;
+
+            //This have to be done first before the code jumps to another subdivision because of await/async
+            for(const offer of priceList){
+                if(offer.toBuy){
+                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toBuy);
+                }
+            }
+
+            if(machinesToRemove){
+                const data = {
+                    operation: "terminate",
+                    unit: subid,
+                    amount: machinesToRemove
+                }
+    
+                const r = () => Results.addStats(this.id, "removed", machinesToRemove);
+                await Page.get("EquipmentAjax").send(data, domain, realm).then(r);
+            }            
+
+            const offerPromises = [];
+            for(const offer of priceList){
+                if(offer.toBuy){
+                    const data = {
+                        operation: "buy",
+                        offer: offer.id,
+                        unit: subid,
+                        supplier: offer.id,
+                        amount: offer.toBuy
+                    }
+    
+                    const b = () => Results.addStats(this.id, "bought", offer.toBuy);
+                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(b);
+                    offerPromises.push(p);
+                }                
+            }
+
+            await Promise.all(offerPromises);
+            await updateEmployeeList();
+
+        }
+
+
+        const equipmentList = await Page.get("EquipmentList").load(domain, realm, companyid);
+        const equipmentData = ListUtil.restructById("subid", equipmentList)[subid];
+        const equipmentWindow = await getEquipmentWindow(equipmentList);
+        let priceList = createPriceList(equipmentWindow);
+        sortPriceList(priceList);
+        priceList = filterPriceListMaxPrice(priceList);
+        const numPartsToRepair = getNumPartsToRepair(equipmentData);
+        const qualityRequired = getQualityRequired(equipmentData);
+        priceList = determineRepair(priceList, numPartsToRepair, qualityRequired);
+        await repairEquipment(priceList, equipmentWindow);
+        priceList = cleanRepairPriceList(priceList);
+        const machineQuantity = await getMachineQuantity(equipmentData);
+        priceList = addHomeToPriceList(priceList, equipmentData);
+        const model = getBuyRemoveModel(priceList, machineQuantity, qualityRequired);
+        priceList = determineBuyRemove(priceList, model, qualityRequired, machineQuantity);
+        await buyRemoveEquipment(priceList, equipmentData, equipmentWindow);		
 
     }
-};
+}));

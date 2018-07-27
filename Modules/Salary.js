@@ -4,8 +4,7 @@ Module.add( new Module({
     name: "Salary",
     explanation: `Sets the salary of the employees. The first option is the value of the salary in dollars, with Minimum = 80% of the city average, City Average = 100% of the city average, and Required is the salary to match the required skill. The required salary cannot go below 80% of the city average. The next option is the maximum salary the script is allowed to set, in order to protect you from extremely high values. Default input is 5000 meaning the salary cannot go beyond 5000 dollars. Note that if you set the maximum to zero nothing happens, because you can't set the salary to zero.`,
     subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "shop"],
-    parallel: false,
-    predecessors: [],
+    predecessors: ["Equipment"],
     options: [         
         new Option({
             id: "salary",
@@ -31,7 +30,7 @@ Module.add( new Module({
         new Stat({ id : "raise", display : "Loan Raises", format : "Plain"}),
         new Stat({ id : "cut", display : "Loan Cuts", format : "Plain"}),
     ],
-    precleaner: [],
+    precleaner: ["EmployeeList"],
     execute: async function(domain, realm, companyid, subid, type, choice){
 
         const determineSalaryValue = async (employeeList, subIndex) => {
@@ -41,7 +40,7 @@ Module.add( new Module({
                     return minimumSalary;
                 case "required":
                     const cityOverview = await Page.get("CityOverview").load(domain, realm);
-                    const {cityId} = await GeoUtil.getGeoId(domain, realm, companyid, subid);
+                    const {cityId} = await GeoUtil.getGeoIdFromSubid(domain, realm, companyid, subid);
                     const citySkill = parseFloat(cityOverview[cityId].education);
                     const sw = employeeList.salaryWorking[subIndex];
                     const sc = employeeList.salaryCity[subIndex];

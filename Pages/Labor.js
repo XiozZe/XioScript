@@ -1,3 +1,5 @@
+//I believe every information that labor has can also be found in CityOverview, making this page unnecessary
+//Except size_min and size_max?
 Page.add(new Page({
 
     id: "Labor",
@@ -37,7 +39,7 @@ Has the following layout:
             "retail_count":"0",
             "intellectuals_cost":"0.00",
             "merchants_cost":"0.00",
-            "workers_cost":"30.86"},"3032":
+            "workers_cost":"30.86"
         }
         "3032": {
             ...

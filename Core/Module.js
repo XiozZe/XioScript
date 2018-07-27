@@ -1,7 +1,7 @@
 /**
  * Module represents a procedure that executes some things regarding a subdivision, such as setting it's price or it's supply.
  */
-function Module({id, name, explanation, subTypes, parallel, predecessors, options, stats, precleaner, execute}){
+function Module({id, name, explanation, subTypes, predecessors, options, stats, precleaner, execute}){
     this.name = name;
 
     Procedure.call(this, {id, name, explanation, options, execute});
@@ -9,8 +9,6 @@ function Module({id, name, explanation, subTypes, parallel, predecessors, option
    
     //These are the subdivision types the module is operating on. Any subdivision that is not one of these types will not be executed. Note that the values should correspond with those found in SubTypes.
     this.subTypes = subTypes;
-    //Boolean value that is true if the subdivisions executed are allowed to be executed in parallel: meaning all at the same time without interfering with each other.
-    this.parallel = parallel;
     //An array with module ID's that determine which modules have to be completed before this module is allowed to be called.
     this.predecessors = predecessors;
     //An array of Stat object that represent statistics that are showed on the results screen. Have to be updated inside the execute function to have any effect    
@@ -41,7 +39,7 @@ Module.get = (moduleId) => {
 Module.prototype.checkComplete = function(){
 
     const allPresent1 = this.id && this.name && this.explanation && this.subTypes && this.options && this.predecessors;
-    const allPresent2 = this.stats && this.precleaner && this.execute && this.parallel !== undefined;
+    const allPresent2 = this.stats && this.precleaner && this.execute;
     console.assert(allPresent1 && allPresent2, "Somethings wrong in the script: Module is incomplete: ", this);
 
     const correctOptions = this.options instanceof Array && this.options.reduce((acc, e) => acc && e instanceof Option);
