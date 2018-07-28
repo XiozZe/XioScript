@@ -3,7 +3,7 @@ Page.add(new Page({
     id: "CityOverview",
 
     getUrl: (domain, realm) => {
-        return `${domain}/api/${realm}/main/geo/city/browse`;
+        return `${domain}/api/${realm}/main/geo/city/browse`
     }
 
 }));

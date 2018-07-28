@@ -1,15 +1,15 @@
 const GeoUtil = {
 
     getGeoIdFromSubid: async (domain, realm, companyid, subid) => {
-        const unitList = await Page.get("UnitList").load(domain, realm, companyid);
-        const unitListIndex = unitList.subid.indexOf(subid);
-        const cityName = unitList.cityName[unitListIndex];
-        return await GeoUtil.getGeoIdFromCityName(domain, realm, cityName);
+        const unitList = await Page.get("UnitList").load(domain, realm, companyid)
+        const unitListIndex = unitList.subid.indexOf(subid)
+        const cityName = unitList.cityName[unitListIndex]
+        return await GeoUtil.getGeoIdFromCityName(domain, realm, cityName)
     },
 
     getGeoIdFromCityName: async (domain, realm, cityName) => {
-        const cityOverview = await Page.get("CityOverview").load(domain, realm);
-        const city = Object.keys(cityOverview).map(k => cityOverview[k]).find(o => o.city_name === cityName);
+        const cityOverview = await Page.get("CityOverview").load(domain, realm)
+        const city = Object.keys(cityOverview).map(k => cityOverview[k]).find(o => o.city_name === cityName)
         return {
             cityId: city.city_id,
             regionId: city.region_id,

@@ -2,130 +2,166 @@ Module.add( new Module({
 
     id: "Ads",
     name: "Advertisements",
-    explanation: `Set a subdivision's advertisement budget according to 'Budget' for the media 'Medium'. A minimum budget will set the budget to the minimum required for the medium. Required will set the budget to match the required number of contacts to keep the current reputation. Population xN will set the budget to make sure the number of contacts is the population times N. If that budget exceeds Maximum it will be set to Maximum. Maximum budget will set the maximum budget allowed by the top manager to keep 100%.`,
+    explanation: `Set a subdivision's advertisement budget according to 'Budget' for the media 'Medium'. A 'Minimum' budget will set the budget to the minimum required for the medium. Required will set the budget to match the required number of contacts to keep the current reputation for TV, as given on the ads page. Population will set the budget to make sure the number of contacts is the population times the input given in the Population Input. For any other budget that Population Input is ignored. If this population budget exceeds Maximum it will be set to Maximum.  Maximum budget will set the maximum budget allowed by the top manager to keep 100% efficiency.`,
     subTypes: ["shop"],
-    options: {
-        "Budget": ["Zero", "Minimum", "Required", "Population x1", "Population x2", "Population x5", "Population x10", "Population x20", "Maximum"],
-        "Medium": ["Internet", "Press", "Outdoor", "Radio", "TV"]
-    },
     predecessors: [],
-    stats: {
-        "Checked": "Page Checked",			
-        "Budget": "Budgets Changed",
-        "Media": "Media Changed"
-    },
-    execute: async (result, subid, choice, type) => {
+    options: [
+        new Option({
+            id: "budget",
+            name: "Budget",
+            type: "select",
+            start: "required",
+            values: [
+                new Value({ id: "zero", name: "Zero" }),
+                new Value({ id: "minimum", name: "Minimum" }),
+                new Value({ id: "required", name: "Required" }),
+                new Value({ id: "population", name: "Population" }),
+                new Value({ id: "maximum", name: "Maximum" }),
+            ]
+        }),
+        new Option({
+            id: "population",
+            name: "Population",
+            type: "textbox",
+            format: "Float",
+            start: 2.5
+        }),
+        new Option({
+            id: "medium",
+            name: "Medium",
+            type: "select",
+            start: "tv",
+            values: [
+                new Value({ id: "internet", name: "Internet" }),
+                new Value({ id: "press", name: "Press" }),
+                new Value({ id: "outdoor", name: "Outdoor" }),
+                new Value({ id: "radio", name: "Radio" }),
+                new Value({ id: "tv", name: "TV" }),
+            ]
+        })
+    ],
+    stats: [
+        new Stat({ id: "budget", display: "Budgets Changed", format: "Plain"}),
+        new Stat({ id: "media", display: "Media Changed", format: "Plain"})
+    ],
+    precleaner: [],
+    execute: async function(domain, realm, companyid, subid, type, choice){
         
-        //For the stats
-        let doesMediumChange = (mediumIndex) => {
-
-            //One should be on
-            if(!ads.mediaChecked[mediumIndex])
-                return true;
-
-            //All others off
-            for(let mediaIndex of ads.mediaChecked){
-                if(ads.mediaChecked[mediaIndex] && mediaIndex !== mediumIndex)
-                    return true;
+        const getMediumId = () => {
+            switch (choice.medium) {
+                case "internet": return "2260"
+                case "press": return "2261"
+                case "outdoor": return "2262"
+                case "radio": return "2263"
+                case "tv": return "2264"
+                default: console.error(`Undefined medium: ${choice.medium} in Ads module`)
             }
-
-            return false;
-        }
-    
-        //Population is also hardcoded in the script of the advertisement page, but difficult to reach
-        let getPopulation = async () => {
-            let	cityOverview = await Scrapper.get(`/${Vital.getRealm()}/main/common/main_page/game_info/bonuses/city`, VirtoMap.CityOverview);
-            let cityIndex = cityOverview.name.indexOf(ads.city);				
-            return cityOverview.population[cityIndex];
         }
 
-        //We need extra data about required and population costs
-        let getFame = async () => {							
-            let fameUrl = `/${Vital.getRealm()}/ajax/unit/virtasement/${subid}/fame`;
-            let fame = await Ajax.post(fameUrl, `moneyCost=${ads.budget}&population=${await getPopulation()}&type%5B0%5D=${mediumId}`);
-            return JSON.parse(fame);
+        const checkMediaChanged = (ads, mediumId) => {
+            const array = [false, false, false, false, false]
+            const mediumIndex = ads.mediaId.indexOf(mediumId)
+            array[mediumIndex] = true
+            return !array.every( (v, i) => v === ads.mediaChecked[i] )
+        }
+
+        const getPopulation = async () => {
+            const cityOverview = await Page.get("CityOverview").load(domain, realm)
+            const {cityId} = await GeoUtil.getGeoIdFromSubid(domain, realm, companyid, subid)
+            return cityOverview[cityId].population
+        }
+
+        const getFame = async (mediumId, population) => {		
+
+            const data = {
+                moneyCost: 0,
+                population,
+                "type[0]": mediumId
+            }
+            const fame = await Page.get("Fame").send(data, domain, realm, subid)
+            return fame
         }
 
         //Restricted by top manager
-        let getMaxBudget = async () => {
-            let qual = await Scrapper.get(`/${Vital.getRealm()}/main/user/privat/persondata/knowledge`, VirtoMap.Manager);
-            let managerIndex = qual.pic.indexOf("/img/qualification/advert.png");
-            let manager = qual.base[managerIndex] + qual.bonus[managerIndex];
-            return Math.floor(Formulas.maxAdsBudget(manager));
+        const getMaxBudget = async () => {
+            const q = await Page.get("Qualification").load(domain, realm)
+            const managerIndex = q.image.indexOf("/img/qualification/advert.png")
+            const manager = q.base[managerIndex] + q.bonus[managerIndex]
+            return Math.floor(Formulas.maxAdsBudget(manager))
         }
 
-        //Restricted by medium lower bound
-        let getMinBudget = async () => {
-            let fame = await getFame();
-            return fame.minCost;
-        }
-                    
-        let getBudget = async () => {
-            if(choice["Budget"] === "Zero"){
-                return 0;
+        const getBudget = async (ads, mediumId) => {
+
+            if(choice.budget === "zero"){
+                return 0
             }
-            else if(choice["Budget"] === "Minimum"){
-                let fame = await getFame();
-                return fame.minCost;
+
+            const population = await getPopulation()
+            const fame = await getFame(mediumId, population)
+            const minBudget = fame.minCost
+            const maxBudget = await getMaxBudget()
+
+            let budget = 0;
+
+            switch(choice.budget){
+                case "minimum": budget = minBudget; break
+                case "required": budget = ads.requiredContacts * parseFloat(fame.contactCost); break
+                case "population": {
+                    const p = await getPopulation()
+                    const multiplier = choice.population
+                    budget = p * multiplier * fame.contactCost
+                    break
+                }
+                case "maximum": budget = maxBudget; break
             }
-            else if(choice["Budget"] === "Required"){
-                let fame = await getFame();
-                return ads.requiredContacts * parseFloat(fame.contactCost);
-            }
-            else if(/Population x\d+/.test(choice["Budget"])){
-                let multiplier = parseInt(choice["Budget"].match(/\d+/)[0]);
-                let contactCost = parseFloat((await getFame()).contactCost);
-                return await getPopulation() * contactCost * multiplier;
-            }
-            else if(choice["Budget"] === "Maximum"){
-                return await getMaxBudget();
-            }
+
+            budget = Math.max(minBudget, budget)
+            budget = Math.min(budget, maxBudget)
+            budget = Math.round(budget)
+            return budget
         }
 
-        let sharpenBudget = (budget, min, max) => {
-            let newBudget = Math.min(Math.max(min, budget), max);
-            return Math.round(newBudget / 1000) * 1000;
+        const checkBudgetChanged = (ads, budget) => {
+            if (budget === ads.budget){
+                return false
+            } else {
+                return true
+            }
         }
+        
+        const sendData = async (budget, mediumId) => {
 
-        let sendData = async (budget, mediumId) => {
-            let data = {};
+            const data = {}
             
-            if(budget === 0){
-                data["cancel"] = "Stop+advertising";
-            }
-            else{
-                data["advertData[type][]"] = mediumId;
-                data["advertData[totalCost]"] = budget;
+            if (budget === 0){
+                data.cancel = "Stop+advertising"
+            } else {
+                data["advertData[type][]"] = mediumId
+                data["advertData[totalCost]"] = budget
             }
 
-            let dataString = Tools.encodeObject(data);
+            await Page.get("Advertising").send(data, domain, realm, subid)
+        }
 
-            await Ajax.post(`/${Vital.getRealm()}/main/unit/view/${subid}/virtasement`, dataString);
+        const updateStats = (mediumChanged, budgetChanged) => {
+            if (mediumChanged) {
+                Results.addStats(this.id, "media", 1)
+            }            
+            if (budgetChanged) {
+                Results.addStats(this.id, "budget", 1)
+            }
         }
         
-        let ads = await Scrapper.get(`/${Vital.getRealm()}/main/unit/view/${subid}/virtasement`, VirtoMap.Advertisement);
+        const ads = await Page.get("Advertising").load(domain, realm, subid)
         
-        let mediumIndex = ["Internet", "Press", "Outdoor", "Radio", "TV"].indexOf(choice["Medium"]);
-        let mediumId = ads.mediaId[mediumIndex];	
+        const mediumId = getMediumId()
+        const mediumChanged = checkMediaChanged(ads, mediumId)
+        const budget = await getBudget(ads, mediumId)
+        const budgetChanged = checkBudgetChanged(ads, budget)
 
-        let budget = await getBudget();			
-        if(budget !== 0)
-            budget = sharpenBudget(budget, await getMinBudget(), await getMaxBudget());
-
-        let budgetChanged = false;
-
-        if(budget !== ads.budget){
-            budgetChanged = true;
-            await sendData(budget, mediumId);
+        if (mediumChanged || budgetChanged) {
+            await sendData(budget, mediumId)
+            updateStats(mediumChanged, budgetChanged)           
         }
-        
-        //Something something results
-        
-        return {
-            "Checked": 1,
-            "Budget": budgetChanged,
-            "Media": doesMediumChange(mediumIndex)
-        };
-
     }
 }));

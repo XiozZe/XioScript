@@ -72,11 +72,11 @@ Page.prototype.fetch = async function(url, fetchArguments){
 
 Page.prototype.send = async function(data, ...urlArguments){
     
-    const url = this.getUrl(...urlArguments);
+    const url = this.getUrl(...urlArguments)
     
-    const urlSP = new URLSearchParams();
+    const urlSP = new URLSearchParams()
     for(const key in data){
-        urlSP.append(key, data[key]);
+        urlSP.append(key, data[key])
     }
     
     const page = await this.fetch(url, {
@@ -86,7 +86,9 @@ Page.prototype.send = async function(data, ...urlArguments){
 
     //Try because it is very possible that this data that is send is not meant to give anything back
     try{
-        return await page.json();
+        const j = await page.json()
+        console.log(url, j)
+        return j
     }
     catch(e){}
 }

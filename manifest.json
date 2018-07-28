@@ -71,6 +71,7 @@
                 "/Extensions/ForumChecker.js",
                 "/Extensions/PageSize.js",
 
+                "/Modules/Ads.js",
                 "/Modules/ProdSale.js",
                 "/Modules/ProdSupply.js",
                 "/Modules/Equipment.js",
@@ -78,6 +79,7 @@
                 "/Modules/Technology.js",
                 "/Modules/Training.js",
 
+                "/Pages/Advertising.js",
                 "/Pages/CityOverview.js",
                 "/Pages/CTIErates.js",
                 "/Pages/CustomDuties.js",
@@ -85,6 +87,7 @@
                 "/Pages/EquipmentAjax.js",
                 "/Pages/EquipmentList.js",
                 "/Pages/EquipmentWindow.js",
+                "/Pages/Fame.js",
                 "/Pages/ForumMain.js",
                 "/Pages/HomePage.js",
                 "/Pages/Labor.js",
