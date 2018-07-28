@@ -26,9 +26,9 @@ Module.add( new Module({
         })
     ],
     stats: [
-        new Stat({ id : "salary", display : "Salaries Set", format : "Plain"}),
-        new Stat({ id : "raise", display : "Loan Raises", format : "Plain"}),
-        new Stat({ id : "cut", display : "Loan Cuts", format : "Plain"}),
+        new Stat({ id: "salary", display: "Salaries Set", format: "Plain"}),
+        new Stat({ id: "raise", display: "Loan Raises", format: "Plain"}),
+        new Stat({ id: "cut", display: "Loan Cuts", format: "Plain"}),
     ],
     precleaner: ["EmployeeList"],
     execute: async function(domain, realm, companyid, subid, type, choice){

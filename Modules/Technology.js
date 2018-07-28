@@ -1,74 +1,58 @@
-const Technology = {
+Module.add( new Module({
     
+    id: "Technology",
     name: "Technology",
-    explanation: `Set the Technology level. The technology will not be higher than allowed under the top-manager. 'Manager' will determine which qualification level to use: 'Target' gives qualification without bonuses, 'Maximum' with bonus. Overflow will set the tech level to the maximum for which the subdivision can get 100% efficiency, but keep in mind that TOP3 (number of total employees) should be lower, because TOP1 is overloaded.`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "apiary", "oilpump", "fishingbase"],
-    options: {
-        "Manager": ["Target", "Maximum", "Overflow"]
-    },
-    predecessor: [],
-    calls: {
-        "Checked": "Subdivisions Checked",
-        "Pages": "Tech Pages Checked",
-        "Level": "Tech Level Changes"
-    },
-    execute: async (subid, choice, type) => {
+    explanation: `Set the Technology level of a subdivision. The technology will not be higher than allowed under the top-manager. The option "Bonus" will determine if the bonus qualification will be taken in account when the maximum technology level is calculated.`,
+    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase"],
+    predecessors: [],
+    options: [
+        new Option({
+            id: "bonus",
+            name: "Bonus",
+            type: "select",
+            start: "on",
+            values: [
+                new Value({ id: "on", name: "On" }),
+                new Value({ id: "off", name: "Off" })
+            ]
+        })
+    ],
+    stats: [
+        new Stat({ id: "changed", display: "Techs Changed", format: "Plain" })
+    ],
+    precleaner: [],
+    execute: async function(domain, realm, companyid, subid, type, choice){
 
-        let tech = await Scrapper.get(`/${Vital.getRealm()}/main/company/view/${Vital.getCompanyId()}/unit_list/technology`, VirtoMap.TechList);
-        let qual = await Scrapper.get(`/${Vital.getRealm()}/main/user/privat/persondata/knowledge`, VirtoMap.Manager);
-
-        let pageChecked = 0;
-        let techChanged = 0;
-
-        //Find index for this subdivision in the tech list
-        let j = (() => {
-            for(let j in tech.subid)
-                if(subid === tech.subid[j])
-                    return j;
-        })();
-
-        let qualImg = HardData.getManagerImg(tech.type[j]);
-        let qualIndex = qual.pic.indexOf(qualImg);
-        let manReq = qual.base[qualIndex];
-        let manMax = manReq + qual.bonus[qualIndex];
-        let mananager = 0;
-
-        switch(choice["Manager"]){
-            case "Target":
-                manager = manReq;
-                break;
-            case "Maximum":
-                manager = manMax;
-                break;
-            case "Overflow":
-                manager = manMax * 6/5;
-                break;							
+        const getManagerLevel = async () => {
+            const baseLevel = await ManagerUtil.getLevel(domain, realm, type);
+            switch(choice.bonus){
+                case "on": return baseLevel + await ManagerUtil.getBonus(domain, realm, type);
+                case "off": return baseLevel;
+            }
         }
 
-        let maxtech = Math.floor(Formulas.techLevel(manager));
+        const techList = await Page.get("TechList").load(domain, realm, companyid);
+        const techInfo = ListUtil.restructById("subid", techList)[subid];
+        const managerLevel = await getManagerLevel();
+        const maxTech = Formulas.techLevel(managerLevel);
 
-        if(tech.level[j] < maxtech){
-            pageChecked = 1;
-            techpage = await Scrapper.get(`/${Vital.getRealm()}/main/unit/view/${subid}/technology`, VirtoMap.Technology);
-            
+        if(techInfo.level < maxTech){
+            const techPickPage = Page.get("TechPick");
+            const techPick = await techPickPage.load(domain, realm, subid);
+
             //Go through all possible better tech level candidates
-            for(let i = techpage.level.length - 1; techpage.level[i] > techpage.curlevel; i--){
+            for(let i = techPick.levelTech.length - 1; techPick.levelTech[i] > techPick.levelCurrent; i--){
                 
                 //Yours means here that it's free
-                if(techpage.level[i] <= maxtech && techpage.yours[i]){
-                    techChanged = 1;
-                    Ajax.post(`/${Vital.getRealm()}/main/unit/view/${subid}/technology`, `level=${techpage.level[i]}`);
+                if(techPick.levelTech[i] <= maxTech && techPick.isYours[i]){
+                    const data = {
+                        level: techPick.levelTech[i]
+                    }
+                    await techPickPage.send(data, domain, realm, subid);
+                    Results.addStats(this.id, "changed", 1);
                     break;
                 }
             }
-
         }
-
-        return {
-            "Checked": 1,
-            "Pages": pageChecked,
-            "Level": techChanged
-        }
-
     }
-};
+}));

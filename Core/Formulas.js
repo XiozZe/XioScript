@@ -27,7 +27,7 @@ const Formulas = Object.freeze({
 	},
 
 	techLevel: (manager) => {
-		return Math.pow(manager*156.25, 1/3);
+		return Math.floor(Math.pow(manager*156.25, 1/3));
 	},
 
 	topTech: (tech) => {
