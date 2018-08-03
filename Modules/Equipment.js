@@ -255,9 +255,8 @@ Module.add( new Module({
 
         const getBuyRemoveModel = (priceList, machineQuantity, qualityRequired) => {
 
-            //We have to optimize 'value'. We can't call it price because we can also optimize different things
             const model = {
-                "optimize": "value",
+                "optimize": "price",
                 "opType": "min",
                 "constraints": {
                     "quality": {"min": qualityRequired * machineQuantity },
@@ -270,7 +269,7 @@ Module.add( new Module({
             for(const offer of priceList){
                 model.constraints["c"+offer.id] = {"max": offer.available};
                 model.variables[offer.id] = {
-                    "value": offer.price,
+                    "price": offer.price,
                     "quality": offer.quality,
                     ["c"+offer.id]: 1,
                     "pieces": 1
@@ -283,9 +282,6 @@ Module.add( new Module({
 
         const determineBuyRemove = (priceList, model, qualityRequired, machineQuantity) => {
             
-            if(choice.manage !== "on")
-                return priceList;
-
             const solution = Solver.solve(model);
             if(!solution.feasible){
                 Results.warningLog(`Could not find equipment to make sure that ${type} ${subid} has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`);
@@ -306,12 +302,12 @@ Module.add( new Module({
 
         //If equipment is being changed, naturally the required skill for employees also change. However, the employeeList only gets updated after something employee related happens. So we have to force an update.
         const updateEmployeeList = async () => {
-            const eL = await Page.get("EmployeeList").load(domain, realm, companyid);
+            const eL = await Page.get("EmployeeList").load(domain, realm, companyid)
             const data = {
                 "unitEmployeesData[quantity]": eL.employeesWorking[1],
                 "unitEmployeesData[salary]": eL.salaryWorking[1]
             }
-            await Page.get("SalaryWindow").send(data, domain, realm, eL.subid[1]);
+            await Page.get("SalaryWindow").send(data, domain, realm, eL.subid[1])
         }
 
         const buyRemoveEquipment = async (priceList, equipmentData, equipmentWindow) => {
@@ -362,22 +358,25 @@ Module.add( new Module({
         }
 
 
-        const equipmentList = await Page.get("EquipmentList").load(domain, realm, companyid);
-        const equipmentData = ListUtil.restructById("subid", equipmentList)[subid];
-        const equipmentWindow = await getEquipmentWindow(equipmentList);
-        let priceList = createPriceList(equipmentWindow);
-        sortPriceList(priceList);
-        priceList = filterPriceListMaxPrice(priceList);
-        const numPartsToRepair = getNumPartsToRepair(equipmentData);
-        const qualityRequired = getQualityRequired(equipmentData);
-        priceList = determineRepair(priceList, numPartsToRepair, qualityRequired);
-        await repairEquipment(priceList, equipmentWindow);
-        priceList = cleanRepairPriceList(priceList);
-        const machineQuantity = await getMachineQuantity(equipmentData);
-        priceList = addHomeToPriceList(priceList, equipmentData);
-        const model = getBuyRemoveModel(priceList, machineQuantity, qualityRequired);
-        priceList = determineBuyRemove(priceList, model, qualityRequired, machineQuantity);
-        await buyRemoveEquipment(priceList, equipmentData, equipmentWindow);		
+        const equipmentList = await Page.get("EquipmentList").load(domain, realm, companyid)
+        const equipmentData = ListUtil.restructById("subid", equipmentList)[subid]
+        const equipmentWindow = await getEquipmentWindow(equipmentList)
+        let priceList = createPriceList(equipmentWindow)
+        sortPriceList(priceList)
+        priceList = filterPriceListMaxPrice(priceList)
+        const numPartsToRepair = getNumPartsToRepair(equipmentData)
+        const qualityRequired = getQualityRequired(equipmentData)
+        priceList = determineRepair(priceList, numPartsToRepair, qualityRequired)
+        await repairEquipment(priceList, equipmentWindow)
+
+        if(choice.manage !== "on") return
+
+        priceList = cleanRepairPriceList(priceList)
+        const machineQuantity = await getMachineQuantity(equipmentData)
+        priceList = addHomeToPriceList(priceList, equipmentData)
+        const model = getBuyRemoveModel(priceList, machineQuantity, qualityRequired)
+        priceList = determineBuyRemove(priceList, model, qualityRequired, machineQuantity)
+        await buyRemoveEquipment(priceList, equipmentData, equipmentWindow)
 
     }
 }));
