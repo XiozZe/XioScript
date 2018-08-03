@@ -161,12 +161,14 @@ Module.add( new Module({
             switch(choice.policy){
                 case "noSale":
                     return "0";
-                case "anyCostumer":
+                case "anyCustomer":
                     return "1";
                 case "myCompany":
                     return "3";
                 case "myCorporation":
                     return "5";
+                default:
+                    console.error(`Could not find policy ${choice.policy} in the Production Sale module`)
             }
         }
             
