@@ -1,82 +1,99 @@
-const Holiday = {
+Module.add( new Module({
+
+    id: "Holiday",
     name: "Holiday",
-    explanation: `This function will turn the holiday for workers on and off. If 'Base' is set to holiday, the subdivision will go on holiday. If set to working, holiday will be off. Exceptions are made for certain buildings: if 'Stock' is set to 'Holiday' the subdivision will go on holiday if there are no goods in stock (Retail) or the are no goods of one of the items in stock (Production), and this overrides the 'Working' setting of 'Base'. Same thing for laboratories: 'Research' to 'Holiday' will force a laboratory to holiday if no research is being done or if no subdivision is attached.	`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "apiary", "oilpump", "fishingbase", "shop", "lab", "warehouse"],
-    options: {
-        "Base": ["Holiday", "Working"],
-        "Stock": ["Holiday", "Ignore"],
-        "Research": ["Holiday", "Ignore"]
-    },
-    predecessor: ["Production Supply", "Research"],
-    calls: {
-        "Checked": "Pages Checked",
-        "Holiday": "Send on Holiday",
-        "Working": "Send back to Work"
-    },
-    execute: async(subid, choice, type) => {
+    explanation: `This function will turn the holiday for workers on and off. If 'Base' is set to holiday, the subdivision will go on holiday. If set to working, holiday will be off. Exceptions are made for certain buildings: if 'Stock' is set to 'Holiday' the subdivision will go on holiday if there are no goods of one of the items in stock (Production), and this overrides the 'Working' setting of 'Base'. Same thing for laboratories: 'Research' to 'Holiday' will force a laboratory to holiday if no research is being done or if no subdivision is attached.	`,
+    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "shop", "lab", "warehouse"],
+    options: [
+        new Option({
+            id: "base",
+            name: "Base",
+            type: "select",
+            start: "working",
+            values: [
+                new Value({ id: "holiday", name: "Holiday" }),
+                new Value({ id: "working", name: "Working" })
+            ]
+        }),        
+        new Option({
+            id: "stock",
+            name: "Stock",
+            type: "select",
+            start: "ignore",
+            values: [
+                new Value({ id: "holiday", name: "Holiday" }),
+                new Value({ id: "ignore", name: "Ignore" })
+            ]
+        }),
+        new Option({
+            id: "research",
+            name: "Research",
+            type: "select",
+            start: "ignore",
+            values: [
+                new Value({ id: "holiday", name: "Holiday" }),
+                new Value({ id: "ignore", name: "Ignore" })
+            ]
+        })
+    ],
+    predecessors: ["ProdSupply", "Research"],
+    stats: [
+        new Stat({ id: "holiday", display: "Send on Holiday", format: "Plain" }),
+        new Stat({ id: "working", display: "Returned to Work", format: "Plain" })
+    ],
+    precleaner: [],
+    execute: async function(domain, realm, companyid, subid, type, choice) {
         
         //Not finished: need Retail And Service supply
 
-        let isOnHoliday = Tools.once(async () => {
-            let salaryList = await Scrapper.get(`/${Vital.getRealm()}/main/company/view/${Vital.getCompanyId()}/unit_list/employee/salary`, VirtoMap.SalaryList);
-            let index = salaryList.subid.indexOf(subid);
-            return salaryList.onHoliday[index];
-        });
+        const isOnHoliday = async () => {
+            const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid)
+            const index = employeeList.subid.indexOf(subid)
+            return employeeList.onHoliday[index]
+        }
 
-        let isEmptyStock = async () => {
+        let prodSupplyToHoliday = async () => {
 
-            let supplyUrl = `/${Vital.getRealm()}/main/unit/view/${subid}/supply`;
-            Scrapper.clean(supplyUrl);
+            const supply = await Page.get("ProdSupply").load(domain, realm, subid)
+            const lowestAmount = Math.min(...supply.goodsBased.quantity)
 
-            let subTypesProduction = ["workshop", "animalfarm", "apiary"];
-            let subTypesRetail = ["shop"];
-            let subTypesService = [];
-
-            if(subTypesProduction.includes(type)){
-                let supply = await Scrapper.get(supplyUrl, VirtoMap.ProductionSupply);
-                return false;					
-            }
-            else if(subTypesRetail.includes(type)){
-                return false;
-            }
-            else if (subTypesService.includes(type)){
-                return false;
-            }
+            if (lowestAmount === 0) return true
+            else return false
 
         }
 
-        let isNoResearch = async () => {
+        const researchToHoliday = async () => {
 
-            let labUrl = `/${Vital.getRealm()}/main/unit/view/${subid}/investigation`;
-            Scrapper.clean(labUrl); //To see what Research has set
-            let lab = await Scrapper.get(labUrl, VirtoMap.Research);
+            const lab = await Page.get("Laboratory").load(domain, realm, subid)
+            return lab.isFree || lab.hasAbsentFactory
 
-            return lab.isFree || lab.isAbsent;
         }
 
-        let goingOnHoliday = Tools.once(async () => {
-            let subTypesWithStock = ["workshop", "animalfarm", "apiary", "shop"];
+        const goingOnHoliday = async () => {
+
+            let toHoliday = false
+            if (choice.base === "holiday") {
+                toHoliday = true
+            }
+
+            if (Module.get("Research").subTypes.includes(type)) {
+                toHoliday = toHoliday || await researchToHoliday()
+            } 
+            else if (Module.get("ProdSupply").subTypes.includes(type)) {
+                toHoliday = toHoliday || await prodSupplyToHoliday()
+            }
             
-            return  choice["Base"] === "Holiday" ||
-                    choice["Stock"] === "Holiday" && subTypesWithStock.includes(type) && await isEmptyStock() ||
-                    choice["Research"] === "Holiday" && type === "lab" && await isNoResearch();
-        });
-        
-        let call = {
-            "Checked": true,
-            "Holiday": false,
-            "Working": false
+            return toHoliday
         }
-
+        
         if(!await isOnHoliday() && await goingOnHoliday()){
-            await Ajax.get(`/${Vital.getRealm()}/main/unit/view/${subid}/holiday_set`);
-            call["Holiday"] = true;
+            await Page.get("HolidaySet").load(domain, realm, subid)
+            Results.addStats(this.id, "holiday", 1)
         } 
         else if(await isOnHoliday() && !await goingOnHoliday()){			
-            await Ajax.get(`/${Vital.getRealm()}/main/unit/view/${subid}/holiday_unset`, "none");
-            call["Working"] = true;
+            await Page.get("HolidayUnset").load(domain, realm, subid)
+            Results.addStats(this.id, "working", 1)
         }
         
-        return call;
     }
-}
+}))
