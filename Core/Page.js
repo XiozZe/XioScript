@@ -86,35 +86,48 @@ Page.prototype.send = async function(data, ...urlArguments){
 
     //Try because it is very possible that this data that is send is not meant to give anything back
     try{
-        const j = await page.json()
-        console.log(url, j)
-        return j
+        if(this.scrape){
+            //Normal
+            const t = await page.text()
+            const p = new DOMParser()
+            const d = p.parseFromString(t, "text/html")
+            const s = this.scrape(d)
+            console.log(url, s)
+            return s
+        
+        } else {
+            //JSON
+            const j = await page.json()
+            console.log(url, j)
+            return j
+        }
+        
     }
     catch(e){}
 }
 
 Page.prototype.fetchDocument = async function(...urlArguments){
 
-    const url = this.getUrl(...urlArguments);
-    const page = await this.fetch(url);
-    const docText = await page.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(docText, "text/html");
+    const url = this.getUrl(...urlArguments)
+    const page = await this.fetch(url)
+    const docText = await page.text()
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(docText, "text/html")
 
-    return await this.applySettings(doc, ...urlArguments);
+    return await this.applySettings(doc, ...urlArguments)
 
 }
 
 Page.prototype.scrapeHTMLdocument = function(doc, url){
 
-    const scraped = Tools.try(() => this.scrape(doc));
+    const scraped = Tools.try(() => this.scrape(doc))
 
     if(scraped === null){
-        Results.errorLog(`An error occured while scraping the page of type ${this.id}`);
-        return {};
+        Results.errorLog(`An error occured while scraping the page of type ${this.id}`)
+        return {}
     }
 
-    return scraped;
+    return scraped
 
 }
 
