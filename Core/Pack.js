@@ -3,10 +3,10 @@
  */
 function Pack(subdivision, choices){
 
-    console.assert(subdivision instanceof Subdivision, `Tried to create a Pack with subdivision ${subdivision} that is not a Subdivision`);
+    console.assert(subdivision instanceof Subdivision, `Tried to create a Pack with subdivision ${subdivision} that is not a Subdivision`)
 
-    this.subdivision = subdivision;
-    this.choices = choices;    
+    this.subdivision = subdivision
+    this.choices = choices
 }
 
 /**
@@ -14,41 +14,46 @@ function Pack(subdivision, choices){
  */
 Pack.createPackage = async (selections) => {
 
-    const toggle = await Storage.getToggle();
-    const package = {};
+    const toggle = await Storage.getToggle()
+    const package = {}
 
     for(const selection of selections){
 
         //Does not fulfill selection criteria
         if(!toggle["Choices"].includes(selection.name))
-            continue;
+            continue
 
         for(const choice of selection.choices){
 
-            const moduleId = choice.id;
+            const moduleId = choice.id
             //Does not fulfill module criteria, or is not active
             if(!toggle["Modules"].includes(moduleId) || !choice.active){
-                continue;
+                continue
             }                
 
             for(const subdivision of selection.subdivisions){
 
-                const hasRealm = toggle["Realms"].includes(subdivision.realm);
-                //We disabled the Subdivision selection;
-                const hasSubdivisionID = toggle["Subdivisions"].includes(subdivision.id) || true;
-                const hasType = toggle["Types"].includes(subdivision.type);
+                const hasRealm = toggle["Realms"].includes(subdivision.realm)
+                //We disabled the Subdivision selection
+                const hasSubdivisionID = toggle["Subdivisions"].includes(subdivision.id) || true
+                const hasType = toggle["Types"].includes(subdivision.type)
 
-                if(hasRealm && hasSubdivisionID && hasType){
+                const module = Module.get(moduleId)
+                const correctType = module.subTypes.includes(subdivision.type)
 
-                    const pack = new Pack(subdivision, choice.picks);
-                    package[moduleId] = package[moduleId] || [];
-                    package[moduleId].push(pack);
+                console.log(selection, toggle)
+
+                if(hasRealm && hasSubdivisionID && hasType && correctType){
+
+                    const pack = new Pack(subdivision, choice.picks)
+                    package[moduleId] = package[moduleId] || []
+                    package[moduleId].push(pack)
                 }
             }
         }
     }
 
-    return package;
+    return package
 };
 
 
@@ -56,21 +61,21 @@ Pack.createPackage = async (selections) => {
  * Find all realms that are in the package
  */
 Pack.getRealms = (package) => {
-    const realms = new Set();
+    const realms = new Set()
     for(const moduleId in package){
-        const packs = package[moduleId];
+        const packs = package[moduleId]
         for(const pack of packs){
-            realms.add(pack.subdivision.realm);      
+            realms.add(pack.subdivision.realm)     
         }      
     }
-    return Array.from(realms);
+    return Array.from(realms)
 }
 
 /**
  * Return all module ID's of the package
  */
 Pack.getModuleIds = (package) => {
-    return Object.keys(package);
+    return Object.keys(package)
 }
 
 

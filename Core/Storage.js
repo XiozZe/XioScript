@@ -8,20 +8,20 @@ const Storage = (() => {
 
 	const getSelections = async () => {
     
-        const storageObject = await browser.storage.local.get(storageSelectionName);
-        const selections = storageObject[storageSelectionName] || [];
+        const storageObject = await browser.storage.local.get(storageSelectionName)
+        const selections = storageObject[storageSelectionName] || []
         
         //The object properties are lost in the local storage so let's put them back in.
         //Also put the selection up to date in case of new XS versions.
-        const prototypedSelections = [];
+        const prototypedSelections = []
         for(const selection of selections){            
-            const newSelection = Selection.createFromObject(selection);
-            newSelection.cleanUp();
-            prototypedSelections.push(newSelection);
+            const newSelection = Selection.createFromObject(selection)
+            newSelection.cleanUp()
+            prototypedSelections.push(newSelection)
         }
 
-        await saveSelections(prototypedSelections);
-        return prototypedSelections;
+        await saveSelections(prototypedSelections)
+        return prototypedSelections
 
 	}
 
@@ -33,17 +33,17 @@ const Storage = (() => {
 
     const getToggle = async () => {
     
-        const storageObject = await browser.storage.local.get(storageToggleName);
-        const toggle = storageObject[storageToggleName] || {};
+        const storageObject = await browser.storage.local.get(storageToggleName)
+        const toggle = storageObject[storageToggleName] || {}
 
         //Initialize. Sort of hardcoded but whatever.
-        const mustBeInToggle = ["Choices", "Modules", "Realms", "Subdivisions", "Types"];
+        const mustBeInToggle = ["Choices", "Modules", "Realms", "Subdivisions", "Types"]
         for(const key of mustBeInToggle){
-            toggle[key] = toggle[key] || [];
+            toggle[key] = toggle[key] || []
         }
 
-        await saveToggle(toggle);
-        return toggle;
+        await saveToggle(toggle)
+        return toggle
 
     }
     
@@ -55,29 +55,29 @@ const Storage = (() => {
 
     const getExtensions = async () => {
     
-        const storageObject = await browser.storage.local.get(storageExtensionName);
-        const choices = storageObject[storageExtensionName] || [];
+        const storageObject = await browser.storage.local.get(storageExtensionName)
+        const choices = storageObject[storageExtensionName] || []
 
         //Saving object in storage means there prototype is gone. Set it back.
-        const prototypedChoices = [];
+        const prototypedChoices = []
         for(const choice of choices){
-            const prototypedChoice = Choice.createFromObject(choice, "Extension");
+            const prototypedChoice = Choice.createFromObject(choice, "Extension")
             if(prototypedChoice.hasRecognizedId()){
-                prototypedChoice.cleanPicks();
-                prototypedChoices.push(prototypedChoice);
+                prototypedChoice.cleanPicks()
+                prototypedChoices.push(prototypedChoice)
             }
         }
 
         //Add extra choices for new extensions.
         for(const extension of Extension.getAll()){
             if(prototypedChoices.every(choice => choice.id !== extension.id)){
-                const newChoice = new Choice(extension.id, "Extension");
-                prototypedChoices.push(newChoice);
+                const newChoice = new Choice(extension.id, "Extension")
+                prototypedChoices.push(newChoice)
             }
         }
 
-        await saveExtensions(prototypedChoices);
-        return prototypedChoices;
+        await saveExtensions(prototypedChoices)
+        return prototypedChoices
 
     }
     
@@ -92,10 +92,10 @@ const Storage = (() => {
      */
     const getValue = async (extensionId, keyName) => {
     
-        const storageObject = await browser.storage.local.get(storageValueName);
-        const extensionValues = storageObject[storageValueName] || {};
-        extensionValues[extensionId] = extensionValues[extensionId] || {};
-        return extensionValues[extensionId][keyName];        
+        const storageObject = await browser.storage.local.get(storageValueName)
+        const extensionValues = storageObject[storageValueName] || {}
+        extensionValues[extensionId] = extensionValues[extensionId] || {}
+        return extensionValues[extensionId][keyName]
     }
     
     /**
@@ -103,16 +103,16 @@ const Storage = (() => {
      */
     const saveValue = async (extensionId, keyName, value) => {
         
-        const storageObject = await browser.storage.local.get(storageValueName);
-        const extensionValues = storageObject[storageValueName] || {};
-        extensionValues[extensionId] = extensionValues[extensionId] || {};
-        extensionValues[extensionId][keyName] = value;
+        const storageObject = await browser.storage.local.get(storageValueName)
+        const extensionValues = storageObject[storageValueName] || {}
+        extensionValues[extensionId] = extensionValues[extensionId] || {}
+        extensionValues[extensionId][keyName] = value
 
 		await browser.storage.local.set({
 			[storageValueName] : extensionValues
 		});
     }   
 
-	return {getSelections, saveSelections, getToggle, saveToggle, getExtensions, saveExtensions, getValue, saveValue};
+	return {getSelections, saveSelections, getToggle, saveToggle, getExtensions, saveExtensions, getValue, saveValue}
 
 })();
