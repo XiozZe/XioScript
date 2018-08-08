@@ -3,7 +3,7 @@ Module.add( new Module({
     id: "Holiday",
     name: "Holiday",
     explanation: `This function will turn the holiday for workers on and off. If 'Base' is set to holiday, the subdivision will go on holiday. If set to working, holiday will be off. Exceptions are made for certain buildings: if 'Stock' is set to 'Holiday' the subdivision will go on holiday if there are no goods of one of the items in stock (Production), and this overrides the 'Working' setting of 'Base'. Same thing for laboratories: 'Research' to 'Holiday' will force a laboratory to holiday if no research is being done or if no subdivision is attached.	`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "shop", "lab", "warehouse"],
+    subTypes: ['animalfarm', 'apiary', 'coal_power', 'cellular', 'farm', 'fishingbase', 'fitness', 'fuel', 'hairdressing', 'incinerator_power', 'kindergarten', 'lab', 'laundry', 'medicine', 'mill', 'mine', 'network', 'office', 'oil_power', 'oilpump', 'orchard', 'repair', 'restaurant', 'sawmill', 'shop', 'sun_power', 'workshop'],
     options: [
         new Option({
             id: "base",

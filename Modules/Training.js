@@ -3,7 +3,7 @@ Module.add( new Module({
     id: "Training",
     name: "Training",
     explanation: `Train your employees. First option will determine how many weeks the training should be. The second option 'Threshold' is a multiplier of the city average the current salary should be to be send to training. The default is 0.9, meaning that if the salary is less than 90% of city average the employees will not be send to training. The third option 'Skill Gain' sets a minimum amount of skill to be gained after the training is complete. With a default of 0.05 it means that the subdivision will only be set on training if after the complete training, the skill will increase with at least 0.05. The last option, 'Payback', is the maximum number of days the training should be 'payed back'. It will calculate the reduction of salary if the training is complete, and compares that to the training costs. A number of 365 means that training will only take place if after 365 updates, the total saved salary higher is than the training costs. If the Payback value is set to zero, the script will ignore this restriction.`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "shop"],
+    subTypes: ['animalfarm', 'apiary', 'coal_power', 'cellular', 'farm', 'fishingbase', 'fitness', 'fuel', 'hairdressing', 'incinerator_power', 'kindergarten', 'lab', 'laundry', 'medicine', 'mill', 'mine', 'network', 'office', 'oil_power', 'oilpump', 'orchard', 'repair', 'restaurant', 'sawmill', 'shop', 'sun_power', 'workshop'],
     predecessors: ["Salary"],
     options: [         
         new Option({

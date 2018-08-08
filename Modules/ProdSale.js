@@ -3,7 +3,7 @@ Module.add( new Module({
     id: "ProdSale",
     name: "Production Sale",
     explanation: `Sets the prices and policies of the sales page. The price option will let you pick a price formula: primecost (plus one penny), 1x or 30x the Indicative Price of that good, or a more difficult formula: CTIE = prime cost * (1 + CTIE rate), profit tax = prime cost * (1 + CTIE rate) * (1 + region's profit tax rate). You can also pick "Input", in that case the price will be set to the value you input in the Input textbox. If you don't pick Input the value in the Input textbox will be ignored. Note that whatever price you set, the script will not let you put a price higher than 30 times the Indicative Price. Origin will determine which prime cost to use: the Stock prime cost or the Output prime cost (makes no difference for warehouses). To Zero will determine what the script will do when it is about to set a value to zero: set it to zero, or keep the old price. The policy option will set the policy to the selected. If the target is all goods, that means all goods will be set to the selected policy. If the target is Output Only, only goods that have output last turn are set to the selected policy, and all other goods will be set to No Sale.`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase", "warehouse"],
+    subTypes: ['animalfarm', 'apiary', 'farm', 'fishingbase', 'mill', 'mine', 'oilpump', 'orchard', 'sawmill', 'warehouse', 'workshop'],
     predecessors: [],
     options: [         
         new Option({

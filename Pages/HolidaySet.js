@@ -5,6 +5,10 @@ Page.add(new Page({
 
     getUrl: (domain, realm, subid) => {
         return `${domain}/${realm}/main/unit/view/${subid}/holiday_set`
-    }
+    },
+
+    scrape: (doc) => ({
+        
+    })
 
 }))

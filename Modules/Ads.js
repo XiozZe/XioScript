@@ -3,7 +3,7 @@ Module.add( new Module({
     id: "Ads",
     name: "Advertisements",
     explanation: `Set a subdivision's advertisement budget according to 'Budget' for the media 'Medium'. A 'Minimum' budget will set the budget to the minimum required for the medium. Required will set the budget to match the required number of contacts to keep the current reputation for TV, as given on the ads page. Population will set the budget to make sure the number of contacts is the population times the input given in the Population Input. For any other budget that Population Input is ignored. If this population budget exceeds Maximum it will be set to Maximum.  Maximum budget will set the maximum budget allowed by the top manager to keep 100% efficiency.`,
-    subTypes: ["shop"],
+    subTypes: ["shop", "fitness", "hairdressing", "laundry", "restaurant", "medicine", "fuel", "repair", "kindergarten", "cellular"],
     predecessors: [],
     options: [
         new Option({

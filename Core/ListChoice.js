@@ -195,31 +195,30 @@ ListChoice.prototype.manageChoices = async function(){
     const tdMouseOver = async element => {
 
         if(holdSelectionName === null)
-            return;
+            return
 
-        const td = element.target;       
-        console.log(td);
-        const currentSelectionName = td.innerText;        
-        const selections = await Storage.getSelections();
+        const td = element.target
+        const currentSelectionName = td.innerText      
+        const selections = await Storage.getSelections()
 
         //Remove the subdivision from the current selection
         if(currentSelectionName !== "" && selections.some(selection => selection.name === currentSelectionName)){
-            const currentSelection = selections.find(selection => selection.name === currentSelectionName);
+            const currentSelection = selections.find(selection => selection.name === currentSelectionName)
             const currentIndex = currentSelection.subdivisions.findIndex(subd => {
-                return subd.id === td.subid && subd.realm == Vital.getRealm();
+                return subd.id === td.subid && subd.realm == Vital.getRealm()
             });
-            currentSelection.subdivisions.splice(currentIndex, 1);
+            currentSelection.subdivisions.splice(currentIndex, 1)
         }
         
         //Adds the subdivision to the new selection
         if(holdSelectionName != ""){
-            const nextSelection = selections.find(selection => selection.name === holdSelectionName);
-            const subdivision = new Subdivision(td.subid, Vital.getRealm(), td.subType);
-            nextSelection.subdivisions.push(subdivision);
+            const nextSelection = selections.find(selection => selection.name === holdSelectionName)
+            const subdivision = new Subdivision(td.subid, Vital.getRealm(), td.subType)
+            nextSelection.subdivisions.push(subdivision)
         }
 
-        await Storage.saveSelections(selections);
-        await this.fillChoices();
+        await Storage.saveSelections(selections)
+        await this.fillChoices()
     }
 
     const docMouseUp = async () => {

@@ -41,8 +41,6 @@ Pack.createPackage = async (selections) => {
                 const module = Module.get(moduleId)
                 const correctType = module.subTypes.includes(subdivision.type)
 
-                console.log(selection, toggle)
-
                 if(hasRealm && hasSubdivisionID && hasType && correctType){
 
                     const pack = new Pack(subdivision, choice.picks)

@@ -3,7 +3,7 @@ Module.add( new Module({
     id: "Technology",
     name: "Technology",
     explanation: `Set the Technology level of a subdivision. Only technology research by your company will be introduced, meaning that the purchase costs are always zero. The technology will not be higher than allowed under the top-manager. The option "Bonus" will determine if the bonus qualification will be taken in account when the maximum technology level is calculated.`,
-    subTypes: ["workshop", "mine", "mill", "orchard", "animalfarm", "sawmill", "farm", "fishingbase"],
+    subTypes: ['animalfarm', 'apiary', 'coal_power', 'farm', 'fishingbase', 'incinerator_power', 'mill', 'mine', 'oil_power', 'oilpump', 'orchard', 'sawmill', 'sun_power', 'workshop'],
     predecessors: [],
     options: [
         new Option({

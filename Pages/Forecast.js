@@ -9,8 +9,6 @@ Page.add(new Page({
 
 }))
 
-
-
 /* 
     If you send this data:
     {
