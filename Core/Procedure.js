@@ -61,8 +61,9 @@ Procedure.createEditChoice = (procedure, clickOnOff, changeSelect) => {
 
     if(procedure instanceof Module){
         const procedureSubTypes = procedureDiv.createChild("div");
-        procedureSubTypes.classList.add("procedureSubTypes");               
-        procedureSubTypes.innerText = procedure.subTypes.map(subType => SubTypes.getName(subType)).join(", ");
+        procedureSubTypes.classList.add("procedureSubTypes");
+        const subTypes = procedure.subTypes.map(subType => SubTypes.getName(subType))
+        procedureSubTypes.innerText = subTypes.sort().join(", ");
     }
 
     const procedureExplanation = procedureDiv.createChild("p");
