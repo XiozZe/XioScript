@@ -54,6 +54,8 @@ Module.add( new Module({
 
         let prodSupplyToHoliday = async () => {
 
+            if (choice.stock === "ignore") return false
+
             const supply = await Page.get("ProdSupply").load(domain, realm, subid)
             const lowestAmount = Math.min(...supply.goodsBased.quantity)
 
@@ -63,6 +65,8 @@ Module.add( new Module({
         }
 
         const researchToHoliday = async () => {
+
+            if (choice.research === "ignore") return false
 
             const lab = await Page.get("Laboratory").load(domain, realm, subid)
             return lab.isFree || lab.hasAbsentFactory
