@@ -101,6 +101,7 @@
                 "/Pages/ProdSale.js",
                 "/Pages/ProdSupply.js",
                 "/Pages/Products.js",
+                "/Pages/ProductMarket.js",
                 "/Pages/ProjectCreate.js",
                 "/Pages/Qualification.js",
                 "/Pages/RegionOverview.js",
