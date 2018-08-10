@@ -50,21 +50,21 @@ Module.add( new Module({
         
         const getDuration = () => {
             switch(choice.duration){
-                case "one": return 1;
-                case "two": return 2;
-                case "three": return 3;
-                case "four": return 4;
-                default: console.error("Training duration error");
+                case "one": return 1
+                case "two": return 2
+                case "three": return 3
+                case "four": return 4
+                default: console.error("Training duration error")
             }
         }
 
-        const checkThreshold = (employeeList, subIndex) => {
+        const checkThreshold = (employeeInfo) => {
             //Check if the salary is high enough compared to city average
-            const thresholdMultiplier = choice.threshold;
-            if (employeeList.salaryWorking[subIndex] > employeeList.salaryCity[subIndex] * thresholdMultiplier)
-                return true;
+            const thresholdMultiplier = choice.threshold
+            if (employeeInfo.salaryWorking > employeeInfo.salaryCity * thresholdMultiplier)
+                return true
             else
-                return false;
+                return false
 
         }
 
@@ -74,97 +74,98 @@ Module.add( new Module({
                 employees: employeesWorking,
                 weeks: duration
             }
-            const f = await Page.get("TrainingLevel").send(data, domain, realm, subid);
-            return f.employees_level;
+            const f = await Page.get("TrainingLevel").send(data, domain, realm, subid)
+            return f.employees_level
 
         }
 
-        const checkSkillGain = async (employeeList, subIndex, duration) => {
+        const checkSkillGain = async (employeeInfo, duration) => {
 
-            const skillGain = choice.skillGain;
+            const skillGain = choice.skillGain
 
             //Setting it to zero means off
             if(!skillGain)
-                return true;
+                return true
 
-            const e = employeeList.employeesWorking[subIndex];            
-            const newSkill = await getNewSkill(e, duration);
-            const oldSkill = employeeList.skillWorking[subIndex];
+            const e = employeeInfo.employeesWorking
+            const newSkill = await getNewSkill(e, duration)
+            const oldSkill = employeeInfo.skillWorking
 
             if(newSkill - oldSkill > skillGain)
-                return true;
+                return true
             else 
-                return false;
+                return false
 
         }
 
-        const checkPayback = async (employeeList, subIndex, duration) => {
+        const checkPayback = async (employeeInfo, duration) => {
 
-            const paybackPeriod = choice.payback;
+            const paybackPeriod = choice.payback
             if (!paybackPeriod)
-                return true;
+                return true
 
-            const workingEmpl = employeeList.employeesWorking[subIndex];
-            const p = getNewSkill(workingEmpl, duration);
-            const q = Page.get("TrainingWindow").load(domain, realm, subid);
-            const newSkill = await p;
-            const trainingWindow = await q;
+            const workingEmpl = employeeInfo.employeesWorking
+            const p = getNewSkill(workingEmpl, duration)
+            const q = Page.get("TrainingWindow").load(domain, realm, subid)
+            const newSkill = await p
+            const trainingWindow = await q
 
-            const citySkill = trainingWindow.skillCity;
-            const currentSalary = employeeList.salaryWorking[subIndex];
-            const citySalary = employeeList.salaryCity[subIndex];
-            const currentSkill = employeeList.skillWorking[subIndex];
+            const citySkill = trainingWindow.skillCity
+            const currentSalary = employeeInfo.salaryWorking
+            const citySalary = employeeInfo.salaryCity
+            const currentSkill = employeeInfo.skillWorking
             //Calculate the salary as if the training completed, and we reduce the salary to match the current skill
-            const improvedSalary = Formulas.salary( currentSalary, citySalary, newSkill, citySkill, currentSkill );
-            const gainedSalary = currentSalary - improvedSalary;
+            const improvedSalary = Formulas.salary( currentSalary, citySalary, newSkill, citySkill, currentSkill )
+            const gainedSalary = currentSalary - improvedSalary
 
-            const totalTrainingCosts = trainingWindow.trainingCosts * duration / workingEmpl;
-            const totalSalaryGained = gainedSalary * choice.payback;
+            const totalTrainingCosts = trainingWindow.trainingCosts * duration / workingEmpl
+            const totalSalaryGained = gainedSalary * choice.payback
 
             if(totalSalaryGained > totalTrainingCosts)
-                return true;
+                return true
             else 
                 return false
         }
 
-        const determineTraining = async (employeeList, subIndex, duration) => {
+        const determineTraining = async (employeeInfo, duration) => {
 
             //Already on training does not have to be send to training
-            if(employeeList.onTraining[subIndex])
-                return false;
+            if(employeeInfo.onTraining || !employeeInfo.employeesWorking)
+                return false
 
-            const satisfiesThreshold = checkThreshold(employeeList, subIndex);
-            const satisfiesSkillGain = await checkSkillGain(employeeList, subIndex, duration);
-            const satisfiesPayback = await checkPayback(employeeList, subIndex, duration);
+            const satisfiesThreshold = checkThreshold(employeeInfo)
+            const satisfiesSkillGain = await checkSkillGain(employeeInfo, duration)
+            const satisfiesPayback = await checkPayback(employeeInfo, duration)
 
             if(satisfiesThreshold && satisfiesSkillGain && satisfiesPayback)
-                return true;
+                return true
             else
-                return false;
+                return false
         }
 
         const updateStats = (duration, numEmployees) => {
-            Results.addStats(this.id, "trainings", 1);
-            Results.addStats(this.id, "employees", numEmployees);
-            Results.addStats(this.id, "weeks", numEmployees * duration);
+            Results.addStats(this.id, "trainings", 1)
+            Results.addStats(this.id, "employees", numEmployees)
+            Results.addStats(this.id, "weeks", numEmployees * duration)
         }
         
-        const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid);
-        const subIndex = employeeList.subid.indexOf(subid);
-        const duration = getDuration();
-        const goesTraining = await determineTraining(employeeList, subIndex, duration);
+        const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid)
+        const r = ListUtil.restructById("subid", employeeList)
+        const employeeInfo = r[subid]
+        const duration = getDuration()
+        const goesTraining = await determineTraining(employeeInfo, duration)
 
         if(goesTraining){
 
-            const employees = employeeList.employeesWorking[subIndex];
+            const employees = employeeInfo.employeesWorking
             const data = {
                 "unitEmployeesData[time_count]": duration,
                 "unitEmployeesData[employees]": employees
             }
 
-            await Page.get("TrainingWindow").send(data, domain, realm, subid);
-            updateStats(duration, employees);
+            await Page.get("TrainingWindow").send(data, domain, realm, subid)
+            updateStats(duration, employees)
         }
 
     }
-}));
+}))

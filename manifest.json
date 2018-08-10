@@ -76,6 +76,7 @@
                 "/Modules/ProdSupply.js",
                 "/Modules/Technology.js",
                 "/Modules/Research.js",
+                "/Modules/Employee.js",
                 "/Modules/Equipment.js",
                 "/Modules/Holiday.js",
                 "/Modules/Salary.js",

@@ -23,18 +23,18 @@ Module.add( new Module({
             type: "textbox",
             format: "Float",
             start: 5000
-        })
+        }),
     ],
     stats: [
         new Stat({ id: "salary", display: "Salaries Set", format: "Plain"}),
         new Stat({ id: "raise", display: "Loan Raises", format: "Plain"}),
-        new Stat({ id: "cut", display: "Loan Cuts", format: "Plain"}),
+        new Stat({ id: "cut", display: "Loan Cuts", format: "Plain"})
     ],
     precleaner: ["EmployeeList"],
     execute: async function(domain, realm, companyid, subid, type, choice){
 
-        const determineSalaryValue = async (employeeList, subIndex) => {
-            const minimumSalary = (employeeList.salaryCity[subIndex]+0.005) * 0.8
+        const determineSalaryValue = async (employeeInfo) => {
+            const minimumSalary = (employeeInfo.salaryCity+0.005) * 0.8
             switch(choice.salary){
                 case "minimum": 
                     return minimumSalary
@@ -42,14 +42,14 @@ Module.add( new Module({
                     const cityOverview = await Page.get("CityOverview").load(domain, realm)
                     const {cityId} = await GeoUtil.getGeoIdFromSubid(domain, realm, companyid, subid)
                     const citySkill = parseFloat(cityOverview[cityId].education)
-                    const sw = employeeList.salaryWorking[subIndex]
-                    const sc = employeeList.salaryCity[subIndex]
-                    const kw = employeeList.skillWorking[subIndex]
-                    const kr = employeeList.skillRequired[subIndex]
+                    const sw = employeeInfo.salaryWorking
+                    const sc = employeeInfo.salaryCity
+                    const kw = employeeInfo.skillWorking
+                    const kr = employeeInfo.skillRequired
                     const requiredSalary = Formulas.salary( sw, sc, kw, citySkill, kr )
                     return Math.max(minimumSalary, requiredSalary)
                 case "city":
-                    return employeeList.salaryCity[subIndex]
+                    return employeeInfo.salaryCity
                 default:
                     console.error("The salary module does not recognize this choice for salary: "+choice.salary) 
             }
@@ -59,8 +59,13 @@ Module.add( new Module({
             return choice.maximum
         }
 
-        const determineSalary = async (employeeList, subIndex) => {
-            let salary = await determineSalaryValue(employeeList, subIndex)
+        const determineSalary = async (employeeInfo) => {
+
+            if (!employeeInfo.employeesWorking) {
+                return 0
+            }
+
+            let salary = await determineSalaryValue(employeeInfo)
             const maxSalary = determineMaximumSalary()
             salary = Math.min(salary, maxSalary)
             salary = Math.ceil(salary*100)/100
@@ -68,11 +73,15 @@ Module.add( new Module({
         }
 
         const updateStats = (newSalary, oldSalary) => {
-            Results.addStats(this.id, "salary", 1)
-            if(newSalary > oldSalary)
+           
+            if (newSalary > oldSalary) {
+                Results.addStats(this.id, "salary", 1)
                 Results.addStats(this.id, "raise", 1)
-            else
+            }
+            else if (newSalary < oldSalary) {
+                Results.addStats(this.id, "salary", 1)
                 Results.addStats(this.id, "cut", 1)
+            }
         }
 
         const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid)
@@ -80,19 +89,21 @@ Module.add( new Module({
         //For the training module
         employeeList.salaryModule = true
 
-        const subIndex = employeeList.subid.indexOf(subid)
-        const oldSalary = employeeList.salaryWorking[subIndex]
-        const newSalary = await determineSalary(employeeList, subIndex)
+        const r = ListUtil.restructById("subid", employeeList)
+        const employeeInfo = r[subid]
+        const oldSalary = employeeInfo.salaryWorking
+        const newSalary = await determineSalary(employeeInfo)
 
-        if (newSalary !== oldSalary){
+        if (newSalary !== oldSalary) {
+
             const data = {
-                "unitEmployeesData[quantity]": employeeList.employeesWorking[subIndex],
+                "unitEmployeesData[quantity]": employeeInfo.employeesWorking,
                 "unitEmployeesData[salary]": newSalary
             }
+
             await Page.get("SalaryWindow").send(data, domain, realm, subid)
             updateStats(newSalary, oldSalary)
         }
-
 
     }
 }))
