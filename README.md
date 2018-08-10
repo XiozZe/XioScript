@@ -1,7 +1,6 @@
-### Welcome!
+# XioScript
 
-This github repository is dedicated to XioScript, a userscript for Virtonomics. I recommend to check out the wiki for installation and usage.
+A add-on that help doing your daily Virtonomics laundry.
+Link to FireFox add-on: (other browsers not supported)
 
-If you found a bug or have a suggestion to improve XioScript, leave an issue here on GitHub!
-
-And don't forget: Have fun!
+https://addons.mozilla.org/nl/firefox/addon/xioscript/

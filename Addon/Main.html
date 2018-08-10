@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="Main.css"/>
+    </head>
+
+    <body>
+
+        <div id="header">
+
+            <div id='title'>XioScript 14</div> 	
+            <div id="pages">
+
+                <button id=mainPageButton class=pageButton> Main </button>
+                <button id=executionPageButton class=pageButton> Execution </button>
+                <button id=togglePageButton class=pageButton> Toggle </button>
+                <button id=modulesPageButton class=pageButton> Modules </button>
+                <button id=extensionsPageButton class=pageButton> Extensions </button>
+
+            </div>	
+
+        </div>
+
+        <div id="contentLoader">Loading...</div>
+        <div id="mainContent" class="startInvisible">
+                
+            <div id=mainPage>
+
+                <div>Welcome to XioScript 14! Which is not a script but an add-on, but who cares. XioScript is made to make your VirtoLife easier. Having to buy new equipment every day? Boring! Let me take all the unnecesary daily stuff out of your hands and leave it to me. Then you can go and play the fun parts of the game only.</div>
+                <br>
+                <div>XioScript consists of two parts: Modules and Extensions. Modules are tasks that apply on subdivisions. Setting prices or supply for example, or updating salary and send to training. Extensions are things that show up on the Virtonomics pages, like top manager info. </div>
+                <br>
+                <div>Under the title you can see five buttons. The first one shows this page. The "Execution", "Toggle", and "Modules" are related to the Modules part and the "Extensions" are for the extensions. In "Execution" you can run the script. In "Toggle" you can determine which subdivisions to run with which modules. In "Modules" you can set the options of the execution and see the info on what different Modules do. In "Extensions" you can turn extensions on or off and set their settings.</div>            
+                <br>
+                <div>Here an example to get you working. We have a factory on the mary realm where the prices of the goods should be set to prime cost. For that we first go the page "Modules" and create a new Choice by pressing "Create". A new choice with name "yourChoice1" will be created, click on it to select it. Find the Production Sale module in the list below and toggle it on by clicking "Off". Set the selection box of "Price" to primecost and of "Policy" to "My Company", and use the defaults for all others. Next go to a subdivision list in Virtonomics, for example the main page, and click in the newly appeared Choice-column of your subdivion, and the choice "yourChoice1" appears. Then go to the toggle page and toggle on the settings (Realms) "mary", (Modules) "Production sale", (Choices) "yourChoice1" and (Types) "Factory". The last step is to go to the Execution page and press run. After the execution finishes (Status: All Done!), check your subdivision. The price is set to prime cost and the policy to "My Company".
+                </div>
+
+            </div>
+
+            <div id=executionPage>
+
+                <div class=explanation>
+
+                    <div>This page is for running the execution. Use the Toggle page to determine which subdivisions and which modules to run. The magic starts when you press the "Run"-button below. The first thing the script will do is check if you are logged in. Then it will load your company main page list to find it's subdivisions and check if we have not set any Choices for subdivisions that do not exist. After that the modules will run and the results will be visible.</div>
+                    <br>
+                    <div>The results come in three flavors: "Progress", "Stats" and "Pages". The "Progress" will show general statistics of the execution. The second page "Stats" consists of different lists of information. One is the table with the general information about the progress with Modules, for example "Production Sale (2/3)". The first number (2) is how many subdivisions are finished with that module and the second number (3) is how many the execution has started. Other lists display Module specific statistics. At last shows the "Pages" table which pages we have visited to search for information.</div>
+                    <br>
+                    <div>During the execution you can sit back, relax and enjoy the magic. There are some important things to say though about interfering with the execution. If you close your browser, close this tab or reload this tab the execution will abort and in general this does no harm. There are exceptions though, for example with equipment. Let's say the script first removes equipment and then buys equipment. If you reload the page on the exact moment the equipment is removed but not yet bought, your subdivision has lost equipment without realizing. Not harmful, but annoying.</div>
+                    <br>
+                    <div>Another issue is with subdivision lists. If the script must collect information from such a list, it will start at page one and cycle through the list. If during that time, you change page, for example from page 3 to page 11, the script does not know you did that and only scrape page 1-3 and 11 onward, leading to undefined results. Same thing applies to changing the number of subdivisions visible on a page. The reason the script cycles through the pages is because it is possible that a page with 10,000+ pages will not load, or load too slow resulting in an error. The number of subdivisions loaded each iteration is decided by your settings on Virtonomics.</div>
+                    <br>
+                    <div>Other than that there should be nothing to fear continuing browsing Virtonomics pages. Also, you can go to other pages in this script (Toggle page) without interrupting the execution. If you change the settings there, it will only change for the next execution. I wish you happy running!</div>
+
+                </div>
+
+                <button id=execButton> Run </button>
+
+                <div id=execShow>
+                    <div id=execProgress class=execTitle> 
+                        <div class=subTitle>Progress</div>                    
+                        <div>
+                            <div>Time: </div>
+                            <div id=execTime></div>
+                        </div>
+                        <div>
+                            <div>Total number of completed calls: </div>
+                            <div id=execCallsTotal></div>
+                        </div>
+                        <div>
+                            <div>Number of calls being processed: </div>
+                            <div id=execCallsProcess></div>
+                        </div>
+                        <div>
+                            <div>Last url called: </div>
+                            <div id=execUrl></div>
+                        </div> 
+                        <div>
+                            <div>Status: </div>
+                            <div id=execStatus></div>
+                        </div>                       
+                        <ul id=execLog></ul>
+                    </div>
+
+                    <div id=execStats class=execTitle> 
+                        <div class=subTitle>Stats</div>                    
+                        <ul id=execStatList></ul>
+                    </div>
+
+                    <div id=execPages class=execTitle> 
+                        <div class=subTitle>Pages</div>                                            
+                        <div id=execPageList></div>
+                    </div>
+                </div>               
+
+            </div>
+
+            <div id=togglePage>
+
+                <div class=explanation>
+
+                    <div>Here you can set what will run if you execute the script. If you do not see anything then maybe you have not set any Choices yet, so check the Modules page. If you only see the titles "Modules" and "Choices" it means you have not applied the choices to subdivisions in Virtonomics yet. To do that, go to a subdivision list, such as the main page of your company or the employees or equipment page. There appears to be a new column called "Choices". If you have created Choices, you can click inside the column to iterate through the Choices for that subdivision. Giving multiple subdivisions the same choice is easy: click and hold on a choice and drag your mouse within the Choices-column over the other subdivisions. This way you can also erase multiple choices. Having done that click the "Toggle"-button again to update the toggle page.</div>
+                    <br>
+                    <div>Clicking on one of the buttons below will toggle that part on and off. A grey button with white background means off, colored button is on. To quickly toggle every button on or off at the same time, click on a title. The subdivisions that are executed have to have all their properties toggled on. So to execute Salary module on an office of realm Xin with Choice yourChoice1 you need to toggle "Xin", "Salary", "yourChoice1" and "office" on, if one is missing it will not fire.</div>
+
+                </div>
+
+                <div id=generatedLists></div>
+
+            </div>
+
+            <div id=modulesPage>
+
+                <div class=explanation>
+
+                    <div>In order to manipulate the settings of certain subdivisions, we can apply Modules to them, such as the Production Sale module that can set the prices of your goods to prime cost. Every module has it's own set of individual preferences you can choose from. To make organizing easier, the choices you make for the different modules are saved under one name, called a Choice. All you need to do for the script to run is to let it know that a subdivision runs under a Choice.</div>
+                    <br>
+                    <div>The controls are as follows. The 'Create'-button will create a new Choice with a generic name. If you click on any of the choices in the list, you will selected that choice so that you are able to edit it below. 'Remove' will remove the choice that is currently selected. Under General you can edit the name and the color. The name should be unique, and the color can be anything, a name, a rgb code or a hex code. See <a href='https://www.w3schools.com/tags/ref_colornames.asp' target="_blank">here</a> for a reference of colors you can use. Below General, all modules are shown with their name and the subdivision types it can run on beneath the title. If the background is greyed out, it means that the Module is not activated: click on "Off" or the title to activate the module and change it's settings. A module that is not activated will not run, nor will a module ever run on the subdivision types that are not given below the title. All settings are saved immediately on change, but you can always refresh the page to be sure.</div>
+                    <br>
+                </div>
+
+                <div id=choices>
+                    <div class="listHeader">Choice</div>
+                    <ul></ul>
+                </div>
+
+                <button id=moduleCreate> Create </button>
+                <button id=moduleRemove> Remove </button>
+
+                <div id=editChoice>
+                    <div class="procedureDiv">
+                        <div class="subTitle">General</div>
+                        <div>
+                            <table>
+                                <tr>
+                                    <td>Name</td>
+                                    <td><input id=selectionName type=text></td>
+                                    <td id=selectionNameDuplicate></td>
+                                </tr>
+                                <tr>
+                                    <td>Color</td>
+                                    <td><input id=selectionColor type=text></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+
+            <div id=extensionsPage>
+
+                <div class=explanation>
+
+                    <div> Extensions are just like Modules but then they do not run when you press the execution button, but they run every time you visit a certain page. They are meant to enhance your experience by giving you extra information of pages or providing you with shortcuts or links. On this page you can decide with extensions to run and supply them with options. The instructions are exactly the same as on the Modules page.</div> 
+
+                </div>
+                
+                <div id=extensionChoice>
+
+                </div>
+
+            </div>
+            
+        </div>
+        
+
+        <script src="/Util/GeoUtil.js"></script> 
+        <script src="/Util/HTMLtools.js"></script>
+        <script src="/Util/ListUtil.js"></script> 
+        <script src="/Util/ManagerUtil.js"></script> 
+        <script src="/Util/ProductUtil.js"></script> 
+        <script src="/Util/SupplyUtil.js"></script>     
+        <script src="/Util/Tools.js"></script>   
+
+        <script src="/Core/Solver.js"></script>
+
+        <script src="/Core/SubTypes.js"></script>
+        <script src="/Core/Subdivision.js"></script>
+        <script src="/Core/Stat.js"></script>
+        <script src="/Core/Value.js"></script>
+        <script src="/Core/Option.js"></script>
+        <script src="/Core/Choice.js"></script>
+        <script src="/Core/Pack.js"></script>
+
+        <script src="/Core/Collection.js"></script>
+        <script src="/Core/Procedure.js"></script>
+        <script src="/Core/Module.js"></script>
+        <script src="/Core/Extension.js"></script>   
+        <script src="/Core/Page.js"></script>
+        <script src="/Core/Selection.js"></script>
+
+        <script src="/Core/Executor.js"></script>     
+        <script src="/Core/Formulas.js"></script>
+        <script src="/Core/Results.js"></script>
+        <script src="/Core/Storage.js"></script>
+
+        <script src="/Extensions/ForumChecker.js"></script>
+        <script src="/Extensions/PageSize.js"></script>
+        <!--<script src="/Extensions/TopManagerStats.js"></script>-->
+
+        <script src="/Modules/Ads.js"></script>
+        <script src="/Modules/ProdSale.js"></script>
+        <script src="/Modules/ProdSupply.js"></script>
+        <script src="/Modules/Technology.js"></script>
+        <script src="/Modules/Research.js"></script>
+        <script src="/Modules/Employee.js"></script>
+        <script src="/Modules/Equipment.js"></script>
+        <script src="/Modules/Holiday.js"></script>
+        <script src="/Modules/Salary.js"></script>
+        <script src="/Modules/Training.js"></script>
+
+        <script src="/Pages/Advertising.js"></script>
+        <script src="/Pages/CityOverview.js"></script>
+        <script src="/Pages/CTIErates.js"></script>
+        <script src="/Pages/CustomDuties.js"></script>
+        <script src="/Pages/EmployeeList.js"></script>
+        <script src="/Pages/EquipmentAjax.js"></script>
+        <script src="/Pages/EquipmentList.js"></script>
+        <script src="/Pages/EquipmentWindow.js"></script>
+        <script src="/Pages/ExperimentalUnit.js"></script>
+        <script src="/Pages/Fame.js"></script>
+        <script src="/Pages/Forecast.js"></script>
+        <script src="/Pages/ForumMain.js"></script>
+        <script src="/Pages/HolidaySet.js"></script>
+        <script src="/Pages/HolidayUnset.js"></script>
+        <script src="/Pages/HomePage.js"></script>
+        <script src="/Pages/Labor.js"></script>
+        <script src="/Pages/Laboratory.js"></script>
+        <script src="/Pages/ProdSale.js"></script>
+        <script src="/Pages/ProdSupply.js"></script>
+        <script src="/Pages/ProductMarket.js"></script>
+        <script src="/Pages/Products.js"></script>
+        <script src="/Pages/ProjectCreate.js"></script>
+        <script src="/Pages/Qualification.js"></script>
+        <script src="/Pages/RegionOverview.js"></script>
+        <script src="/Pages/SalaryWindow.js"></script>
+        <script src="/Pages/Supplier.js"></script>
+        <script src="/Pages/TechList.js"></script>
+        <script src="/Pages/TechPick.js"></script>
+        <script src="/Pages/Trademarks.js"></script>
+        <script src="/Pages/TrainingLevel.js"></script>
+        <script src="/Pages/TrainingWindow.js"></script>
+        <script src="/Pages/UnitList.js"></script>
+        <script src="/Pages/WorldMap.js"></script>
+        
+        <script src="Main.js"></script>
+        <script src="ExecutionPage.js"></script>
+        <script src="TogglePage.js"></script>
+        <script src="ModulePage.js"></script>
+        <script src="ExtensionPage.js"></script>
+    </body>
+
+</html>

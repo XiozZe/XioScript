@@ -1,0 +1,124 @@
+{
+
+    "manifest_version": 2,
+    "name": "XioScript",
+    "version": "14.0.6",
+    
+    "description": "XioScript is an add-on for Firefox that enhances the user experience and takes over the day-to-day tasks for the game Virtonomics. It has a very broad range of tools you can use to prevent your Virtonomics adventure from becoming stale. It is based on the old XioScript but then fresh and made in an add-on.",
+    
+    "icons": {
+        "48": "Icons/virtobiggerplus48.png"
+    },
+
+    "browser_action": {
+        "browser_style": true,
+        "default_icon": {
+          "16": "Icons/virtobiggerplus16.png",
+          "32": "Icons/virtobiggerplus32.png"
+        }
+    },
+
+    "permissions": [
+        "*://virtonomics.com/*",
+        "*://virtonomica.ru/*",
+        "storage",
+        "cookies"
+    ],
+
+    "background": {
+        "scripts": [
+            "Addon/Background.js"
+        ]
+    },
+    
+    "content_scripts": [
+        {
+            "matches": ["*://virtonomics.com/*", "*://virtonomica.ru/*"],
+            "run_at" : "document_end",
+            "js": [        
+                "/Util/GeoUtil.js",
+                "/Util/HTMLtools.js",
+                "/Util/ListUtil.js",
+                "/Util/ManagerUtil.js",
+                "/Util/ProductUtil.js",
+                "/Util/SupplyUtil.js",
+                "/Util/Tools.js",  
+
+                "/Core/Solver.js",
+
+                "/Core/SubTypes.js",
+                "/Core/Subdivision.js",
+                "/Core/Stat.js",
+                "/Core/Value.js",
+                "/Core/Option.js",
+                "/Core/Choice.js",
+                "/Core/Pack.js",
+                "/Core/Vital.js",
+        
+                "/Core/Collection.js",
+                "/Core/Procedure.js",
+                "/Core/Module.js",
+                "/Core/Extension.js",   
+                "/Core/Page.js",
+                "/Core/Selection.js",
+        
+                "/Core/Executor.js",     
+                "/Core/Formulas.js",
+                "/Core/Results.js",
+                "/Core/Storage.js",
+                "/Core/ListChoice.js",    
+
+                "/Extensions/ForumChecker.js",
+                "/Extensions/PageSize.js",
+
+                "/Modules/Ads.js",
+                "/Modules/ProdSale.js",
+                "/Modules/ProdSupply.js",
+                "/Modules/Technology.js",
+                "/Modules/Research.js",
+                "/Modules/Employee.js",
+                "/Modules/Equipment.js",
+                "/Modules/Holiday.js",
+                "/Modules/Salary.js",
+                "/Modules/Training.js",
+
+                "/Pages/Advertising.js",
+                "/Pages/CityOverview.js",
+                "/Pages/CTIErates.js",
+                "/Pages/CustomDuties.js",
+                "/Pages/EmployeeList.js",
+                "/Pages/EquipmentAjax.js",
+                "/Pages/EquipmentList.js",
+                "/Pages/EquipmentWindow.js",
+                "/Pages/ExperimentalUnit.js",
+                "/Pages/Fame.js",
+                "/Pages/Forecast.js",
+                "/Pages/ForumMain.js",
+                "/Pages/HolidaySet.js",
+                "/Pages/HolidayUnset.js",
+                "/Pages/HomePage.js",
+                "/Pages/Labor.js",
+                "/Pages/Laboratory.js",
+                "/Pages/ProdSale.js",
+                "/Pages/ProdSupply.js",
+                "/Pages/Products.js",
+                "/Pages/ProductMarket.js",
+                "/Pages/ProjectCreate.js",
+                "/Pages/Qualification.js",
+                "/Pages/RegionOverview.js",
+                "/Pages/SalaryWindow.js",
+                "/Pages/Supplier.js",
+                "/Pages/TechList.js",
+                "/Pages/TechPick.js",
+                "/Pages/Trademarks.js",
+                "/Pages/TrainingLevel.js",
+                "/Pages/TrainingWindow.js",
+                "/Pages/UnitList.js",
+                "/Pages/WorldMap.js",
+
+                "/Core/Initialise.js"
+            ]
+        }
+      ]
+  
+  }
