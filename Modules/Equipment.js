@@ -174,7 +174,7 @@ Module.add( new Module({
             }
 
             if(toRepair > 0){
-                Results.warningLog(`Could not repair ${type} ${subid}. Needs ${numPartsToRepair} pieces of equipment with quality ${qualityRequired} and a maximum price of $${choice.price}, but could not find enough of them on the market.`);
+                Results.warningLog(`Could not be repaired. Needs ${numPartsToRepair} pieces of equipment with quality ${qualityRequired} and a maximum price of $${choice.price}, but could not find enough of them on the market.`, {domain, realm, subid, type});
                 priceList.forEach( o => o.toRepair = 0 );
             }
 
@@ -283,7 +283,7 @@ Module.add( new Module({
             
             const solution = Solver.solve(model);
             if(!solution.feasible){
-                Results.warningLog(`Could not find equipment to make sure that ${type} ${subid} has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`);
+                Results.warningLog(`Could not find equipment to make sure that it has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`, {domain, realm, subid, type});
                 return priceList;
             }
 

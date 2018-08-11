@@ -208,7 +208,8 @@ Module.add( new Module({
             const priceHike = choice.priceHike
             const p = 1 + choice.priceHike / 100
             if (oldPrice && priceHike && newPrice > oldPrice * p ) {
-                Results.normalLog(`Price Hike (Production Sale): ${SubTypes.getName(type)} ${subid} has a price increase of ${productName} from $${oldPrice} to $${newPrice}`)
+                const s = `A price hike has taken place. The price of ${productName} has increased from $${oldPrice} to $${newPrice}`
+                Results.normalLog(s, {domain, realm, subid, type})
             }
         }
 

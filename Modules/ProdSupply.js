@@ -88,7 +88,7 @@ Module.add( new Module({
                     toSupply = Math.min(2 * required, Math.max(3 * required - stock, 0));
                     break;
                 default:                    
-                    Results.errorLog(`${this.name} error: supply amount misspecified.`);
+                    Results.errorLog(`${this.name} error: supply amount misspecified. (Production Supply Module)`);
             }
 
             if(choice.minimum === "one"){
@@ -108,7 +108,7 @@ Module.add( new Module({
                 case "quality":
                     return (a, b) => b.qualitySupplier - a.qualitySupplier;
                 default:
-                    Results.errorLog(`${this.name} error: sort function misspecified.`);
+                    Results.errorLog(`${this.name} error: sort function misspecified. (Production Supply Module)`);
             }	
         }
         
@@ -117,13 +117,13 @@ Module.add( new Module({
 
             if(choice.warning === "none" && !suppliers.length){
                 const productName = await ProductUtil.getProductName(domain, realm, productId);
-                const s = `${this.name}: Subdivision ${subid} (${realm}) does not have suppliers for ${productName}!`;
-                Results.warningLog(s);
+                const s = `${this.name}: Not have suppliers for ${productName}!`;
+                Results.warningLog(s, {domain, realm, subid, type});
             }
             else if(choice.warning === "insufficient" && supplyLeft > 0){
                 const productName = await ProductUtil.getProductName(domain, realm, productId);
-                const s = `${this.name}: Subdivision ${subid} (${realm}) does not have enough suppliers for ${productName}!`;
-                Results.warningLog(s);
+                const s = `${this.name}: Not have enough suppliers for ${productName}!`;
+                Results.warningLog(s, {domain, realm, subid, type});
             }
 
         }

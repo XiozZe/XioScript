@@ -10,6 +10,12 @@
         "48": "Icons/virtobiggerplus48.png"
     },
 
+    "applications": {
+        "gecko": {
+            "id": "XiozZe@Virtonomics.com"
+        }
+    },
+
     "browser_action": {
         "browser_style": true,
         "default_icon": {
