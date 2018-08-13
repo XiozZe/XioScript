@@ -62,7 +62,7 @@ Module.add( new Module({
         const determineSalary = async (employeeInfo) => {
 
             if (!employeeInfo.employeesWorking) {
-                return 0
+                return employeeInfo.salaryWorking
             }
 
             let salary = await determineSalaryValue(employeeInfo)
