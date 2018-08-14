@@ -23,14 +23,14 @@ const Formulas = Object.freeze({
 	},
 
 	employees: (skill, factor, manager) => {
-		return Math.pow(5,1+skill) * Math.pow(7, 1-skill) * factor * Math.pow(manager, 2)	
+		return Math.pow(5, 1 + skill) * Math.pow(7, 1 - skill) * factor * Math.pow(manager, 2)	
 	},
 
 	skill: (employees, factor, manager) => {
 		return -Math.log(employees/(35*factor*Math.pow(manager, 2)))/Math.log(7/5)
 	},
 
-	equip: (skill) => {
+	equipment: (skill) => {
 		return Math.pow(skill, 1.5)
 	},
 

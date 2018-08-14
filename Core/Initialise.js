@@ -20,25 +20,25 @@
 		//ForumChecker.trackNewForumMessage();
 	//}
 
-	const unitList = Page.get("UnitList");
+	const unitList = Page.get("UnitList")
 	if(unitList.test(document, document.URL)){
-		const list = new ListChoice("MainList");
-		list.createList();
+		const list = new ListChoice("MainList")
+		list.createList()
 	}
 
 	//Equipment List
 	if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list\/equipment$").test(document.URL)){
-		const salaryList = new ListChoice("ManagementList");
-		salaryList.createList();
+		const salaryList = new ListChoice("ManagementList")
+		salaryList.createList()
 	}	
 
 	//Salary List
 	if(new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list\/employee\/salary$").test(document.URL)){
-		const salaryList = new ListChoice("ManagementList");
-		salaryList.createList();
+		const salaryList = new ListChoice("ManagementList")
+		salaryList.createList()
 	}	
 
-	Extension.run();
+	Extension.run()
 
 	//Not user company: we shouldn't use any building or top manager function here
 	//if(($(".officePlace a").attr("href") + "/dashboard" === $(".dashboard a").attr("href") || !$(".officePlace > a").length) && !$(".officePlace tr:eq(1) a").length){
@@ -56,6 +56,6 @@
 	//}
 
 
-})();
+})()
 
 
