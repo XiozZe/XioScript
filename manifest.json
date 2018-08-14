@@ -78,6 +78,7 @@
                 "/Extensions/ForumChecker.js",
                 "/Extensions/PageSize.js",
                 "/Extensions/TopManagerStats.js",
+                "/Extensions/BuildingShortener.js",
 
                 "/Modules/Ads.js",
                 "/Modules/ProdSale.js",
