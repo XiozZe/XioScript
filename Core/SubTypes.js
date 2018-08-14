@@ -4,6 +4,7 @@
 const SubTypes = (() => {
 
 	//the TOP1 modifier, TOP3 modifier and the img for the top manager page
+	//Can be find as 'symbol' in UnitSummary and 'unit_type_symbol' in CompanySummary
 	const types = {
 		animalfarm: {name: "Animal Farm", top1: 0.6, top3: 0.6, managerImg: "/img/qualification/animal.png"},
 		apiary: {name: "Apiary", top1: 0.6, top3: 0.6, managerImg: "/img/qualification/animal.png"},

@@ -92,107 +92,107 @@ Module.add( new Module({
 
         //Finds the first subdivision on the equipment list that has the same type as this subdivision. We do this to make sure that a certain type is only been called once, because the page can only handle one at the time.
         const getEquipmentWindow = async (equipmentList) => {
-            const index = equipmentList.type.findIndex(e => e === type);
-            const sid = equipmentList.subid[index];
-            return await Page.get("EquipmentWindow").load(domain, realm, sid);
+            const index = equipmentList.type.findIndex(e => e === type)
+            const sid = equipmentList.subid[index]
+            return await Page.get("EquipmentWindow").load(domain, realm, sid)
         }
 
         const createPriceList = (equipmentWindow) => {
-            const offers = ListUtil.restructById("offerId", equipmentWindow);
-            const priceList = Object.values(offers);
+            const offers = ListUtil.restructById("offerId", equipmentWindow)
+            const priceList = Object.values(offers)
             priceList.forEach(o => {
-                o.price = o.offerPrice; 
-                delete o.offerPrice;
-                o.available = o.offerAvailable;
+                o.price = o.offerPrice 
+                delete o.offerPrice
+                o.available = o.offerAvailable
                 delete o.offerAvailable
-                o.quality = o.offerQuality;
-                delete o.offerQuality;
-                o.id = o.offerId;
-                delete o.offerId;
+                o.quality = o.offerQuality
+                delete o.offerQuality
+                o.id = o.offerId
+                delete o.offerId
                 o.windowIndex = equipmentWindow.offerId.indexOf(o.id)
-                o.toRepair = 0;
-                o.toBuy = 0;
-            });
-            return priceList;
+                o.toRepair = 0
+                o.toBuy = 0
+            })
+            return priceList
         }
 
         const sortPriceList = (priceList) => {
             switch(choice.heuristic){
-                case "lowprice": priceList.sort( (a, b) => a.price - b.price ); break;
-                case "lowPQR": priceList.sort( (a, b) => a.price/a.quality - b.price/b.quality ); break;
-                case "lowPQ2R": priceList.sort( (a, b) => a.price/a.quality**2 - b.price/b.quality**2 ); break;
-                case "highqual": priceList.sort( (a, b) => b.quality - a.quality ); break;
-                default: console.error(`Undefined equipment heuristic: ${choice.heuristic}`);
+                case "lowprice": priceList.sort( (a, b) => a.price - b.price ); break
+                case "lowPQR": priceList.sort( (a, b) => a.price/a.quality - b.price/b.quality ); break
+                case "lowPQ2R": priceList.sort( (a, b) => a.price/a.quality**2 - b.price/b.quality**2 ); break
+                case "highqual": priceList.sort( (a, b) => b.quality - a.quality ); break
+                default: console.error(`Undefined equipment heuristic: ${choice.heuristic}`)
             }
         }
 
         const filterPriceListMaxPrice = (priceList) => {
-            const maxPrice = choice.price;
-            priceList = priceList.filter(o => o.price <= maxPrice);
-            return priceList;
+            const maxPrice = choice.price
+            priceList = priceList.filter(o => o.price <= maxPrice)
+            return priceList
         }
 
         const getNumPartsToRepair = (equipmentData) => {
             if(choice.damage > equipmentData.wearPercent)
-                return 0;
+                return 0
 
             if(choice.red === "repair")
-                return equipmentData.wearBlack + equipmentData.wearRed;
+                return equipmentData.wearBlack + equipmentData.wearRed
             else
-                return equipmentData.wearBlack;
+                return equipmentData.wearBlack
         }
 
         const getQualityRequired = (equipmentData) => {
-            let qualityRequired = 0;
+            let qualityRequired = 0
             if(equipmentData.qualityRequired){
-                qualityRequired = equipmentData.qualityRequired;
+                qualityRequired = equipmentData.qualityRequired
             }
-            return Math.max(qualityRequired, choice.required);
+            return Math.max(qualityRequired, choice.required)
         }
 
         //Because the equipmentWindow page is shared between all subdivisions from the same type, we should decrease the number of pieces available if something is repaired or bought here.
         const reduceAvailability = (equipmentWindow, windowIndex, nPieces) => {
-            equipmentWindow.offerAvailable[windowIndex] -= nPieces;
+            equipmentWindow.offerAvailable[windowIndex] -= nPieces
         }
 
         const determineRepair = (priceList, numPartsToRepair, qualityRequired, equipmentWindow) => {
 
             if(!numPartsToRepair)
-                return priceList;
+                return priceList
 
-            let toRepair = numPartsToRepair;
+            let toRepair = numPartsToRepair
 
             for(const offer of priceList){
                 if(offer.quality > qualityRequired){
-                    const repair = Math.min(toRepair, offer.available);
-                    offer.toRepair = repair;
-                    toRepair -= repair;
+                    const repair = Math.min(toRepair, offer.available)
+                    offer.toRepair = repair
+                    toRepair -= repair
                     if(toRepair === 0){
-                        break;
+                        break
                     }
                 }
             }
 
             if(toRepair > 0){
-                Results.warningLog(`Could not be repaired. Needs ${numPartsToRepair} pieces of equipment with quality ${qualityRequired} and a maximum price of $${choice.price}, but could not find enough of them on the market.`, {domain, realm, subid, type});
-                priceList.forEach( o => o.toRepair = 0 );
+                Results.warningLog(`Could not be repaired. Needs ${numPartsToRepair} pieces of equipment with quality ${qualityRequired} and a maximum price of $${choice.price}, but could not find enough of them on the market.`, {domain, realm, subid, type})
+                priceList.forEach( o => o.toRepair = 0 )
             }
 
-            return priceList;
+            return priceList
         }
 
         const repairStats = (offer) => {
-            Results.addStats(this.id, "repaired", offer.toRepair);
-            //Results.addStats(this.id, "spend", offer.toRepair*offer.price);
+            Results.addStats(this.id, "repaired", offer.toRepair)
+            //Results.addStats(this.id, "spend", offer.toRepair*offer.price)
         }
 
         const repairEquipment = async (priceList, equipmentWindow) => {
 
-            const offerPromises = [];
+            const offerPromises = []
             for(const offer of priceList){
                 if(offer.toRepair){
-                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toRepair);
-                    console.log(subid, offer);
+                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toRepair)
+                    console.log(subid, offer)
 
                     const data = {
                         operation: "repair",
@@ -202,38 +202,38 @@ Module.add( new Module({
                         amount: offer.toRepair
                     }
     
-                    const r = () => repairStats(offer);
-                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(r);
-                    offerPromises.push(p);
+                    const r = () => repairStats(offer)
+                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(r)
+                    offerPromises.push(p)
                 }                
             }
 
-            await Promise.all(offerPromises);
+            await Promise.all(offerPromises)
             
             if(offerPromises.length){
-                await updateEmployeeList();
+                await updateEmployeeList()
             }
         }
 
         const cleanRepairPriceList = (priceList) => {
             for (const offer of priceList){
-                offer.available -= offer.toRepair;
-                offer.toRepair = 0;
+                offer.available -= offer.toRepair
+                offer.toRepair = 0
             }
-            return priceList;
+            return priceList
         }
 
         const getMachineQuantity = async (equipmentData) => {
             switch(choice.quantity){
-                case "current": return equipmentData.quantityCurrent;
-                case "full": return equipmentData.quantityMaximum;
+                case "current": return equipmentData.quantityCurrent
+                case "full": return equipmentData.quantityMaximum
                 case "employees": 
-                    const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid);
-                    const index = employeeList.subid.indexOf(subid);
-                    const w = employeeList.employeesWorking[index];
-                    const m = employeeList.employeesMaximum[index];
-                    const workerRatio = Math.ceil(w/m*equipmentData.quantityMaximum);
-                    return workerRatio;               
+                    const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid)
+                    const index = employeeList.subid.indexOf(subid)
+                    const w = employeeList.employeesWorking[index]
+                    const m = employeeList.employeesMaximum[index]
+                    const workerRatio = Math.ceil(w/m*equipmentData.quantityMaximum)
+                    return workerRatio               
                 default: console.error(`Equipment module has Quantity choice ${choice.quantity} that does not exist.`)
             }
         }
@@ -248,8 +248,8 @@ Module.add( new Module({
                 windowIndex: "HOME",
                 toRepair: 0,
                 toBuy: 0
-            });
-            return priceList;
+            })
+            return priceList
         }
 
         const getBuyRemoveModel = (priceList, machineQuantity, qualityRequired) => {
@@ -266,37 +266,37 @@ Module.add( new Module({
             }
 
             for(const offer of priceList){
-                model.constraints["c"+offer.id] = {"max": offer.available};
+                model.constraints["c"+offer.id] = {"max": offer.available}
                 model.variables[offer.id] = {
                     "price": offer.price,
                     "quality": offer.quality,
                     ["c"+offer.id]: 1,
                     "pieces": 1
                 }
-                model.ints[offer.id] = 1;
+                model.ints[offer.id] = 1
             }
             
-            return model;
+            return model
         }
 
         const determineBuyRemove = (priceList, model, qualityRequired, machineQuantity) => {
             
-            const solution = Solver.solve(model);
+            const solution = Solver.solve(model)
             if(!solution.feasible){
-                Results.warningLog(`Could not find equipment to make sure that it has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`, {domain, realm, subid, type});
-                return priceList;
+                Results.warningLog(`Could not find equipment to make sure that it has ${machineQuantity} pieces of equipment with quality ${qualityRequired} and maximum price ${choice.price}.`, {domain, realm, subid, type})
+                return priceList
             }
 
-            delete solution.feasible;
-            delete solution.bounded;
-            delete solution.result;
+            delete solution.feasible
+            delete solution.bounded
+            delete solution.result
 
             for(const offerId in solution){
-                const index = priceList.findIndex(o => o.id === offerId);
-                priceList[index].toBuy = solution[offerId];
+                const index = priceList.findIndex(o => o.id === offerId)
+                priceList[index].toBuy = solution[offerId]
             }
 
-            return priceList;
+            return priceList
         }
 
         //If equipment is being changed, naturally the required skill for employees also change. However, the employeeList only gets updated after something employee related happens. So we have to force an update.
@@ -311,13 +311,13 @@ Module.add( new Module({
 
         const buyRemoveEquipment = async (priceList, equipmentData, equipmentWindow) => {
 
-            const machinesKept = priceList.pop().toBuy; //Home offer is always last
-            const machinesToRemove = equipmentData.quantityCurrent - machinesKept;
+            const machinesKept = priceList.pop().toBuy //Home offer is always last
+            const machinesToRemove = equipmentData.quantityCurrent - machinesKept
 
             //This have to be done first before the code jumps to another subdivision because of await/async
             for(const offer of priceList){
                 if(offer.toBuy){
-                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toBuy);
+                    reduceAvailability(equipmentWindow, offer.windowIndex, offer.toBuy)
                 }
             }
 
@@ -328,11 +328,11 @@ Module.add( new Module({
                     amount: machinesToRemove
                 }
     
-                const r = () => Results.addStats(this.id, "removed", machinesToRemove);
-                await Page.get("EquipmentAjax").send(data, domain, realm).then(r);
+                const r = () => Results.addStats(this.id, "removed", machinesToRemove)
+                await Page.get("EquipmentAjax").send(data, domain, realm).then(r)
             }            
 
-            const offerPromises = [];
+            const offerPromises = []
             for(const offer of priceList){
                 if(offer.toBuy){
                     const data = {
@@ -343,16 +343,16 @@ Module.add( new Module({
                         amount: offer.toBuy
                     }
     
-                    const b = () => Results.addStats(this.id, "bought", offer.toBuy);
-                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(b);
-                    offerPromises.push(p);
+                    const b = () => Results.addStats(this.id, "bought", offer.toBuy)
+                    const p = Page.get("EquipmentAjax").send(data, domain, realm).then(b)
+                    offerPromises.push(p)
                 }                
             }
 
-            await Promise.all(offerPromises);
+            await Promise.all(offerPromises)
 
             if(offerPromises.length){
-                await updateEmployeeList();
+                await updateEmployeeList()
             }
         }
 
@@ -378,4 +378,4 @@ Module.add( new Module({
         await buyRemoveEquipment(priceList, equipmentData, equipmentWindow)
 
     }
-}));
+}))

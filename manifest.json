@@ -41,7 +41,8 @@
         {
             "matches": ["*://virtonomics.com/*", "*://virtonomica.ru/*"],
             "run_at" : "document_end",
-            "js": [        
+            "js": [     
+                "/Util/APIUtil.js",   
                 "/Util/GeoUtil.js",
                 "/Util/HTMLtools.js",
                 "/Util/ListUtil.js",
@@ -90,6 +91,7 @@
 
                 "/Pages/Advertising.js",
                 "/Pages/CityOverview.js",
+                "/Pages/CompanySummary.js",
                 "/Pages/CTIErates.js",
                 "/Pages/CustomDuties.js",
                 "/Pages/EmployeeList.js",
@@ -116,10 +118,13 @@
                 "/Pages/Supplier.js",
                 "/Pages/TechList.js",
                 "/Pages/TechPick.js",
+                "/Pages/Token.js",
                 "/Pages/Trademarks.js",
                 "/Pages/TrainingLevel.js",
                 "/Pages/TrainingWindow.js",
                 "/Pages/UnitList.js",
+                "/Pages/UnitRefresh.js",
+                "/Pages/UnitSummary.js",
                 "/Pages/WorldMap.js",
 
                 "/Core/Initialise.js"

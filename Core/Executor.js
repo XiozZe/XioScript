@@ -1,22 +1,22 @@
 const Executor = (function(){
 
-    let running = false;
+    let running = false
 
     const findDomain = async () => {
         //If you are logged in on the english domain, for some reason it can also get the values from the russian realms.
         const domains = [
             "https://virtonomics.com",
             "https://virtonomica.ru"
-        ];
+        ]
 
         for(const d of domains){
-            const homePage = await Page.get("HomePage").load(d);
+            const homePage = await Page.get("HomePage").load(d)
             if(homePage.loggedIn){
-                return d;
+                return d
             }
         }
 
-        return "https://virtonomics.com";
+        return "https://virtonomics.com"
     }
 
     /**
@@ -24,23 +24,23 @@ const Executor = (function(){
      */
     const findCompanyId = async (domain, realm) => {        
         try{
-            const url = `${domain}/${realm}/main/user/privat/headquarters`;
-            Results.startCall("HeadQuarters", url);
+            const url = `${domain}/${realm}/main/user/privat/headquarters`
+            Results.startCall("HeadQuarters", url)
             const response = await fetch(url, {credentials: "include"})
-            Results.finishCall("HeadQuarters", url);
-            const dashBoardUrl = response.url;
-            const companyId = dashBoardUrl.match(/\d+/)[0];
+            Results.finishCall("HeadQuarters", url)
+            const dashBoardUrl = response.url
+            const companyId = dashBoardUrl.match(/\d+/)[0]
 
             //Not logged in or no company on that realm
             if(companyId === "1" || companyId === "00001")
-                throw new Error;
+                throw new Error
 
-            return companyId;
+            return companyId
         }
         catch(e){
-            console.error(`Tried to find a company ID of domain ${domain} and of realm ${realm}, but could not find it`);
-            throw new Error("CompanyID error");
-            return null;
+            console.error(`Tried to find a company ID of domain ${domain} and of realm ${realm}, but could not find it`)
+            throw new Error("CompanyID error")
+            return null
         }
     }
 
@@ -48,44 +48,49 @@ const Executor = (function(){
      * Get all company ids from the realms given
      */
     const getAllCompanyIds = async(domain, realms) => {
-        const companyId = {};
-        const promise = {};
+        const companyId = {}
+        const promise = {}
 
         //First call on all the promises to fire
         for(const realm of realms){
-            promise[realm] = findCompanyId(domain, realm);
+            promise[realm] = findCompanyId(domain, realm)
         }
         //Then wait till they are all finished
         for(const realm of realms){
-            companyId[realm] = await promise[realm];
+            companyId[realm] = await promise[realm]
         }
         
-        return companyId;
+        return companyId
     }
 
     /**
-     * For all subdivisions that are waiting to be executed in the package, check on the unitList if they still exist. If they don't, then remove those from the selections and the storage.
+     * For all subdivisions that are waiting to be executed in the package, check on the companySummary if they still exist. * If they don't, then remove those from the selections and the storage.
      */
     const removeDeletedSubdivisions = async (selections, domain, realms, companyIds) => {
 
-        const unitList = Page.get("UnitList");
-
         //Find deleted subdivisions and remove them from package
-        for(const realm of realms){
-            const data = await unitList.load(domain, realm, companyIds[realm]);
-            for(const selection of selections){
-                for(const subdivision of selection.subdivisions){
-                    if(realm === subdivision.realm && !data.subid.includes(subdivision.id)){
-                        const index = selection.subdivisions.indexOf(subdivision);
-                        selection.subdivisions.splice(index, 1);
-                        Results.normalLog(`Removed subdivision ${subdivision.id} (${subdivision.realm}) from Storage because it is not found in your company`);
+        for (const realm of realms) {
+
+            const companyid = companyIds[realm]
+            const companySummary = await Page.get("CompanySummary").load(domain, realm, companyid)
+
+            for (const selection of selections) {
+                for (const subdivision of selection.subdivisions) {
+
+                    const availableSubids = Object.keys(companySummary.data)
+
+                    if (realm === subdivision.realm && !availableSubids.includes(subdivision.id)) {
+                        const index = selection.subdivisions.indexOf(subdivision)
+                        selection.subdivisions.splice(index, 1)
+                        const s = `Removed subdivision ${subdivision.id} (${subdivision.realm}) from Storage because it is not found in your company`
+                        Results.normalLog(s)
                     }
                 }
             }
         }
 
-        await Storage.saveSelections(selections);
-        return selections;
+        await Storage.saveSelections(selections)
+        return selections
     }
 
     /**
@@ -94,7 +99,7 @@ const Executor = (function(){
      */
     const emptyAllPageData = () => {
         for(const page of Page.getAll()){
-            page.cleanAll();
+            page.cleanAll()
         }
     }
 
@@ -103,7 +108,7 @@ const Executor = (function(){
      */
     const preclean = (arrayOfPageIds) => {
         for(const pageId of arrayOfPageIds){
-            Page.get(pageId).cleanAll();
+            Page.get(pageId).cleanAll()
         }
     } 
 
@@ -114,33 +119,33 @@ const Executor = (function(){
         
         //If we can't find the module in the packs, it means there are no subdivisions to run
         if(!packs)
-            return;
+            return
 
-        const promises = [];
-        const module = Module.get(moduleId);
-        preclean(module.precleaner);
+        const promises = []
+        const module = Module.get(moduleId)
+        preclean(module.precleaner)
         
         for(const pack of packs){
-            const realm = pack.subdivision.realm;
-            const id = pack.subdivision.id;
-            const type = pack.subdivision.type;
-            const choices = pack.choices;
-            const companyId = companyIds[realm];
+            const realm = pack.subdivision.realm
+            const id = pack.subdivision.id
+            const type = pack.subdivision.type
+            const choices = pack.choices
+            const companyId = companyIds[realm]
 
             try{
-                Results.addModuleCount(moduleId, "busy");
-                const promise = module.execute(domain, realm, companyId, id, type, choices);
-                promise.then(() => Results.addModuleCount(moduleId, "finished"));
-                promises.push(promise);
+                Results.addModuleCount(moduleId, "busy")
+                const promise = module.execute(domain, realm, companyId, id, type, choices)
+                promise.then(() => Results.addModuleCount(moduleId, "finished"))
+                promises.push(promise)
             }            
             catch(e){                
-                Results.errorLog(`Error occured in module ${module.name} for subdivision ${id}`);
-                console.error(e.message);
+                Results.errorLog(`Error occured in module ${module.name} for subdivision ${id}`)
+                console.error(e.message)
             }
         }
 
-        await Promise.all(promises);
-        console.log(`Module ${moduleId} is Done!`);
+        await Promise.all(promises)
+        console.log(`Module ${moduleId} is Done!`)
     }
 
     /**
@@ -148,23 +153,23 @@ const Executor = (function(){
      */
     const nextModuleToRun = (modulesQueued, modulesBusy, modulesFinished) => {
 
-        const moduleToRun = [];
+        const moduleToRun = []
         for(const moduleId of modulesQueued){
 
-            const module = Module.get(moduleId);
+            const module = Module.get(moduleId)
 
-            let canRun = true;            
+            let canRun = true            
             for(const predecessor of module.predecessors){
                 if(!modulesFinished.includes(predecessor)){
-                    canRun = false;
+                    canRun = false
                 }
             }
 
             if(canRun)
-                return moduleId;
+                return moduleId
         }
 
-        return null;
+        return null
     }
 
     /**
@@ -172,54 +177,54 @@ const Executor = (function(){
      */
     const executePackage = async (package, domain, companyIds) => {
 
-        let modulesQueued = Module.getAllIds();
-        let modulesBusy = [];
-        let modulesFinished = [];
+        let modulesQueued = Module.getAllIds()
+        let modulesBusy = []
+        let modulesFinished = []
 
         const iterateModules = async () => {
 
-            console.log(modulesQueued, modulesBusy);
+            console.log(modulesQueued, modulesBusy)
             
             //We don't have to pick a new module, all modules busy or finished
             if(!modulesQueued.length)
-                return;
+                return
 
-            const moduleToRun = nextModuleToRun(modulesQueued, modulesBusy, modulesFinished);
+            const moduleToRun = nextModuleToRun(modulesQueued, modulesBusy, modulesFinished)
 
             if(!moduleToRun && !modulesBusy.length){
-                Results.errorLog("Something is wrong with the script: there are modules that are unreachable.");
-                console.error(modulesQueued, modulesBusy, modulesFinished);
-                return;
+                Results.errorLog("Something is wrong with the script: there are modules that are unreachable.")
+                console.error(modulesQueued, modulesBusy, modulesFinished)
+                return
             }
 
             if(!moduleToRun)
-                return;
+                return
 
-            modulesBusy.push(moduleToRun);
-            modulesQueued = modulesQueued.filter(moduleId => moduleId !== moduleToRun);
+            modulesBusy.push(moduleToRun)
+            modulesQueued = modulesQueued.filter(moduleId => moduleId !== moduleToRun)
             
             //There may be more new modules to fire
-            const iterate1 = iterateModules();
+            const iterate1 = iterateModules()
 
-            const execute = executeModule(moduleToRun, package[moduleToRun], domain, companyIds);
-            await execute;
-            modulesFinished.push(moduleToRun);
-            modulesBusy = modulesBusy.filter(moduleId => moduleId !== moduleToRun);
+            const execute = executeModule(moduleToRun, package[moduleToRun], domain, companyIds)
+            await execute
+            modulesFinished.push(moduleToRun)
+            modulesBusy = modulesBusy.filter(moduleId => moduleId !== moduleToRun)
 
             //New finished module: check if there are more subject to fire
-            const iterate2 = iterateModules();
-            await iterate1;
-            await iterate2; 
+            const iterate2 = iterateModules()
+            await iterate1
+            await iterate2 
             
         }
 
-        await iterateModules();
+        await iterateModules()
     }
 
 
     
     const isRunning = () => {
-        return running;
+        return running
     }
 
     /**
@@ -227,47 +232,47 @@ const Executor = (function(){
      */
     const run = async () => {
 
-        running = true;
-        Results.start();
-        Results.updateStatus("Initializing");
+        running = true
+        Results.start()
+        Results.updateStatus("Initializing")
 
-        emptyAllPageData();
-        const domain = await findDomain();
-        let selections = await Storage.getSelections();
-        const realms = Selection.getAllRealms(selections);
+        emptyAllPageData()
+        const domain = await findDomain()
+        let selections = await Storage.getSelections()
+        const realms = Selection.getAllRealms(selections)
 
-        Results.updateStatus("Finding your Company");
+        Results.updateStatus("Finding your Company")
 
-        let companyIds;
+        let companyIds
         try{ 
-            companyIds = await getAllCompanyIds(domain, realms); 
+            companyIds = await getAllCompanyIds(domain, realms) 
         }
         catch(e) { 
-            Results.errorLog("Could not find your company ID. Check if you are logged in, and if the 'Accept third party cookies and site data'-setting in Firefox is set to 'Always' or 'From Visited'.");
-            Results.stop();
-            running = false;
-            return; 
+            Results.errorLog("Could not find your company ID. Check if you are logged in, and if the 'Accept third party cookies and site data'-setting in Firefox is set to 'Always' or 'From Visited'.")
+            Results.stop()
+            running = false
+            return 
         }
 
-        Results.updateStatus("Looking for subdivisions");
-        selections = await removeDeletedSubdivisions(selections, domain, realms, companyIds);
+        Results.updateStatus("Looking for subdivisions")
+        selections = await removeDeletedSubdivisions(selections, domain, realms, companyIds)
         
-        Results.updateStatus("Executing Modules");
-        console.log(selections);
-        const package = await Pack.createPackage(selections);
-        console.log(package);
-        Results.createStats(package);
+        Results.updateStatus("Executing Modules")
+        console.log(selections)
+        const package = await Pack.createPackage(selections)
+        console.log(package)
+        Results.createStats(package)
 
-        await executePackage(package, domain, companyIds);
+        await executePackage(package, domain, companyIds)
 
-        Results.updateStatus("All Done!");
-        console.log("All Done!");
+        Results.updateStatus("All Done!")
+        console.log("All Done!")
 
-        Results.stop();
-        running = false;
+        Results.stop()
+        running = false
 
     }
 
-    return {run, isRunning};
+    return {run, isRunning}
 
-})();
+})()

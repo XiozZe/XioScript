@@ -1,13 +1,17 @@
+//Main page of the company: Company ==> Enterprises
+//This page should not be loaded anymore. Instead use CompanySummary (is faster and has more information)
+
+
 Page.add(new Page({
 
     id: "UnitList",
 
     getUrl: (domain, realm, companyId) => {
-        return `${domain}/${realm}/main/company/view/${companyId}/unit_list`;
+        return `${domain}/${realm}/main/company/view/${companyId}/unit_list`
     },
 
     test: (doc, url) => {
-        return new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(#del)?$").test(url);
+        return new RegExp("\/.*\/main\/company\/view\/[0-9]+\/unit_list(#del)?$").test(url)
     },
 
     scrape: (doc) => ({
@@ -31,4 +35,4 @@ Page.add(new Page({
         }
     ]		
 
-}));
+}))
