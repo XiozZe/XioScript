@@ -74,7 +74,7 @@ Module.add( new Module({
         let salary = await determineSalaryValue(employeeInfo)
         const maxSalary = determineMaximumSalary()
         salary = Math.min(salary, maxSalary)
-        salary = Math.ceil(salary*100)/100
+        salary = Math.round(salary*100)/100
         return salary
     }
 
