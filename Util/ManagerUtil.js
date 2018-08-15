@@ -14,10 +14,10 @@ const ManagerUtil = {
 
     getManagerLevel: async (domain, realm, type, bonus) => {
         if (bonus) {
-            return await getLevel(domain, realm, type) + await getBonus(domain, realm, type)
+            return await ManagerUtil.getLevel(domain, realm, type) + await ManagerUtil.getBonus(domain, realm, type)
         }
         else {
-            await getLevel(domain, realm, type)
+            return await ManagerUtil.getLevel(domain, realm, type)
         }
     },
 
