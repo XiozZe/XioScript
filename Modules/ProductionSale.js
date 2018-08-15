@@ -1,6 +1,6 @@
 Module.add( new Module({
     
-    id: "ProdSale",
+    id: "ProductionSale",
     name: "Production Sale",
     explanation: `Sets the prices and policies of the sales page. The price option will let you pick a price formula: zero, primecost (plus one penny), the Indicative Price of that good, or a more difficult formula: CTIE = prime cost * (1 + CTIE rate), profit tax = prime cost * (1 + CTIE rate) * (1 + region's profit tax rate). You can also let the price determine by the market: If you put for example '20' in the 'Percentile' input box it will increase the price in such a way that the Price/Quality ratio is at least higher than 20% of the rest of the market. Set 'Percentile' to '0' to ignore this feature. By changing the 'Multiplier' the price you have chosen gets multiplied by the number you fill in the box. Note that whatever price you set, the script will not let you put a price higher than 30 times the Indicative Price. Origin will determine if the Stock or Output value for prime cost and quality will be used (makes no difference for warehouses). To Zero will determine what the script will do when it is about to set a value to zero: set it to zero, or keep the old price. The 'Price Hike' will give off a warning if the price has increased by 30% if you fill in '30' in the box. The policy option will set the policy to the selected. If the target is all goods, that means all goods will be set to the selected policy. If the target is Output Only, only goods that have output last turn are set to the selected policy, and all other goods will be set to No Sale.`,
     subTypes: ['animalfarm', 'apiary', 'farm', 'fishingbase', 'mill', 'mine', 'oilpump', 'orchard', 'sawmill', 'warehouse', 'workshop'],
@@ -264,7 +264,7 @@ Module.add( new Module({
             return data
         }
 
-        const salePage = Page.get("ProdSale")
+        const salePage = Page.get("FactorySale")
         const saleData = await salePage.load(domain, realm, subid)     
         const p = ListUtil.restructById("productId", saleData)
         const products = Object.values(p)

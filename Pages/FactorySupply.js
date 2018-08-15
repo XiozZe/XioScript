@@ -1,6 +1,6 @@
 Page.add(new Page({
 
-	id: "ProdSupply",
+	id: "FactorySupply",
 
     getUrl: (domain, realm, subid) => {
         return `${domain}/${realm}/main/unit/view/${subid}/supply`;
