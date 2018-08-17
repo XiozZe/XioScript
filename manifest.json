@@ -27,6 +27,8 @@
     "permissions": [
         "*://virtonomics.com/*",
         "*://virtonomica.ru/*",
+        "*://es.virtonomics.com/*",
+        "*://ua.virtonomics.com/*",
         "storage",
         "cookies"
     ],
@@ -39,7 +41,12 @@
     
     "content_scripts": [
         {
-            "matches": ["*://virtonomics.com/*", "*://virtonomica.ru/*"],
+            "matches": [
+                "*://virtonomics.com/*", 
+                "*://virtonomica.ru/*", 
+                "*://es.virtonomics.com/*", 
+                "*://ua.virtonomics.com/*"
+            ],
             "run_at" : "document_end",
             "js": [     
                 "/Util/APIUtil.js",   
