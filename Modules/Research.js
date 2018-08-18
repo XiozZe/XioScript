@@ -35,7 +35,7 @@ Module.add( new Module({
         const pickNewResearch = async (lab) => {
 
             if (!lab.lastIndustry) {
-                Results.warningLog(`Laboratory ${subid} has no clue what to research!`)
+                Results.warningLog(`No clue what to research!`, {domain, realm, subid, type})
                 return
             }								
             
@@ -59,8 +59,10 @@ Module.add( new Module({
                 data.create = "Invent"
                 await ProjectCreatePage.send(data, domain, realm, subid)  
                 Results.addStats(this.id, "continue", 1)             
-            } else {
-                Results.warningLog(`Laboratory ${subid} has reached the maximum technology level for this size. Could not research the next level`)
+            } 
+            else {
+                const s = `Maximum technology level research for this size. Could not research the next level.`
+                Results.warningLog(s, {domain, realm, subid, url})
             }            
             
         }
@@ -126,7 +128,7 @@ Module.add( new Module({
             const possibleFactories = e.subid
                         
             if (!possibleFactories.length) {
-                Results.warningLog(`No subdivision available to support laboratory ${subid}`)
+                Results.warningLog(`No subdivision available to support`, {domain, realm, subid, type})
                 return
             }
 
@@ -155,7 +157,7 @@ Module.add( new Module({
             const mostEfficient = efficiencyList.reduce(f, g)
             
             if (!mostEfficient.unit_id) {
-                Results.warningLog(`No subdivision available to support laboratory ${subid}.`)
+                Results.warningLog(`No subdivision available to support.`, {domain, realm, subid, type})
                 return
             }
 
@@ -168,7 +170,7 @@ Module.add( new Module({
             Results.addStats(this.id, "attach", 1)
             
             if (mostEfficient.productivity * mostEfficient.loading < 100) {
-                Results.warningLog(`Laboratory ${subid} has a factory attached, but not working 100%. `)
+                Results.warningLog(`Factory attached, but not working 100%.`, {domain, realm, subid, type})
             }
         }
         

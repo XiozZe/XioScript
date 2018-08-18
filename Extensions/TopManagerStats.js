@@ -1,105 +1,134 @@
+Extension.add( new Extension ({
 
-let TopManagerStats = async () => {
+	id: "TopManagerStats",
+	name: "Top Manager Stats",
+	explanation: `This adds some TOP1 and TOP3 stats for the top manager on the main page of a subdivision. It doesn't look really pretty, especially the old style subdivisions, but at least it's language independent. With the 'Bonus' option, you can toggle whether the bonus qualification should be included in the calculation.`,
+	test: () => {
+		const isMainPage = Page.get("Main").test(document, document.URL)
+		const newInterfaceEmployees = document.extract(".fa-users").length === 1
+		const oldInterfaceEmployees = document.extract("[href*='/window/unit/employees/engage/']").length >= 1
+		return isMainPage && (newInterfaceEmployees || oldInterfaceEmployees)
+	},
+	options: [
+		new Option({
+			id: "bonus", 
+			name: "Bonus", 
+			type: "select", 
+			start: "on",
+			values: [
+				new Value({ id: "on", name: "On" }),
+				new Value({ id: "off", name: "Off" })
+			]
+		}),
+	],
+	execute: async (choice) => {
 
-	let qual = await Scrapper.get("/"+Vital.getRealm()+"/main/user/privat/persondata/knowledge", VirtoMap.Manager);
-	let here = VirtoMap.Main($(document)).values;
-	
-	let factor1 = HardData.getTop1(here.type);
-	let factor3 = HardData.getTop3(here.type);			
-	
-	let managerIndex = qual.pic.indexOf(here.managerPic);
-				
-	if(managerIndex >= 0){
-				
-		let managerBase = qual.base[managerIndex];
-		let managerTotal = here.managerLevel;
-		let ov1 = Formulas.overflowTop1(here.managerEmployees, factor3, managerTotal);
-		let ov3 = Formulas.overflowTop3(here.employeesCur, here.skillNow, here.techLevel, factor1, managerTotal);
-						
-		$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(3) td:eq(1)").append( " (current)"
-			+"<div style='color: darkgreen'>"+(Math.floor(Formulas.skill(here.employeesCur, factor1, managerBase)*100)/100).toFixed(2)+" (target) </div>"
-			+"<div style='color: indigo'>"+(Math.floor(Formulas.skill(here.employeesCur, factor1, managerTotal)*100)/100).toFixed(2)+" (maximum) </div>"
-			+"<div style='color: crimson'>"+(Math.floor(Formulas.skill(here.employeesCur, factor1, managerTotal*ov1)*100)/100).toFixed(2)+" (overflow) </div>"
-		);
-		
-		$(".unit_box:has(.fa-users) tr:not(:has([colspan])):eq(0) td:eq(1)").append( " (current)"
-			+"<div style='color: darkgreen'>"+Math.floor(Formulas.employees(here.skillNow, factor1, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (target) </div>"
-			+"<div style='color: indigo'>"+Math.floor(Formulas.employees(here.skillNow, factor1, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (maximum) </div>"
-			+"<div style='color: crimson'>"+Math.floor(Formulas.employees(here.skillNow, factor1, managerTotal*ov1)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (overflow) </div>"
-		);
-		
-		$(".unit_box:has(.fa-user) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
-			+"<div style='color: darkgreen'>"+Math.floor(Formulas.allEmployees(factor3, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (target) </div>"
-			+"<div style='color: indigo'>"+Math.floor(Formulas.allEmployees(factor3, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (maximum) </div>"
-			+"<div style='color: crimson'>"+Math.floor(Formulas.allEmployees(factor3, managerTotal)*ov3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" (overflow) </div>"
-		);
-		
-		$(".unit_box:has(.fa-cogs) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
-			+"<div style='color: darkgreen'>"+(Math.floor(Formulas.equip(Formulas.skill(here.employeesCur, factor1, managerBase))*100)/100).toFixed(2)+" (target) </div>"
-			+"<div style='color: indigo'>"+(Math.floor(Formulas.equip(Formulas.skill(here.employeesCur, factor1, managerTotal))*100)/100).toFixed(2)+" (maximum) </div>"
-			+"<div style='color: crimson'>"+(Math.floor(Formulas.equip(Formulas.skill(here.employeesCur, factor1, managerTotal*ov1))*100)/100).toFixed(2)+" (overflow) </div>"
-		);
-		
-		$(".unit_box:has(.fa-industry) tr:not(:has([colspan])):eq(2) td:eq(1)").append( " (current)"
-			+"<div style='color: darkgreen'>"+Math.floor(Formulas.techLevel(managerBase))+" (target) </div>"
-			+"<div style='color: indigo'>"+Math.floor(Formulas.techLevel(managerTotal))+" (maximum) </div>"
-			+"<div style='color: crimson'>"+Math.floor(Formulas.techLevel(managerTotal*ov1))+" (overflow) </div>"
-		);
-		
-		$(".unit_box:has(.fa-tasks) tr:not(:has([colspan])):eq(7)").after( ""
-			+"<tr style='color: blue'><td>Expected top manager efficiency</td><td>"+Formulas.efficiency(here.employeesCur, here.managerEmployees, managerTotal, factor1, factor3, here.skillNow, here.techLevel)+"</td></tr>"
-		);			
-		
-	}
-	else{
-
-		//Old Manager Page is ENGLISH ONLY
-		
-		managerIndex = qual.pic.indexOf(HardData.getManagerImg(here.type));
-		let managerBase = qual.base[managerIndex];
-		let managerTotal = managerBase + qual.bonus[managerIndex];
-		
-		let placeText = ($place, text, value, color) => {
-			$place.html($place.html()+"<br><span style='color: "+color+"'><b>"+value+"</b>"+text+"</span>");			
+		const addRow = ({text, value, rowBefore}) => {
+			const row = document.createElement("tr")
+			const td1 = row.createChild("td")
+			td1.innerText = text
+			td1.classList.add("XioTopManagerStats")
+			const td2 = row.createChild("td")
+			td2.innerText = value
+			rowBefore.parentNode.insertBefore(row, rowBefore.nextElementSibling)
+			return row
 		}
+
+		const domain = Vital.getDomain()
+		const realm = Vital.getRealm()
+		const subid = document.URL.match(/\d+/)[0]		
+		const bonus = choice.bonus === "on"
+
+        const unitSummary = await Page.get("UnitSummary").load(domain, realm, subid)
+		const managerInfo = await ManagerUtil.getManagerLimits(unitSummary, bonus)
+			
+		const maxEmployeesString = managerInfo.maxTotalEmployees.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+		const qualificationString = (Math.floor(managerInfo.maxQualification*100)/100).toFixed(2)
+		const employeesString = Math.floor(managerInfo.maxEmployees).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+		const equipmentString = (Math.floor(managerInfo.maxEquipment*100)/100).toFixed(2)
+		const technologyString = Math.floor(managerInfo.maxTechnologyLevel)
 		
-		let $qualRow = $("tr:contains('Qualification of employees'), tr:contains('Qualification of scientists'), \n\
-						tr:contains('Workers qualification')");
-		let $levelRow = $("tr:contains('Qualification of player')");
-		let $empRow = $("tr:contains('Number of employees'), tr:contains('Number of scientists'),\n\
-							tr:contains('Number of workers')");
-		let $totalEmpRow = $("tr:contains('profile qualification')");
-		let $techRow = $("tr:contains('Technology level'), tr:contains('Current research')");
-		let $equipRow = $("tr:contains('Equipment quality'), tr:contains('Computers quality'),\n\
-				tr:contains('Livestock quality'), tr:contains('Quality of agricultural machines')");
-		let $effiRow =  $("tr:contains('Top manager efficiency')");       
-		
-		let amount = Tools.parse($empRow.find("td:eq(1)").text());
-		let skill = Tools.parse($qualRow.find("td:eq(1)").text());
-		let level = Tools.parse($levelRow.find("td:eq(1)").text());
-		let totalEmp = Tools.parse($totalEmpRow.find("td:eq(1)").text());
-		let tech = Tools.parse($techRow.find("td:eq(1)").text());
-		let eqQual = Tools.parse($equipRow.find("td:eq(1)").text());
-					
-		ov1 = Formulas.overflowTop1(totalEmp, factor3, managerTotal);
-		ov3 = Formulas.overflowTop3(amount, skill, tech, factor1, managerTotal);
-								
-		placeText($empRow.find("td:eq(1)")," (target)", Math.floor(Formulas.employees(skill, factor1, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "darkgreen");       
-		placeText($empRow.find("td:eq(1)")," (maximum)", Math.floor(Formulas.employees(skill, factor1, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "indigo");
-		placeText($empRow.find("td:eq(1)")," (overflow)", Math.floor(Formulas.employees(skill, factor1, managerTotal*ov1)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "crimson");
-		placeText($qualRow.find("td:eq(1)")," (target)", (Math.floor(Formulas.skill(amount, factor1, managerBase)*100)/100).toFixed(2), "darkgreen");
-		placeText($qualRow.find("td:eq(1)")," (maximum)", (Math.floor(Formulas.skill(amount, factor1, managerTotal)*100)/100).toFixed(2), "indigo");
-		placeText($qualRow.find("td:eq(1)")," (overflow)", (Math.floor(Formulas.skill(amount, factor1, managerTotal*ov1)*100)/100).toFixed(2), "crimson");
-		placeText($totalEmpRow.find("td:eq(1)")," (target)", Math.floor(Formulas.allEmployees(factor3, managerBase)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "darkgreen");
-		placeText($totalEmpRow.find("td:eq(1)")," (maximum)", Math.floor(Formulas.allEmployees(factor3, managerTotal)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "indigo");
-		placeText($totalEmpRow.find("td:eq(1)")," (overflow)", Math.floor(Formulas.allEmployees(factor3, managerTotal)*ov3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "), "crimson");
-		placeText($equipRow.find("td:eq(1)")," (target)", (Math.floor(Formulas.equip(Formulas.skill(amount, factor1, managerBase))*100)/100).toFixed(2), "darkgreen");
-		placeText($equipRow.find("td:eq(1)")," (maximum)", (Math.floor(Formulas.equip(Formulas.skill(amount, factor1, managerTotal))*100)/100).toFixed(2), "indigo");	
-		placeText($equipRow.find("td:eq(1)")," (overflow)", (Math.floor(Formulas.equip(Formulas.skill(amount, factor1, managerTotal*ov1))*100)/100).toFixed(2), "crimson");	
-		placeText($techRow.find("td:eq(1)")," (target)", Math.floor(Formulas.techLevel(managerBase)), "darkgreen");
-		placeText($techRow.find("td:eq(1)")," (maximum)", Math.floor(Formulas.techLevel(managerTotal)), "indigo");
-		placeText($techRow.find("td:eq(1)")," (overflow)", Math.floor(Formulas.techLevel(managerTotal*ov1)), "crimson");
-		placeText($effiRow.find("td:eq(1)"), " (Expected top manager efficiency)", Formulas.efficiency(amount, totalEmp, managerTotal, factor1, factor3, skill, tech), "blue");
-		
-	}
-}
+		const newInterfaceEmployees = document.extract(".fa-users").length === 1
+
+		if (newInterfaceEmployees) {
+
+			const managementRow = document.querySelector(".fa-user").closest(".unit_box").querySelector("tr:nth-child(3)")
+			addRow({
+				text: "Maximum number of employees company-wide",
+				value: maxEmployeesString,			
+				rowBefore: managementRow
+			})
+
+			const employeeRow = document.querySelector(".fa-users").closest(".unit_box").querySelector("tr:nth-child(5)")
+			const r = addRow({
+				text: "Maximum number of employees with current qualification",
+				value: employeesString,
+				rowBefore: employeeRow
+			})
+			addRow({
+				text: "Maximum qualification with current number of employees",
+				value: qualificationString,
+				rowBefore: r
+			})
+
+			if (managerInfo.maxEquipment) {
+				const equipRow = document.querySelector(".fa-cogs").closest(".unit_box").querySelector("tr:nth-child(4)")
+				addRow({
+					text: "Maximum equipment quality with current number of employees to ensure low enough employee qualification",
+					value: equipmentString,
+					rowBefore: equipRow
+				})
+			}
+
+			if (managerInfo.maxTechnologyLevel) {
+				const techRow = document.querySelector(".fa-industry").closest(".unit_box").querySelector("tr:nth-child(4)")
+				addRow({
+					text: "Maximum technology level",
+					value: technologyString,
+					rowBefore: techRow
+				})
+			}
+
+		}
+		else {
+			
+			let row = document.querySelector("[href*=productivity_info]").closest("tr")
+			row = addRow({
+				text: "Maximum number of employees company-wide",
+				value: maxEmployeesString,			
+				rowBefore: row
+			})
+			row = addRow({
+				text: "Maximum number of employees with current qualification",
+				value: employeesString,
+				rowBefore: row
+			})
+			row = addRow({
+				text: "Maximum qualification with current number of employees",
+				value: qualificationString,
+				rowBefore: row
+			})
+
+			if (managerInfo.maxEquipment) {
+				row = addRow({
+					text: "Maximum equipment quality with current number of employees to ensure low enough employee qualification",
+					value: equipmentString,
+					rowBefore: row
+				})
+			}
+
+			if (managerInfo.maxTechnologyLevel) {
+				addRow({
+					text: "Maximum technology level",
+					value: technologyString,
+					rowBefore: row
+				})
+			}
+
+			for (const e of document.getElementsByClassName("XioTopManagerStats")) {
+				e.style.fontWeight = "bold"
+			}
+
+		}
+
+}}))

@@ -36,7 +36,7 @@ Module.add( new Module({
             ]
         })
     ],
-    predecessors: ["ProdSupply", "Research"],
+    predecessors: ["ProductionSupply", "Research"],
     stats: [
         new Stat({ id: "holiday", display: "Send on Holiday", format: "Plain" }),
         new Stat({ id: "working", display: "Returned to Work", format: "Plain" })
@@ -56,7 +56,7 @@ Module.add( new Module({
 
             if (choice.stock === "ignore") return false
 
-            const supply = await Page.get("ProdSupply").load(domain, realm, subid)
+            const supply = await Page.get("FactorySupply").load(domain, realm, subid)
             const lowestAmount = Math.min(...supply.goodsBased.quantity)
 
             if (lowestAmount === 0) return true
@@ -83,7 +83,7 @@ Module.add( new Module({
             if (Module.get("Research").subTypes.includes(type)) {
                 toHoliday = toHoliday || await researchToHoliday()
             } 
-            else if (Module.get("ProdSupply").subTypes.includes(type)) {
+            else if (Module.get("ProductionSupply").subTypes.includes(type)) {
                 toHoliday = toHoliday || await prodSupplyToHoliday()
             }
             

@@ -13,7 +13,7 @@ Page.add(new Page({
  * Send something with structure:
  * {
  *    employees: 300
- *    weels: 4
+ *    weeks: 4
  * }
  * 
  * and you get back:

@@ -110,13 +110,15 @@ Module.add( new Module({
             const newSkill = await p
             const trainingWindow = await q
 
-            const citySkill = trainingWindow.skillCity
-            const currentSalary = employeeInfo.salaryWorking
-            const citySalary = employeeInfo.salaryCity
-            const currentSkill = employeeInfo.skillWorking
+            const skillCity = trainingWindow.skillCity
+            const salaryCurrent = employeeInfo.salaryWorking
+            const salaryCity = employeeInfo.salaryCity
+            const skillCurrent = employeeInfo.skillWorking
+
             //Calculate the salary as if the training completed, and we reduce the salary to match the current skill
-            const improvedSalary = Formulas.salary( currentSalary, citySalary, newSkill, citySkill, currentSkill )
-            const gainedSalary = currentSalary - improvedSalary
+            const trainingLevel = Formulas.trainingLevel({salaryCurrent, salaryCity, skillCurrent: newSkill, skillCity})
+            const improvedSalary = Formulas.salary({skillRequired: skillCurrent, trainingLevel, skillCity, salaryCity})
+            const gainedSalary = salaryCurrent - improvedSalary
 
             const totalTrainingCosts = trainingWindow.trainingCosts * duration / workingEmpl
             const totalSalaryGained = gainedSalary * choice.payback
@@ -149,6 +151,7 @@ Module.add( new Module({
             Results.addStats(this.id, "weeks", numEmployees * duration)
         }
         
+        //UnitSummary can't see whether a subdivision is on training, so we will still have to use this for a while
         const employeeList = await Page.get("EmployeeList").load(domain, realm, companyid)
         const r = ListUtil.restructById("subid", employeeList)
         const employeeInfo = r[subid]

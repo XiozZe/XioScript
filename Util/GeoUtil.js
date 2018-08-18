@@ -1,9 +1,8 @@
 const GeoUtil = {
 
     getGeoIdFromSubid: async (domain, realm, companyid, subid) => {
-        const unitList = await Page.get("UnitList").load(domain, realm, companyid)
-        const unitListIndex = unitList.subid.indexOf(subid)
-        const cityName = unitList.cityName[unitListIndex]
+        const companySummary = await Page.get("CompanySummary").load(domain, realm, companyid)
+        const cityName = companySummary.data[subid].city_name
         return await GeoUtil.getGeoIdFromCityName(domain, realm, cityName)
     },
 

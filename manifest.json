@@ -10,6 +10,12 @@
         "48": "Icons/virtobiggerplus48.png"
     },
 
+    "applications": {
+        "gecko": {
+            "id": "XiozZe@Virtonomics.com"
+        }
+    },
+
     "browser_action": {
         "browser_style": true,
         "default_icon": {
@@ -21,6 +27,8 @@
     "permissions": [
         "*://virtonomics.com/*",
         "*://virtonomica.ru/*",
+        "*://es.virtonomics.com/*",
+        "*://ua.virtonomics.com/*",
         "storage",
         "cookies"
     ],
@@ -33,9 +41,15 @@
     
     "content_scripts": [
         {
-            "matches": ["*://virtonomics.com/*", "*://virtonomica.ru/*"],
+            "matches": [
+                "*://virtonomics.com/*", 
+                "*://virtonomica.ru/*", 
+                "*://es.virtonomics.com/*", 
+                "*://ua.virtonomics.com/*"
+            ],
             "run_at" : "document_end",
-            "js": [        
+            "js": [     
+                "/Util/APIUtil.js",   
                 "/Util/GeoUtil.js",
                 "/Util/HTMLtools.js",
                 "/Util/ListUtil.js",
@@ -70,10 +84,12 @@
 
                 "/Extensions/ForumChecker.js",
                 "/Extensions/PageSize.js",
+                "/Extensions/TopManagerStats.js",
+                "/Extensions/BuildingShortener.js",
 
                 "/Modules/Ads.js",
-                "/Modules/ProdSale.js",
-                "/Modules/ProdSupply.js",
+                "/Modules/ProductionSale.js",
+                "/Modules/ProductionSupply.js",
                 "/Modules/Technology.js",
                 "/Modules/Research.js",
                 "/Modules/Employee.js",
@@ -84,6 +100,7 @@
 
                 "/Pages/Advertising.js",
                 "/Pages/CityOverview.js",
+                "/Pages/CompanySummary.js",
                 "/Pages/CTIErates.js",
                 "/Pages/CustomDuties.js",
                 "/Pages/EmployeeList.js",
@@ -91,6 +108,8 @@
                 "/Pages/EquipmentList.js",
                 "/Pages/EquipmentWindow.js",
                 "/Pages/ExperimentalUnit.js",
+                "/Pages/FactorySale.js",
+                "/Pages/FactorySupply.js",
                 "/Pages/Fame.js",
                 "/Pages/Forecast.js",
                 "/Pages/ForumMain.js",
@@ -99,8 +118,7 @@
                 "/Pages/HomePage.js",
                 "/Pages/Labor.js",
                 "/Pages/Laboratory.js",
-                "/Pages/ProdSale.js",
-                "/Pages/ProdSupply.js",
+                "/Pages/Main.js",
                 "/Pages/Products.js",
                 "/Pages/ProductMarket.js",
                 "/Pages/ProjectCreate.js",
@@ -110,10 +128,13 @@
                 "/Pages/Supplier.js",
                 "/Pages/TechList.js",
                 "/Pages/TechPick.js",
+                "/Pages/Token.js",
                 "/Pages/Trademarks.js",
                 "/Pages/TrainingLevel.js",
                 "/Pages/TrainingWindow.js",
                 "/Pages/UnitList.js",
+                "/Pages/UnitRefresh.js",
+                "/Pages/UnitSummary.js",
                 "/Pages/WorldMap.js",
 
                 "/Core/Initialise.js"

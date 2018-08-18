@@ -1,10 +1,10 @@
 Module.add( new Module({
     
-    id: "ProdSupply",
+    id: "ProductionSupply",
     name: "Production Supply",
     explanation: `Set the supply on the Supply page of production facilities. Under amount you can set the number to supply. Zero is zero, required is the daily required. Economical is the same as required except when there is too much in stock, then it uses 2*required - stock. Excessive will aim for having two times required in stock all day: min{2*required, 3*required-stock}. "Minimum" will determine the minimum number of goods set for all suppliers: zero or one. Note that it overwrites the "Zero" set by amount. When having more than one supplier for a product, the script will pick the best supplier given by the 'Order'. With Quality the script will prefer the supplier with the highest quality, Price: lowest price, PQR: lowest Price/Quality-Ratio. In case the price of a supplier has changed, "Update" will determine whether the buy contract should be updated to the new price. If there are not enough suppliers to deliver enough goods, you will be informed if you set Warning on Insufficient, and if you set it on No Suppliers you will be warned only if a good has no suppliers.`,
     subTypes: ['animalfarm', 'apiary', 'farm', 'fishingbase', 'mill', 'mine', 'oilpump', 'orchard', 'sawmill', 'workshop'],
-    predecessors: ["ProdSale"],
+    predecessors: ["ProductionSale"],
     options: [
         new Option({
             id: "amount", 
@@ -88,7 +88,7 @@ Module.add( new Module({
                     toSupply = Math.min(2 * required, Math.max(3 * required - stock, 0));
                     break;
                 default:                    
-                    Results.errorLog(`${this.name} error: supply amount misspecified.`);
+                    Results.errorLog(`${this.name} error: supply amount misspecified. (Production Supply Module)`);
             }
 
             if(choice.minimum === "one"){
@@ -108,7 +108,7 @@ Module.add( new Module({
                 case "quality":
                     return (a, b) => b.qualitySupplier - a.qualitySupplier;
                 default:
-                    Results.errorLog(`${this.name} error: sort function misspecified.`);
+                    Results.errorLog(`${this.name} error: sort function misspecified. (Production Supply Module)`);
             }	
         }
         
@@ -117,13 +117,13 @@ Module.add( new Module({
 
             if(choice.warning === "none" && !suppliers.length){
                 const productName = await ProductUtil.getProductName(domain, realm, productId);
-                const s = `${this.name}: Subdivision ${subid} (${realm}) does not have suppliers for ${productName}!`;
-                Results.warningLog(s);
+                const s = `${this.name}: Not have suppliers for ${productName}!`;
+                Results.warningLog(s, {domain, realm, subid, type});
             }
             else if(choice.warning === "insufficient" && supplyLeft > 0){
                 const productName = await ProductUtil.getProductName(domain, realm, productId);
-                const s = `${this.name}: Subdivision ${subid} (${realm}) does not have enough suppliers for ${productName}!`;
-                Results.warningLog(s);
+                const s = `${this.name}: Not have enough suppliers for ${productName}!`;
+                Results.warningLog(s, {domain, realm, subid, type});
             }
 
         }
@@ -188,7 +188,7 @@ Module.add( new Module({
             }
         }
                             
-        const supply = await Page.get("ProdSupply").load(domain, realm, subid);
+        const supply = await Page.get("FactorySupply").load(domain, realm, subid);
         const goodsIterator = SupplyUtil.goodsGenerator(supply);
 
         const supplyposts = [];

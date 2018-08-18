@@ -115,36 +115,68 @@ const Results = (function(){
     }
     
     /**
+     * This is a function for the error, warning and normal logs
+     * Accepts a object with keys: domain, realm, subid, type and makes an HTML <li> from it
+     * that goes to the main page of that subdivision and has text as explanation.
+     */
+    const createSubdivisionLi = (message, subObject) => {
+
+        const li = logUl.createChild("li")    
+
+        if(subObject){            
+            const {domain, realm, subid, type} = subObject
+
+            const t = SubTypes.getName(type) +" "
+            const txt1 = document.createTextNode(t)        
+            li.appendChild(txt1)
+
+            const a = li.createChild("a")
+            const url = `${domain}/${realm}/main/unit/view/${subid}`
+            a.setAttribute("href", url)
+            a.innerText = subid
+            
+            const s = `: `    
+            const txt2 = document.createTextNode(s)
+            li.appendChild(txt2)
+        }
+                   
+        const txt3 = document.createTextNode(message)
+        li.appendChild(txt3)
+
+        //li.innerText = message
+        return li
+    }
+
+    /**
      * Displays the error on the Results page.
      * Also puts it in the console so it also works not during execution
      */
-    const errorLog = (message, ...params) => {
-        console.error(message, ...params);
+    const errorLog = (message, subObject) => {
+
         if(!timeIsRunning)
             return;
 
-        const li = logUl.createChild("li");
-        li.innerText = message;
-        li.style.color = "crimson";
+        console.error(message)
+        const li = createSubdivisionLi(message, subObject)
+        li.style.color = "crimson"
+
     }
 
-    const warningLog = (message) => {
+    const warningLog = (message, subObject) => {
         if(!timeIsRunning)
-            return;
+            return
 
-        const li = logUl.createChild("li");
-        li.innerText = message;
-        li.style.color = "darkmagenta";
+        const li = createSubdivisionLi(message, subObject)
+        li.style.color = "darkmagenta"
     }
 
-    const normalLog = (message) => {
-        console.log(message);
+    const normalLog = (message, subObject) => {
+        console.log(message)
         if(!timeIsRunning)
-            return;
+            return
 
-        const li = logUl.createChild("li");
-        li.innerText = message;
-        li.style.color = "blue";
+        const li = createSubdivisionLi(message, subObject)
+        li.style.color = "blue"
     }
 
     const updateStatus = (statusMessage) => {

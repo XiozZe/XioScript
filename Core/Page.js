@@ -300,11 +300,3 @@ Page.prototype.load = async function(...urlArguments){
     console.log(url, l)
     return l    
 }
-
-/**
- * Function just for testing purposes. Loads the acquiered document text on the screen
- */
-Page.prototype.show = function(docText){
-    document.querySelector("html").innerHTML = docText
-    window.doc = document //To be able to copy paste Page scrapers in the console.log
-}
