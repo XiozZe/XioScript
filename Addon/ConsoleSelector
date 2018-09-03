@@ -33,4 +33,5 @@ Tools = {parse: (textToParse) => {
 Node.prototype.extract = function(selector){
 	return Array.from(this.querySelectorAll(selector));
 }
+numberfy = Tools.parse
 $html = $(document)

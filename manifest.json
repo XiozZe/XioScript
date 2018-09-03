@@ -135,6 +135,7 @@
                 "/Pages/UnitList.js",
                 "/Pages/UnitRefresh.js",
                 "/Pages/UnitSummary.js",
+                "/Pages/WarehouseSupply.js",
                 "/Pages/WorldMap.js",
 
                 "/Core/Initialise.js"

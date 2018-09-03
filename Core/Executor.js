@@ -6,8 +6,15 @@ const Executor = (function(){
         //If you are logged in on the english domain, for some reason it can also get the values from the russian realms.
         const domains = [
             "https://virtonomics.com",
-            "https://virtonomica.ru"
+            "https://virtonomica.ru",
         ]
+
+        /**
+            These domains are unnecessary because they are accessable by the virtonomics.com domain:
+            "https://es.virtonomics.com",
+            "https://ua.virtonomics.com"
+          
+         */
 
         for(const d of domains){
             const homePage = await Page.get("HomePage").load(d)
